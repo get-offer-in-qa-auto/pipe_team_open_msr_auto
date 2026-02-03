@@ -1,0 +1,13 @@
+from typing import Protocol, Optional, Union
+
+from src.api.models.base_model import BaseModel
+
+
+class CrudEndPointInterface(Protocol):
+    def post(self, model: BaseModel) -> BaseModel: ...
+
+    def get(self, model: Optional[BaseModel] = None, id : Optional[int] = None) -> BaseModel: ...
+
+    def update(self, model: Optional[BaseModel] = None, id: Optional[int] = None) -> BaseModel: ...
+
+    def delete(self, id: int) -> Union[BaseModel, bool]: ...
