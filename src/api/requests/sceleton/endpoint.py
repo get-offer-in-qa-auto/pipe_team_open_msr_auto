@@ -5,10 +5,15 @@ from typing import Optional
 from src.api.models.base_model import BaseModel
 from src.api.models.requests.create_patient_from_person_request import CreatePatientFromPersonRequest
 from src.api.models.requests.create_person_request import CreatePersonRequest
+from src.api.models.requests.create_provider_request import CreateProviderRequest
+from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
 from src.api.models.responses.create_patient_response import PatientFullResponse, PatientCreateResponse
-from src.api.models.responses.create_person_response import CreatPersonResponse, PersonFullResponse
+from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
+from src.api.models.responses.create_provider_response import CreateProviderResponse
+from src.api.models.responses.create_user_response import CreateUserResponse
 from src.api.models.responses.get_location_response import LocationListResponse
 from src.api.models.responses.get_roles_response import RoleListResponse
+from src.api.models.responses.get_session_response import GetSessionResponse
 from src.api.models.responses.patient_identifier_type_response import PatientIdentifierTypeListResponse
 
 
@@ -19,6 +24,12 @@ class EndpointConfig:
     response_model:Optional[BaseModel]
 
 class Endpoint(Enum):
+    GET_SESSION = EndpointConfig(
+        url="/session",
+        request_model=None,
+        response_model=GetSessionResponse
+    )
+
     GET_ROLES = EndpointConfig(
         url="/role",
         request_model=None,
@@ -36,10 +47,11 @@ class Endpoint(Enum):
         request_model=None,
         response_model=PatientIdentifierTypeListResponse
     )
+
     CREATE_PERSON = EndpointConfig(
         url="/person",
         request_model=CreatePersonRequest,
-        response_model=CreatPersonResponse
+        response_model=CreatePersonResponse
     )
 
     GET_PERSON = EndpointConfig(
@@ -70,4 +82,28 @@ class Endpoint(Enum):
         url="/patient",
         request_model=None,
         response_model=PatientFullResponse  # добавим модель ниже
+    )
+
+    CREATE_USER_FROM_PERSON = EndpointConfig(
+        url="/user",
+        request_model=CreateUserFromExistingPersonRequest,
+        response_model=CreateUserResponse
+    )
+
+    DELETE_USER = EndpointConfig(
+        url="/user",
+        request_model=None,
+        response_model=None
+    )
+
+    CREATE_PROVIDER = EndpointConfig(
+        url="/provider",
+        request_model=CreateProviderRequest,
+        response_model=CreateProviderResponse
+    )
+
+    DELETE_PROVIDER = EndpointConfig(
+        url="/provider",
+        request_model=None,
+        response_model=None
     )

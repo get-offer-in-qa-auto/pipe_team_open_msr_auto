@@ -8,13 +8,13 @@ from src.api.models.requests.create_person_request import CreatePersonRequest, C
 @pytest.mark.api
 def test_create_person(api_manager):
     req = RandomModelGenerator.generate(CreatePersonRequest)
-    created = api_manager.admin_steps.create_person(req)
+    created = api_manager.user_steps.create_person(req)
 
     #TODO: убрать куда-нибудь
     assert created.uuid
     assert created.voided is False
     assert created.preferredName.uuid
-    full = api_manager.admin_steps.get_person_full(created.uuid)
+    full = api_manager.user_steps.get_person_full(created.uuid)
 
     # TODO: убрать куда-нибудь
     assert full.uuid == created.uuid
@@ -48,7 +48,7 @@ def test_create_person(api_manager):
     ],
 )
 def test_create_person_invalid(api_manager, payload, error_key, error_value):
-    api_manager.admin_steps.create_invalid_person(
+    api_manager.user_steps.create_invalid_person(
         create_person_request=payload,
         error_key=error_key,
         error_value=error_value,
