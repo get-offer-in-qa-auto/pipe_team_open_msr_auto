@@ -4,8 +4,6 @@ import pytest
 
 from src.api.classes.api_manager import ApiManager
 from src.api.models.responses.create_patient_response import PatientCreateResponse
-from src.api.models.responses.create_person_response import CreatPersonResponse
-from src.api.models.responses.create_visit_response import VisitCreateResponse
 from src.api.models.responses.create_person_response import CreatePersonResponse
 from src.api.models.responses.create_provider_response import CreateProviderResponse
 from src.api.models.responses.create_user_response import CreateUserResponse

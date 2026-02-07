@@ -12,7 +12,6 @@ from src.api.models.responses.create_patient_response import PatientFullResponse
 from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
 from src.api.models.responses.create_provider_response import CreateProviderResponse
 from src.api.models.responses.create_user_response import CreateUserResponse
-from src.api.models.responses.create_person_response import CreatPersonResponse, PersonFullResponse
 from src.api.models.responses.create_visit_response import VisitCreateResponse
 from src.api.models.responses.get_location_response import LocationListResponse
 from src.api.models.responses.get_roles_response import RoleListResponse

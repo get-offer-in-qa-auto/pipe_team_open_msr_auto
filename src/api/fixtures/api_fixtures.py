@@ -21,7 +21,7 @@ def created_patient(api_manager: ApiManager) -> PatientCreateResponse:
 
     The created objects are automatically registered in created_objects and removed in teardown.
     """
-    return api_manager.admin_steps.create_patient_from_existing_person()
+    return api_manager.user_steps.create_patient_from_existing_person()
 
 
 @pytest.fixture
@@ -30,10 +30,10 @@ def create_visit_request(api_manager: ApiManager, created_patient: PatientCreate
 
     Takes the first available Location and Visit Type.
     """
-    visit_types = api_manager.admin_steps.get_visit_types()
+    visit_types = api_manager.user_steps.get_visit_types()
     visit_type_uuid = visit_types.results[0].uuid
 
-    locations = api_manager.admin_steps.get_locations()
+    locations = api_manager.user_steps.get_locations()
     location_uuid = locations.results[0].uuid
 
     start_dt = now_iso_utc()
@@ -49,32 +49,14 @@ def create_visit_request(api_manager: ApiManager, created_patient: PatientCreate
 
 
 @pytest.fixture
-def valid_visit_payload(api_manager, created_patient):
-    visit_types = api_manager.admin_steps.get_visit_types()
-    locations = api_manager.admin_steps.get_locations()
-
-    start_dt = datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
-
-    return {
-        "patient": created_patient.uuid,
-        "visitType": visit_types.results[0].uuid,
-        "startDatetime": start_dt,
-        "location": locations.results[0].uuid,
-        # optional:
-        # "indication": "some text",
-        # "encounters": [],
-    }
-
-
-@pytest.fixture
 def visit_type_uuid(api_manager) -> str:
-    visit_types = api_manager.admin_steps.get_visit_types()
+    visit_types = api_manager.user_steps.get_visit_types()
     return visit_types.results[0].uuid
 
 
 @pytest.fixture
 def patient_context(api_manager, created_patient) -> dict:
-    locations = api_manager.admin_steps.get_locations()
+    locations = api_manager.user_steps.get_locations()
     return {
         "patient_uuid": created_patient.uuid,
         "location_uuid": locations.results[0].uuid,

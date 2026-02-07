@@ -1,9 +1,15 @@
-from typing import Optional, List
+from __future__ import annotations
 
+from typing import Optional, List, Any
+
+from src.api.generators.mod30 import generate_mod30_identifier
+from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.comparison.model_assertions import ModelAssertions
 from src.api.models.requests.BaseCreateUserRequest import BaseCreateUserRequest
-from src.api.models.requests.create_patient_from_person_request import CreatePatientFromPersonRequest, \
-    PatientIdentifierRequest
+from src.api.models.requests.create_patient_from_person_request import (
+    CreatePatientFromPersonRequest,
+    PatientIdentifierRequest,
+)
 from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
 from src.api.models.requests.create_provider_request import CreateProviderRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
@@ -19,53 +25,71 @@ from src.api.steps.base_steps import BaseSteps
 
 
 class UserSteps(BaseSteps):
-    def get_person_full(self, person_uuid: str) -> PersonFullResponse:
+
+    def _vcr(self, endpoint: Endpoint, response_spec):
         return ValidatedCrudRequester(
             request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.GET_PERSON,
-            response_spec=ResponseSpecs.request_returns_ok()
-        ).get(id=person_uuid, params={"v": "full"})
+            endpoint=endpoint,
+            response_spec=response_spec,
+        )
+
+    def _cr(self, endpoint: Endpoint, response_spec):
+        return CrudRequester(
+            request_spec=RequestSpecs.admin_auth_spec(),
+            endpoint=endpoint,
+            response_spec=response_spec,
+        )
+
+    def get_person_full(self, person_uuid: str) -> PersonFullResponse:
+        return self._vcr(Endpoint.GET_PERSON, ResponseSpecs.request_returns_ok()).get(
+            id=person_uuid, params={"v": "full"}
+        )
 
     def get_patient_full(self, patient_uuid: str) -> PatientFullResponse:
-        return ValidatedCrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.GET_PATIENT,
-            response_spec=ResponseSpecs.request_returns_ok()
-        ).get(id=patient_uuid, params={"v": "full"})
+        return self._vcr(Endpoint.GET_PATIENT, ResponseSpecs.request_returns_ok()).get(
+            id=patient_uuid, params={"v": "full"}
+        )
 
     def create_person(self, create_person_request: CreatePersonRequest) -> CreatePersonResponse:
-        person = ValidatedCrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.CREATE_PERSON,
-            response_spec=ResponseSpecs.entity_was_created()
-        ).post(create_person_request)
+        person = self._vcr(Endpoint.CREATE_PERSON, ResponseSpecs.entity_was_created()).post(create_person_request)
 
         full = self.get_person_full(person.uuid)
         ModelAssertions(create_person_request, full).match()
+
         self.created_objects.append(person)
         return person
 
     def delete_person(self, person_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
+        self._cr(Endpoint.DELETE_PERSON, ResponseSpecs.entity_was_deleted()).delete_with_params(
+            id=person_uuid, params=params
+        )
 
-        CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.DELETE_PERSON,
-            response_spec=ResponseSpecs.entity_was_deleted()
-        ).delete_with_params(id=person_uuid, params=params)
+    def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_key: str, error_value: str):
+        self._cr(
+            Endpoint.CREATE_PERSON,
+            ResponseSpecs.request_returns_bad_request(error_key, error_value),
+        ).post(create_person_request)
 
-    def create_patient_from_person(self,
-                                   person: str,
-                                   identifiers: Optional[List[PatientIdentifierRequest]] = None,
-                                   user_request: Optional[BaseCreateUserRequest] = None) -> PatientCreateResponse:
-        request_spec = RequestSpecs.auth_as_user(user_request.username, user_request.password) if user_request else RequestSpecs.admin_auth_spec()
-        identifiers = identifiers or [self.get_identifier_request()]
+    def create_patient_from_person(
+        self,
+        person: str,
+        identifiers: Optional[List[PatientIdentifierRequest]] = None,
+        user_request: Optional[BaseCreateUserRequest] = None,
+    ) -> PatientCreateResponse:
+        request_spec = (
+            RequestSpecs.auth_as_user(user_request.username, user_request.password)
+            if user_request
+            else RequestSpecs.admin_auth_spec()
+        )
+
+        identifiers = identifiers or [self._build_identifier_request()]
         req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
 
         patient_created = ValidatedCrudRequester(
             request_spec=request_spec,
             endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
-            response_spec=ResponseSpecs.entity_was_created()
+            response_spec=ResponseSpecs.entity_was_created(),
         ).post(req)
 
         assert patient_created.uuid, f"patient_created.uuid is falsy: {patient_created}"
@@ -77,51 +101,32 @@ class UserSteps(BaseSteps):
         self.created_objects.append(patient_created)
         return patient_created
 
-    def delete_patient(self, patient_uuid: str, purge: bool = True):
-        params = {"purge": "true"} if purge else None
-        CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.DELETE_PATIENT,
-            response_spec=ResponseSpecs.entity_was_deleted()
-        ).delete_with_params(id=patient_uuid, params=params)
-
     def create_patient_from_person_invalid_data(
-            self,
-            person: str,
-            error_message: str,
-            identifiers: Optional[List[PatientIdentifierRequest]] = None,
-            user_request: Optional[BaseCreateUserRequest] = None):
-        request_spec = RequestSpecs.auth_as_user(user_request.username, user_request.password) if user_request else RequestSpecs.admin_auth_spec()
-        req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
+        self,
+        person: str,
+        error_message: str,
+        identifiers: Optional[List[PatientIdentifierRequest]] = None,
+        user_request: Optional[BaseCreateUserRequest] = None,
+    ):
+        request_spec = (
+            RequestSpecs.auth_as_user(user_request.username, user_request.password)
+            if user_request
+            else RequestSpecs.admin_auth_spec()
+        )
 
+        req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
         CrudRequester(
             request_spec=request_spec,
             endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
-            response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_message)
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_message),
         ).post(req)
 
-    def delete_patient(self, patient_uuid: str, purge: bool = True):
-        params = {"purge": "true"} if purge else None
-        CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.DELETE_PATIENT,
-            response_spec=ResponseSpecs.entity_was_deleted()
-        ).delete_with_params(id=patient_uuid, params=params)
-
-    def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_key, error_value):
-        CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.CREATE_PERSON,
-            response_spec=ResponseSpecs.request_returns_bad_request(error_key, error_value),
-        ).post(create_person_request)
-
     def create_patient_with_person(
-        self, create_person_request: CreatePersonRequest, identifiers: Optional[List[PatientIdentifierRequest]] = None,
+        self,
+        create_person_request: CreatePersonRequest,
+        identifiers: Optional[List[PatientIdentifierRequest]] = None,
     ):
         created_person = self.create_person(create_person_request)
-
-        identifiers = identifiers or [self.get_identifier_request()]
-
         created_patient = self.create_patient_from_person(created_person.uuid, identifiers)
 
         assert created_patient.uuid
@@ -129,42 +134,74 @@ class UserSteps(BaseSteps):
 
         return created_person, created_patient
 
-    def create_user_from_existing_person(self, create_user_request: CreateUserFromExistingPersonRequest ) -> CreateUserResponse:
-        create_user_response: CreateUserResponse = ValidatedCrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.CREATE_USER_FROM_PERSON,
-            response_spec=ResponseSpecs.entity_was_created()
-        ).post(create_user_request)
+    def create_patient_from_existing_person(self) -> PatientCreateResponse:
+        _, patient = self.create_patient_with_person(RandomModelGenerator.generate(CreatePersonRequest))
+        return patient
 
-        ModelAssertions(create_user_request, create_user_response).match()
-        self.created_objects.append(create_user_response)
-        return create_user_response
+    def delete_patient(self, patient_uuid: str):
+        for visit_uuid in self._get_visit_uuids_by_patient(patient_uuid):
+            self._purge_visit(visit_uuid)
+
+        self._cr(Endpoint.DELETE_PATIENT, ResponseSpecs.entity_was_deleted()).delete_with_params(
+            id=patient_uuid, params={"purge": "true"}
+        )
+
+    def create_user_from_existing_person(self, create_user_request: CreateUserFromExistingPersonRequest) -> CreateUserResponse:
+        user = self._vcr(Endpoint.CREATE_USER_FROM_PERSON, ResponseSpecs.entity_was_created()).post(create_user_request)
+        ModelAssertions(create_user_request, user).match()
+
+        self.created_objects.append(user)
+        return user
 
     def delete_user(self, user_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
-
-        CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.DELETE_USER,
-            response_spec=ResponseSpecs.entity_was_deleted()
-        ).delete_with_params(id=user_uuid, params=params)
+        self._cr(Endpoint.DELETE_USER, ResponseSpecs.entity_was_deleted()).delete_with_params(id=user_uuid, params=params)
 
     def create_provider(self, create_provider_request: CreateProviderRequest):
-        response = ValidatedCrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.CREATE_PROVIDER,
-            response_spec=ResponseSpecs.entity_was_created()
-        ).post(create_provider_request)
-
-        self.created_objects.append(response)
-
-        return response
+        provider = self._vcr(Endpoint.CREATE_PROVIDER, ResponseSpecs.entity_was_created()).post(create_provider_request)
+        self.created_objects.append(provider)
+        return provider
 
     def delete_provider(self, provider_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
+        self._cr(Endpoint.DELETE_PROVIDER, ResponseSpecs.entity_was_deleted()).delete_with_params(
+            id=provider_uuid, params=params
+        )
 
-        CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=Endpoint.DELETE_PROVIDER,
-            response_spec=ResponseSpecs.entity_was_deleted()
-        ).delete_with_params(id=provider_uuid, params=params)
+    def get_locations(self):
+        return self._vcr(Endpoint.GET_LOCATIONS, ResponseSpecs.request_returns_ok()).get()
+
+    def get_visit_types(self):
+        return self._vcr(Endpoint.GET_VISIT_TYPES, ResponseSpecs.request_returns_ok()).get()
+
+    def get_patient_identifier_types(self):
+        return self._vcr(Endpoint.GET_PATIENT_IDENTIFIER_TYPES, ResponseSpecs.request_returns_ok()).get()
+
+    def _build_identifier_request(self) -> PatientIdentifierRequest:
+        identifier_types = self.get_patient_identifier_types()
+        locations = self.get_locations()
+
+        identifier_type_uuid = identifier_types.results[0].uuid
+        location_uuid = locations.results[0].uuid
+
+        return PatientIdentifierRequest(
+            identifier=generate_mod30_identifier(total_len=10),
+            identifierType=identifier_type_uuid,
+            location=location_uuid,
+            preferred=True,
+        )
+
+    def _get_visit_uuids_by_patient(self, patient_uuid: str) -> List[str]:
+        resp = self._cr(Endpoint.GET_VISIT, ResponseSpecs.request_returns_ok()).get(params={"patient": patient_uuid})
+
+        try:
+            body: dict[str, Any] = resp.json()
+            results = body.get("results", [])
+            return [v["uuid"] for v in results if isinstance(v, dict) and v.get("uuid")]
+        except Exception:
+            return []
+
+    def _purge_visit(self, visit_uuid: str):
+        self._cr(Endpoint.DELETE_VISIT, ResponseSpecs.entity_was_deleted()).delete_with_params(
+            id=visit_uuid, params={"purge": "true"}
+        )
