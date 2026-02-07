@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from src.api.constants.error_messages import ErrorMessages
@@ -26,6 +28,8 @@ class TestCreatePatientFromExistingPerson:
         ("", ErrorMessages.EMPTY_IDENTIFIER_TYPE),
         (None, ErrorMessages.EMPTY_STRING_IDENTIFIER_TYPE),
         (123, ErrorMessages.INT_IDENTIFIER_TYPE),
+        ("not-a-uuid", ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+        (str(uuid.uuid4()), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
     ])
     def test_create_patient_from_existing_person_invalid_identifier_type(self, api_manager, create_user_with_roles,
                                                                          created_person, identifier_type, error_message):
