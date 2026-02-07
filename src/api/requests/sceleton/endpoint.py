@@ -5,8 +5,13 @@ from typing import Optional
 from src.api.models.base_model import BaseModel
 from src.api.models.requests.create_patient_from_person_request import CreatePatientFromPersonRequest
 from src.api.models.requests.create_person_request import CreatePersonRequest
+from src.api.models.requests.create_provider_request import CreateProviderRequest
+from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
 from src.api.models.requests.create_visit_request import CreateVisitRequest
 from src.api.models.responses.create_patient_response import PatientFullResponse, PatientCreateResponse
+from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
+from src.api.models.responses.create_provider_response import CreateProviderResponse
+from src.api.models.responses.create_user_response import CreateUserResponse
 from src.api.models.responses.create_person_response import CreatPersonResponse, PersonFullResponse
 from src.api.models.responses.create_visit_response import VisitCreateResponse
 from src.api.models.responses.get_location_response import LocationListResponse
@@ -45,7 +50,7 @@ class Endpoint(Enum):
     CREATE_PERSON = EndpointConfig(
         url="/person",
         request_model=CreatePersonRequest,
-        response_model=CreatPersonResponse
+        response_model=CreatePersonResponse
     )
 
     GET_PERSON = EndpointConfig(
@@ -78,7 +83,6 @@ class Endpoint(Enum):
         response_model=PatientFullResponse
     )
 
-    # --- Visits ---
     CREATE_VISIT = EndpointConfig(
         url="/visit",
         request_model=CreateVisitRequest,
@@ -97,9 +101,32 @@ class Endpoint(Enum):
         response_model=None,
     )
 
-    # --- Visit Types ---
     GET_VISIT_TYPES = EndpointConfig(
         url="/visittype",
         request_model=None,
         response_model=VisitTypeListResponse,
+    )
+
+    CREATE_USER_FROM_PERSON = EndpointConfig(
+        url="/user",
+        request_model=CreateUserFromExistingPersonRequest,
+        response_model=CreateUserResponse
+    )
+
+    DELETE_USER = EndpointConfig(
+        url="/user",
+        request_model=None,
+        response_model=None
+    )
+
+    CREATE_PROVIDER = EndpointConfig(
+        url="/provider",
+        request_model=CreateProviderRequest,
+        response_model=CreateProviderResponse
+    )
+
+    DELETE_PROVIDER = EndpointConfig(
+        url="/provider",
+        request_model=None,
+        response_model=None
     )
