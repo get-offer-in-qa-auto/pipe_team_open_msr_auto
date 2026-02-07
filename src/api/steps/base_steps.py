@@ -1,3 +1,4 @@
+import random
 from typing import Any
 from typing import Optional, List
 
@@ -43,7 +44,7 @@ class BaseSteps:
         identifier_type_uuid = types.results[0].uuid
 
         locations = self.get_locations()
-        location_uuid = locations.results[0].uuid
+        location_uuid = random.choice(locations.results).uuid
 
         identifier_request.identifierType = identifier_type_uuid
         identifier_request.location = location_uuid
