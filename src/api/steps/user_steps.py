@@ -39,6 +39,10 @@ class UserSteps(BaseSteps):
     def create_person(self, create_person_request: CreatePersonRequest) -> CreatePersonResponse:
         person = self._vcr(Endpoint.CREATE_PERSON, ResponseSpecs.entity_was_created()).post(create_person_request)
 
+        assert person.uuid
+        assert person.voided is False
+        assert person.preferredName.uuid
+
         full = self.get_person_full(person.uuid)
         ModelAssertions(create_person_request, full).match()
 
