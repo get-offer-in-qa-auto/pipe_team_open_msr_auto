@@ -57,3 +57,36 @@ class ResponseSpecs:
 
         return check
 
+    @staticmethod
+    def request_returns_unauthorized_with_message(error_msg: str) -> Callable:
+        def check(response: Response):
+            assert response.status_code == HTTPStatus.UNAUTHORIZED, response.text
+
+            try:
+                error_content = response.json().get("error").get("message")
+            except JSONDecodeError:
+                error_content = response.content
+            error_text = str(error_content)
+
+            assert error_msg in error_text, (
+                f"Expected error message '{error_msg}',\nbut got '{error_text}'."
+            )
+
+        return check
+
+    @staticmethod
+    def request_returns_forbidden_with_message(error_msg: str) -> Callable:
+        def check(response: Response):
+            assert response.status_code == HTTPStatus.FORBIDDEN, response.text
+
+            try:
+                error_content = response.json().get("error").get("message")
+            except JSONDecodeError:
+                error_content = response.content
+            error_text = str(error_content)
+
+            assert error_msg in error_text, (
+                f"Expected error message '{error_msg}',\nbut got '{error_text}'."
+            )
+
+        return check

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Callable
 
 from src.api.generators.mod30 import generate_mod30_identifier
 from src.api.generators.random_model_generator import RandomModelGenerator
@@ -105,6 +105,21 @@ class UserSteps(BaseSteps):
             request_spec=request_spec,
             endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
             response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_message),
+        ).post(req)
+
+    def create_patient_from_person_invalid_request(
+            self,
+            person: str,
+            user_request: BaseCreateUserRequest,
+            response_spec: Callable,
+            identifiers: Optional[List[PatientIdentifierRequest]] = None,
+        ):
+        req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
+
+        CrudRequester(
+            request_spec=RequestSpecs.auth_as_user(user_request.username, user_request.password),
+            endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
+            response_spec=response_spec
         ).post(req)
 
     def create_patient_with_person(
