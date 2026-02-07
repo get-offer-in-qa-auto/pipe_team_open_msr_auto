@@ -14,7 +14,7 @@ class PreferredName(BaseModel):
     links: Optional[List[Link]] = None
 
 
-class CreatPersonResponse(BaseModel):
+class CreatePersonResponse(BaseModel):
     uuid: str
     display: str
     gender: str

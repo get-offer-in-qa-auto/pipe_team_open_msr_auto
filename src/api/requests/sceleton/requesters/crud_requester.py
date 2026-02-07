@@ -28,7 +28,7 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
 
 
 
-    def get(self, model: Optional[BaseModel] = None, id: Optional[str] = None, params: Optional[Dict[str, Any]] = None):
+    def get(self, model: Optional[BaseModel] = None, id: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
 
