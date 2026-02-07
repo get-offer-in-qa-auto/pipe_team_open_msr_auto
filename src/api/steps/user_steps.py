@@ -115,21 +115,6 @@ class UserSteps(BaseSteps):
             response_spec=response_spec
         ).post(req)
 
-    # def create_patient_from_person_forbidden_request(
-    #         self,
-    #         person: str,
-    #         error_message: str,
-    #         user_request: BaseCreateUserRequest,
-    #         identifiers: Optional[List[PatientIdentifierRequest]] = None,
-    #     ):
-    #     req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
-    #
-    #     CrudRequester(
-    #         request_spec=RequestSpecs.auth_as_user(user_request.username, user_request.password),
-    #         endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
-    #         response_spec=ResponseSpecs.request_returns_forbidden_with_message(error_message)
-    #     ).post(req)
-
     def delete_patient(self, patient_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
         CrudRequester(
