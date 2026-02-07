@@ -6,6 +6,7 @@ from src.api.constants.error_messages import ErrorMessages
 from src.api.generators.random_data import RandomData
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest
+from src.api.specs.response_spec import ResponseSpecs
 
 
 @pytest.mark.api
@@ -20,9 +21,35 @@ class TestCreatePatientFromExistingPerson:
         "Organizational: Doctor",
     ])
     def test_create_patient_from_existing_person_with_role(self, api_manager, create_user_with_roles, created_person, role):
-        user_request = create_user_with_roles(roles=[role])
+        user_request, _ = create_user_with_roles()
 
         api_manager.user_steps.create_patient_from_person(person=created_person.uuid, user_request=user_request)
+
+    @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_privileges')
+    def test_create_patient_from_existing_person_no_create_edit_patient_privilege_user(self, api_manager, create_user_with_privileges, created_person):
+        exclude_privilege_names=['Add Patients', 'Edit Patients']
+        user_request, _ = create_user_with_privileges(exclude_privilege_names=exclude_privilege_names)
+
+        error_message = ErrorMessages.privileges_required(exclude_privilege_names)
+        api_manager.user_steps.create_patient_from_person_invalid_request(
+            person=created_person.uuid,
+            user_request=user_request,
+            identifiers=[api_manager.user_steps.get_identifier_request()],
+            response_spec = ResponseSpecs.request_returns_forbidden_with_message(error_message)
+        )
+
+    @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
+    def test_create_patient_from_existing_person_with_disabled_user(self, api_manager, create_user_with_roles,
+                                                                    created_person):
+        user_request, user_data = create_user_with_roles()
+
+        api_manager.user_steps.delete_user(user_data.uuid, purge=False)
+        api_manager.user_steps.create_patient_from_person_invalid_request(
+            person=created_person.uuid,
+            user_request=user_request,
+            identifiers=[api_manager.user_steps.get_identifier_request()],
+            response_spec=ResponseSpecs.request_returns_unauthorized_with_message(ErrorMessages.USER_IS_NOT_LOGGED_IN)
+        )
 
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
     @pytest.mark.parametrize('identifier_type, error_message', [
@@ -34,7 +61,7 @@ class TestCreatePatientFromExistingPerson:
     ])
     def test_create_patient_from_existing_person_invalid_identifier_type(self, api_manager, create_user_with_roles,
                                                                          created_person, identifier_type, error_message):
-        user_request = create_user_with_roles()
+        user_request, _ = create_user_with_roles()
 
         identifier = api_manager.user_steps.get_identifier_request()
         identifier.identifierType = identifier_type
@@ -72,7 +99,7 @@ class TestCreatePatientFromExistingPerson:
     def test_create_patient_from_existing_person_invalid_identifier_data(self, api_manager, create_user_with_roles,
                                                                          created_person, field, value,
                                                                          error_message):
-        user_request = create_user_with_roles()
+        user_request, _ = create_user_with_roles()
 
         identifier = api_manager.user_steps.get_identifier_request()
         setattr(identifier, field, value)

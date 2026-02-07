@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Callable
 
 from src.api.models.comparison.model_assertions import ModelAssertions
 from src.api.models.requests.BaseCreateUserRequest import BaseCreateUserRequest
@@ -100,6 +100,36 @@ class UserSteps(BaseSteps):
             response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_message)
         ).post(req)
 
+    def create_patient_from_person_invalid_request(
+            self,
+            person: str,
+            user_request: BaseCreateUserRequest,
+            response_spec: Callable,
+            identifiers: Optional[List[PatientIdentifierRequest]] = None,
+        ):
+        req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
+
+        CrudRequester(
+            request_spec=RequestSpecs.auth_as_user(user_request.username, user_request.password),
+            endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
+            response_spec=response_spec
+        ).post(req)
+
+    # def create_patient_from_person_forbidden_request(
+    #         self,
+    #         person: str,
+    #         error_message: str,
+    #         user_request: BaseCreateUserRequest,
+    #         identifiers: Optional[List[PatientIdentifierRequest]] = None,
+    #     ):
+    #     req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
+    #
+    #     CrudRequester(
+    #         request_spec=RequestSpecs.auth_as_user(user_request.username, user_request.password),
+    #         endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
+    #         response_spec=ResponseSpecs.request_returns_forbidden_with_message(error_message)
+    #     ).post(req)
+
     def delete_patient(self, patient_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
         CrudRequester(
@@ -129,7 +159,7 @@ class UserSteps(BaseSteps):
 
         return created_person, created_patient
 
-    def create_user_from_existing_person(self, create_user_request: CreateUserFromExistingPersonRequest ) -> CreateUserResponse:
+    def create_user_from_existing_person(self, create_user_request: CreateUserFromExistingPersonRequest) -> CreateUserResponse:
         create_user_response: CreateUserResponse = ValidatedCrudRequester(
             request_spec=RequestSpecs.admin_auth_spec(),
             endpoint=Endpoint.CREATE_USER_FROM_PERSON,
