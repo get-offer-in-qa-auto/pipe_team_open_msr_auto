@@ -56,7 +56,6 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
-    #TODO мы же наслодовались тут почему возвращаемы тип другой - не бейс модел
     def delete(self, id: int) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
