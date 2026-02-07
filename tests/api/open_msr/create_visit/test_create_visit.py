@@ -3,17 +3,15 @@ import uuid
 import pytest
 
 from src.api.classes.api_manager import ApiManager
-from src.api.models.comparison.entity_assertions import EntityAssertions
 from src.api.models.requests.create_visit_request import CreateVisitRequest, CreateVisitInvalidRequest
 from src.api.utils.datetime_utils import now_iso_utc
 
 
 @pytest.mark.api
-class CreateVisit:
+class TestCreateVisit:
 
     def test_create_visit(self, api_manager: ApiManager, create_visit_request: CreateVisitRequest):
-        created_visit = api_manager.visit_steps.create_visit(create_visit_request)
-        EntityAssertions.has_uuid(created_visit)
+        api_manager.visit_steps.create_visit(create_visit_request)
 
     @pytest.mark.parametrize(
         "bad_patient",

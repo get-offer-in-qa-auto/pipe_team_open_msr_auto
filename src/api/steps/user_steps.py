@@ -26,20 +26,6 @@ from src.api.steps.base_steps import BaseSteps
 
 class UserSteps(BaseSteps):
 
-    def _vcr(self, endpoint: Endpoint, response_spec):
-        return ValidatedCrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=endpoint,
-            response_spec=response_spec,
-        )
-
-    def _cr(self, endpoint: Endpoint, response_spec):
-        return CrudRequester(
-            request_spec=RequestSpecs.admin_auth_spec(),
-            endpoint=endpoint,
-            response_spec=response_spec,
-        )
-
     def get_person_full(self, person_uuid: str) -> PersonFullResponse:
         return self._vcr(Endpoint.GET_PERSON, ResponseSpecs.request_returns_ok()).get(
             id=person_uuid, params={"v": "full"}

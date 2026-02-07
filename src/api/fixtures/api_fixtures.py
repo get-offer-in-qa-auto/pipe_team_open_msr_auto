@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from datetime import datetime, timezone
 from src.api.utils.datetime_utils import now_iso_utc
 
@@ -31,10 +32,10 @@ def create_visit_request(api_manager: ApiManager, created_patient: PatientCreate
     Takes the first available Location and Visit Type.
     """
     visit_types = api_manager.user_steps.get_visit_types()
-    visit_type_uuid = visit_types.results[0].uuid
+    visit_type_uuid = random.choice(visit_types.results).uuid
 
     locations = api_manager.user_steps.get_locations()
-    location_uuid = locations.results[0].uuid
+    location_uuid = random.choice(locations.results).uuid
 
     start_dt = now_iso_utc()
 
