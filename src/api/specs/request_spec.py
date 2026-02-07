@@ -1,12 +1,5 @@
 import base64
-import logging
 from typing import Dict
-
-import requests
-
-from src.api.requests.sceleton.endpoint import Endpoint
-from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
-from src.api.specs.response_spec import ResponseSpecs
 
 
 class RequestSpecs:

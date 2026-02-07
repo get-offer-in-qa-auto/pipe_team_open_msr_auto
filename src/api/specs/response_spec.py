@@ -52,7 +52,9 @@ class ResponseSpecs:
                 error_content = response.content
             error_text = str(error_content)
 
-            assert error_msg in error_text
+            assert error_msg in error_text, (
+                f"Expected error message '{error_msg}',\nbut got '{error_text}'."
+            )
 
         return check
 
