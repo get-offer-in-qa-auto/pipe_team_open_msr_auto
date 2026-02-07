@@ -39,7 +39,7 @@ class BaseSteps:
     def get_identifier_request(
             self,
             identifier_request: Optional[PatientIdentifierRequest] = RandomModelGenerator.generate(PatientIdentifierRequest)
-    ):
+    ) -> PatientIdentifierRequest:
         types = self.get_patient_identifier_types()
         identifier_type_uuid = types.results[0].uuid
 
