@@ -13,9 +13,8 @@ from src.api.requests.sceleton.requesters.validated_crud_requester import Valida
 from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
 from src.api.steps.base_steps import BaseSteps
-
-
-
+from src.api.models.responses.get_visit_type_response import VisitTypeListResponse
+from src.api.models.comparison.entity_assertions import EntityAssertions
 
 
 class AdminSteps(BaseSteps):
@@ -32,6 +31,15 @@ class AdminSteps(BaseSteps):
             request_spec=RequestSpecs.admin_auth_spec(),
             endpoint=Endpoint.GET_LOCATIONS,
             response_spec=ResponseSpecs.request_returns_ok()
+        ).get()
+
+    def get_visit_types(self) -> VisitTypeListResponse:
+        """List visit types (GET /visittype)."""
+
+        return ValidatedCrudRequester(
+            request_spec=RequestSpecs.admin_auth_spec(),
+            endpoint=Endpoint.GET_VISIT_TYPES,
+            response_spec=ResponseSpecs.request_returns_ok(),
         ).get()
 
     def get_patient_identifier_types(self):
@@ -83,8 +91,7 @@ class AdminSteps(BaseSteps):
             response_spec=ResponseSpecs.entity_was_created()
         ).post(req)
 
-        assert patient_created.uuid, f"patient_created.uuid is falsy: {patient_created}"
-        assert str(patient_created.uuid).lower() != "null", f"uuid returned as 'null': {patient_created}"
+        EntityAssertions.has_uuid(patient_created)
 
         # <-- ключевая часть
         patient_full = self.get_patient_full(patient_created.uuid)
@@ -134,13 +141,7 @@ class AdminSteps(BaseSteps):
         req = CreatePatientFromPersonRequest(person=created_person.uuid, identifiers=[identifier])
         created_patient = self.create_patient_from_person(req)
 
-        assert created_patient.uuid
-        assert created_patient.display
+        EntityAssertions.has_uuid(created_patient)
+        EntityAssertions.has_display(created_patient)
 
         return created_patient
-
-
-
-
-
-

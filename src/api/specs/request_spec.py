@@ -1,7 +1,6 @@
 import base64
 
 
-
 class RequestSpecs:
 
     @staticmethod
