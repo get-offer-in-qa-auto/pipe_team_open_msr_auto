@@ -25,7 +25,6 @@ class ResponseSpecs:
             assert response.status_code in (HTTPStatus.CREATED, HTTPStatus.OK, HTTPStatus.NO_CONTENT), response.text
         return check
 
-
     @staticmethod
     def request_returns_bad_request(error_key: str, error_value: str) -> Callable:
         def check(response: Response):

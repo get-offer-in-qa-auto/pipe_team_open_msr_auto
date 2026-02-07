@@ -6,6 +6,7 @@ from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
 from src.api.models.responses.get_roles_response import RoleListResponse
 from src.api.requests.sceleton.endpoint import Endpoint
+from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
 from src.api.requests.sceleton.requesters.validated_crud_requester import ValidatedCrudRequester
 from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
@@ -14,6 +15,23 @@ from src.api.specs.response_spec import ResponseSpecs
 class BaseSteps:
     def __init__(self, created_objects: List[Any]):
         self.created_objects = created_objects
+
+    def _request_spec(self, request_spec=None):
+        return request_spec or RequestSpecs.admin_auth_spec()
+
+    def _vcr(self, endpoint: Endpoint, response_spec, request_spec=None) -> ValidatedCrudRequester:
+        return ValidatedCrudRequester(
+            request_spec=self._request_spec(request_spec),
+            endpoint=endpoint,
+            response_spec=response_spec,
+        )
+
+    def _cr(self, endpoint: Endpoint, response_spec, request_spec=None) -> CrudRequester:
+        return CrudRequester(
+            request_spec=self._request_spec(request_spec),
+            endpoint=endpoint,
+            response_spec=response_spec,
+        )
 
     def get_roles(self) -> RoleListResponse:
         return ValidatedCrudRequester(

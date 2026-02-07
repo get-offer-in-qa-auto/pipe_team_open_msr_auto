@@ -1,7 +1,6 @@
 import base64
 from typing import Dict
 
-
 class RequestSpecs:
     @staticmethod
     def default_request_headers() -> Dict[str, str]:
