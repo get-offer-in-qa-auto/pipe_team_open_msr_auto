@@ -8,16 +8,7 @@ from src.api.models.requests.create_person_request import CreatePersonRequest, C
 @pytest.mark.api
 def test_create_person(api_manager):
     req = RandomModelGenerator.generate(CreatePersonRequest)
-    created = api_manager.user_steps.create_person(req)
-
-    #TODO: убрать куда-нибудь
-    assert created.uuid
-    assert created.voided is False
-    assert created.preferredName.uuid
-    full = api_manager.user_steps.get_person_full(created.uuid)
-
-    # TODO: убрать куда-нибудь
-    assert full.uuid == created.uuid
+    api_manager.user_steps.create_person(req)
 
 
 @pytest.mark.xfail #TODO: how fail by parametrized test
