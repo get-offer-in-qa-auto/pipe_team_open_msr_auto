@@ -22,6 +22,8 @@ from src.api.models.responses.get_roles_response import RoleListResponse
 from src.api.models.responses.patient_identifier_type_response import PatientIdentifierTypeListResponse
 from src.api.models.responses.get_visit_type_response import VisitTypeListResponse
 from src.api.models.responses.get_visit_response import VisitFullResponse
+from src.api.models.requests.create_patient_request import CreatePatientRequest
+
 
 
 @dataclass(frozen=True)
@@ -89,6 +91,12 @@ class Endpoint(Enum):
     CREATE_PATIENT_FROM_PERSON = EndpointConfig(
         url="/patient",
         request_model=CreatePatientFromPersonRequest,
+        response_model=PatientCreateResponse
+    )
+
+    CREATE_PATIENT = EndpointConfig(
+        url="/patient",
+        request_model=CreatePatientRequest,
         response_model=PatientCreateResponse
     )
 

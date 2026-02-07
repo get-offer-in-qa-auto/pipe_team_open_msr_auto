@@ -27,6 +27,7 @@ from src.api.specs.response_spec import ResponseSpecs
 from src.api.steps import database_steps
 from src.api.steps.base_steps import BaseSteps
 from src.api.steps.database_steps import DatabaseSteps
+from src.api.models.requests.create_patient_request import CreatePatientRequest
 
 
 class UserSteps(BaseSteps):
@@ -158,6 +159,38 @@ class UserSteps(BaseSteps):
                 f"Expected: {exp_date}, got: {db_date}"
             )
 
+    def create_patient(self, patient_request: CreatePatientRequest) -> PatientCreateResponse:
+        patient_created = self._vcr(
+            Endpoint.CREATE_PATIENT,
+            ResponseSpecs.entity_was_created()
+        ).post(patient_request)
+
+        assert patient_created.uuid
+        assert str(patient_created.uuid).lower() != "null"
+
+        self.created_objects.append(patient_created)
+        return patient_created
+
+    def create_patient_invalid_data(self, patient_request, error_message: str | None = None):
+        spec = (
+            ResponseSpecs.request_returns_bad_request_with_message(error_message)
+            if error_message
+            else ResponseSpecs.request_returns_error()
+        )
+        self._cr(
+            Endpoint.CREATE_PATIENT,
+            spec
+        ).post(patient_request)
+
+    def create_patient_with_new_person(self, create_person_request: CreatePersonRequest) -> PatientCreateResponse:
+        identifiers = [self._build_identifier_request()]
+
+        patient_request = CreatePatientRequest(
+            person=create_person_request,
+            identifiers=identifiers
+        )
+
+        return self.create_patient(patient_request)
 
     def create_patient_from_person_invalid_data(
         self,

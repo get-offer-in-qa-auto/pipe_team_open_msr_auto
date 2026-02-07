@@ -56,6 +56,12 @@ class ResponseSpecs:
         )
 
     @staticmethod
+    def request_returns_error() -> Callable:
+        def check(response: Response):
+            assert response.status_code >= 400, response.text
+        return check
+
+    @staticmethod
     def request_returns_unauthorized_with_message(error_msg: str) -> Callable:
         return lambda res: ResponseSpecs._base_error_check(
             res, HTTPStatus.UNAUTHORIZED, ResponseSpecs._standard_error_extractor, error_msg
