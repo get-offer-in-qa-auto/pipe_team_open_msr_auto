@@ -41,3 +41,18 @@ class ResponseSpecs:
 
         return check
 
+    @staticmethod
+    def request_returns_bad_request_with_message(error_msg: str) -> Callable:
+        def check(response: Response):
+            assert response.status_code == HTTPStatus.BAD_REQUEST, response.text
+
+            try:
+                error_content = response.json().get("error").get("message")
+            except JSONDecodeError:
+                error_content = response.content
+            error_text = str(error_content)
+
+            assert error_msg in error_text
+
+        return check
+

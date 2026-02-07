@@ -13,7 +13,6 @@ from src.api.models.responses.create_provider_response import CreateProviderResp
 from src.api.models.responses.create_user_response import CreateUserResponse
 from src.api.models.responses.get_location_response import LocationListResponse
 from src.api.models.responses.get_roles_response import RoleListResponse
-from src.api.models.responses.get_session_response import GetSessionResponse
 from src.api.models.responses.patient_identifier_type_response import PatientIdentifierTypeListResponse
 
 
@@ -24,12 +23,6 @@ class EndpointConfig:
     response_model:Optional[BaseModel]
 
 class Endpoint(Enum):
-    GET_SESSION = EndpointConfig(
-        url="/session",
-        request_model=None,
-        response_model=GetSessionResponse
-    )
-
     GET_ROLES = EndpointConfig(
         url="/role",
         request_model=None,

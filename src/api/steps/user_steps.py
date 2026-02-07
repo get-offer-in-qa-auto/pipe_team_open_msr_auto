@@ -85,6 +85,29 @@ class UserSteps(BaseSteps):
             response_spec=ResponseSpecs.entity_was_deleted()
         ).delete_with_params(id=patient_uuid, params=params)
 
+    def create_patient_from_person_invalid_data(
+            self,
+            person: str,
+            error_message: str,
+            identifiers: Optional[List[PatientIdentifierRequest]] = None,
+            user_request: Optional[BaseCreateUserRequest] = None):
+        request_spec = RequestSpecs.auth_as_user(user_request.username, user_request.password) if user_request else RequestSpecs.admin_auth_spec()
+        req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
+
+        CrudRequester(
+            request_spec=request_spec,
+            endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_message)
+        ).post(req)
+
+    def delete_patient(self, patient_uuid: str, purge: bool = True):
+        params = {"purge": "true"} if purge else None
+        CrudRequester(
+            request_spec=RequestSpecs.admin_auth_spec(),
+            endpoint=Endpoint.DELETE_PATIENT,
+            response_spec=ResponseSpecs.entity_was_deleted()
+        ).delete_with_params(id=patient_uuid, params=params)
+
     def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_key, error_value):
         CrudRequester(
             request_spec=RequestSpecs.admin_auth_spec(),

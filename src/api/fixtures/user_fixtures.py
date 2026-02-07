@@ -25,7 +25,7 @@ def full_privilege_user(api_manager: ApiManager):
     create_user_request.person = person_data.uuid
     create_user_request.roles = roles
 
-    user_data: CreateUserResponse = api_manager.user_steps.create_user_from_existing_person(person_data, create_user_request)
+    user_data: CreateUserResponse = api_manager.user_steps.create_user_from_existing_person(create_user_request)
 
     return create_user_request, person_data, user_data
 
@@ -53,3 +53,7 @@ def create_user_with_roles(api_manager: ApiManager):
         return create_user_request
 
     return _create_user
+
+@pytest.fixture
+def created_person(api_manager: ApiManager):
+    return api_manager.user_steps.create_person(RandomModelGenerator.generate(CreatePersonRequest))
