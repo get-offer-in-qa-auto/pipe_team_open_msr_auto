@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.api.models.requests.create_visit_request import CreateVisitRequest
+from src.api.models.requests.create_visit_request import CreateVisitRequest, CreateVisitInvalidRequest
 from src.api.models.responses.create_visit_response import VisitCreateResponse
 from src.api.requests.sceleton.endpoint import Endpoint
 from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
@@ -35,6 +35,19 @@ class VisitSteps(BaseSteps):
 
         self.created_objects.append(created)
         return created
+
+    def create_invalid_visit(
+            self,
+            payload,
+            error_key: str | None = None,
+            error_value: str | None = None,
+    ):
+
+        return CrudRequester(
+            request_spec=RequestSpecs.admin_auth_spec(),
+            endpoint=Endpoint.CREATE_VISIT,
+            response_spec=ResponseSpecs.request_returns_bad_request(error_key, error_value),
+        ).post(payload)
 
     def delete_visit(self, visit_uuid: str, purge: bool = True) -> None:
         """Delete/purge visit (DELETE /visit/{uuid}?purge=true)."""

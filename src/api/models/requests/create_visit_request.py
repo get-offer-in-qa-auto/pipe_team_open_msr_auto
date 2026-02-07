@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from src.api.models.base_model import BaseModel
 
@@ -15,3 +15,12 @@ class CreateVisitRequest(BaseModel):
     location: str
     indication: Optional[str] = None
     encounters: Optional[List[str]] = None
+
+
+class CreateVisitInvalidRequest(BaseModel):
+    patient: Any = None
+    visitType: Any = None
+    startDatetime: Any = None
+    location: Any = None
+    indication: Any = None
+    encounters: Any = None
