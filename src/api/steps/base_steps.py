@@ -19,6 +19,23 @@ class BaseSteps:
     def __init__(self, created_objects: List[Any]):
         self.created_objects = created_objects
 
+    def _request_spec(self, request_spec=None):
+        return request_spec or RequestSpecs.admin_auth_spec()
+
+    def _vcr(self, endpoint: Endpoint, response_spec, request_spec=None) -> ValidatedCrudRequester:
+        return ValidatedCrudRequester(
+            request_spec=self._request_spec(request_spec),
+            endpoint=endpoint,
+            response_spec=response_spec,
+        )
+
+    def _cr(self, endpoint: Endpoint, response_spec, request_spec=None) -> CrudRequester:
+        return CrudRequester(
+            request_spec=self._request_spec(request_spec),
+            endpoint=endpoint,
+            response_spec=response_spec,
+        )
+
     def get_roles(self) -> RoleListResponse:
         return ValidatedCrudRequester(
             request_spec=RequestSpecs.admin_auth_spec(),
