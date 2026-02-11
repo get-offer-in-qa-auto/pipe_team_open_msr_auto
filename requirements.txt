@@ -3,5 +3,4 @@ requests
 pydantic
 faker
 rstr
-psycopg[binary]
 mysql-connector-python

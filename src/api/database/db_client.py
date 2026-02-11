@@ -6,8 +6,6 @@ from enum import Enum
 from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
 
 import mysql.connector
-import psycopg
-from psycopg.rows import dict_row
 
 from src.api.configs.config import Config
 
@@ -16,18 +14,6 @@ T = TypeVar("T")
 
 class RequestType(str, Enum):
     SELECT = "SELECT"
-
-
-def _dsn() -> str:
-    """
-    Build Postgres DSN from resources/config.properties (with ENV override via Config.get()).
-    """
-    host = str(Config.get("DB_HOST", "localhost"))
-    port = int(Config.get("DB_PORT", 5433))
-    dbname = str(Config.get("DB_NAME", "nbank"))
-    user = str(Config.get("DB_USERNAME", "postgres"))
-    password = str(Config.get("DB_PASSWORD", "postgres"))
-    return f"host={host} port={port} dbname={dbname} user={user} password={password}"
 
 def _db_config() -> dict:
     """
@@ -41,16 +27,6 @@ def _db_config() -> dict:
         "password": str(Config.get("DB_PASSWORD", "openmrs"))
     }
 
-
-# @contextmanager
-# def db_conn() -> Generator[psycopg.Connection, None, None]:
-#     conn = psycopg.connect(_dsn(), row_factory=dict_row)
-#     # conn = mysql.connector.connect(**_db_config())
-#     try:
-#         yield conn
-#     finally:
-#         conn.close()
-
 @contextmanager
 def db_conn() -> Generator[mysql.connector.MySQLConnection, None, None]:
     conn = mysql.connector.connect(**_db_config())
@@ -59,14 +35,6 @@ def db_conn() -> Generator[mysql.connector.MySQLConnection, None, None]:
     finally:
         if conn.is_connected():
             conn.close()
-
-
-# def fetch_one(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[Dict[str, Any]]:
-#     with db_conn() as conn:
-#         with conn.cursor() as cur:
-#             cur.execute(sql, params or ())
-#             row = cur.fetchone()
-#             return dict(row) if row is not None else None
 
 def fetch_one(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[Dict[str, Any]]:
     with db_conn() as conn:
