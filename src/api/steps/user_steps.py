@@ -73,7 +73,7 @@ class UserSteps(BaseSteps):
             else RequestSpecs.admin_auth_spec()
         )
 
-        identifiers = identifiers or [self._build_identifier_request()]
+        identifiers = identifiers or [self.build_identifier_request()]
         req = CreatePatientFromPersonRequest(person=person, identifiers=identifiers)
 
         patient_created = ValidatedCrudRequester(
@@ -83,13 +83,20 @@ class UserSteps(BaseSteps):
         ).post(req)
 
         assert patient_created.uuid, f"patient_created.uuid is falsy: {patient_created}"
+        assert patient_created.uuid == person, f"Verify returned uuid is: {person}, but got {patient_created.uuid}"
         assert str(patient_created.uuid).lower() != "null", f"uuid returned as 'null': {patient_created}"
 
-        patient_full = self.get_patient_full(patient_created.uuid)
-        ModelAssertions(req, patient_full).match()
+
 
         self.created_objects.append(patient_created)
         return patient_created
+
+    def verify_patient_created(self,
+                               created_patient_response: PatientCreateResponse,
+                               identifiers: List[PatientIdentifierRequest]):
+        req = CreatePatientFromPersonRequest(person=created_patient_response.uuid, identifiers=identifiers)
+        patient_full = self.get_patient_full(created_patient_response.uuid)
+        ModelAssertions(req, patient_full).match()
 
     def create_patient_from_person_invalid_data(
         self,
@@ -182,7 +189,7 @@ class UserSteps(BaseSteps):
     def get_patient_identifier_types(self):
         return self._vcr(Endpoint.GET_PATIENT_IDENTIFIER_TYPES, ResponseSpecs.request_returns_ok()).get()
 
-    def _build_identifier_request(self) -> PatientIdentifierRequest:
+    def build_identifier_request(self) -> PatientIdentifierRequest:
         identifier_types = self.get_patient_identifier_types()
         locations = self.get_locations()
 
