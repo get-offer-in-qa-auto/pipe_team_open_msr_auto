@@ -14,6 +14,10 @@ class ErrorMessages:
 
     USER_IS_NOT_LOGGED_IN = "User is not logged in [Privileges required: Get People]"
 
+    PATIENT_ID_IS_REQUIRED = "Patient Id is required"
+    VISIT_TYPE_IS_REQUIRED = "Visit Type is required"
+    START_DATETIME_HAS_INVALID_FORMAT = "Invalid format"
+
     @staticmethod
     def privileges_required(privileges: List[str]):
         return f'User is logged in but doesn\'t have the relevant privilege [Privileges required: {",".join(privileges)}]'
