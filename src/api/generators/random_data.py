@@ -14,3 +14,7 @@ class RandomData:
     @staticmethod
     def get_string(length: int) -> str:
         return faker.lexify(text="?" * length)
+
+    @staticmethod
+    def get_uuid():
+        return faker.uuid4()

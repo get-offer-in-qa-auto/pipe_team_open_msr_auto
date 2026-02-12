@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from src.api.constants.error_messages import ErrorMessages
@@ -11,6 +9,7 @@ from src.api.specs.response_spec import ResponseSpecs
 
 @pytest.mark.api
 class TestCreatePatientFromExistingPerson:
+    @pytest.mark.debug
     def test_create_patient_from_existing_person_admin_user(self, api_manager):
         identifiers = [api_manager.user_steps.build_identifier_request()]
         _, created_patient = api_manager.user_steps.create_patient_with_person(
@@ -21,6 +20,7 @@ class TestCreatePatientFromExistingPerson:
         api_manager.database_steps.verify_patient_created_from_existing_person(created_patient.uuid,
                                                                                identifiers)
 
+    @pytest.mark.debug
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
     @pytest.mark.parametrize('role',[
         "Privilege Level: Full",
@@ -74,14 +74,14 @@ class TestCreatePatientFromExistingPerson:
         ("identifierType", None, ErrorMessages.EMPTY_IDENTIFIER_TYPE),
         ("identifierType", RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER_TYPE),
         ("identifierType", RandomData.get_word(), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
-        ("identifierType", str(uuid.uuid4()), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+        ("identifierType", str(RandomData.get_uuid()), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
 
         # Тесты для поля location
         ("location", "", ErrorMessages.EMPTY_LOCATION),
         ("location", None, ErrorMessages.EMPTY_LOCATION),
         ("location", RandomData.get_int(1, 1000), ErrorMessages.INT_LOCATION),
         ("location", RandomData.get_word(), ErrorMessages.EMPTY_LOCATION),
-        ("location", str(uuid.uuid4()), ErrorMessages.EMPTY_LOCATION),
+        ("location", str(RandomData.get_uuid()), ErrorMessages.EMPTY_LOCATION),
 
         # Тесты для поля identifier
         ('identifier', "", ErrorMessages.INVALID_SUBMISSION),
