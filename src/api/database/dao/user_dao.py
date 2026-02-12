@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -16,17 +17,17 @@ class UserDao:
     username: str
     password: str
     salt: str
-    secret_question: str | None
-    secret_answer: str | None
+    secret_question: Optional[str]
+    secret_answer: Optional[str]
     creator: int
     date_created: datetime.datetime
-    changed_by: int | None
-    date_changed: datetime.datetime | None
+    changed_by: Optional[int]
+    date_changed: Optional[datetime.datetime]
     person_id: int
     retired: bool | None
-    retired_by: int | None
-    date_retired: datetime.datetime | None
-    retire_reason: str | None
+    retired_by: Optional[int]
+    date_retired: Optional[datetime.datetime]
+    retire_reason: Optional[str]
     uuid: str
-    activation_key: str | None
-    email: str | None
+    activation_key: Optional[str]
+    email: Optional[str]
