@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -12,12 +13,12 @@ class PatientIdentifierDao:
     location_id: int
     creator: int
     date_created: datetime.datetime
-    date_changed: datetime.datetime | None
+    date_changed: Optional[datetime.datetime]
     changed_by: int
-    voided: str | None
-    voided_by: int | None
-    date_voided: datetime.datetime | None
-    void_reason: str | None
+    voided: Optional[str]
+    voided_by: Optional[int]
+    date_voided: Optional[datetime.datetime]
+    void_reason: Optional[str]
     uuid: str
-    patient_program_id: int | None
+    patient_program_id: Optional[int]
 

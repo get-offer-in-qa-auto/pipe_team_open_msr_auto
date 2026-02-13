@@ -4,3 +4,4 @@ pydantic
 faker
 rstr
 mysql-connector-python
+pytest-xdist

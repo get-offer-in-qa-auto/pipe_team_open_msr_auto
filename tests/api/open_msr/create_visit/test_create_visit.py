@@ -1,8 +1,8 @@
-import uuid
 
 import pytest
 
 from src.api.classes.api_manager import ApiManager
+from src.api.generators.random_data import RandomData
 from src.api.models.requests.create_visit_request import CreateVisitRequest, CreateVisitInvalidRequest
 from src.api.utils.datetime_utils import now_iso_utc
 
@@ -15,7 +15,7 @@ class TestCreateVisit:
 
     @pytest.mark.parametrize(
         "bad_patient",
-        [None, "", "not-a-uuid", str(uuid.uuid4())],
+        [None, "", "not-a-uuid", str(RandomData.get_uuid())],
     )
     def test_create_visit_invalid_patient_field(self, api_manager, patient_context: dict,
                                                 visit_type_uuid: str, bad_patient):

@@ -1,27 +1,28 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 
 @dataclass
 class PersonDao:
     person_id: int
     gender: str
-    birthdate: datetime | None
+    birthdate: Optional[datetime]
     birthdate_estimated: bool
     dead: bool
-    death_date: datetime | None
-    cause_of_death: str | None
+    death_date: Optional[datetime]
+    cause_of_death: Optional[str]
     creator: int
     date_created: datetime
-    changed_by: int | None
-    date_changed: datetime | None
+    changed_by: Optional[int]
+    date_changed: Optional[datetime]
     voided: bool
-    voided_by: int | None
-    date_voided: datetime | None
-    void_reason: str | None
+    voided_by: Optional[int]
+    date_voided: Optional[datetime]
+    void_reason: Optional[str]
     uuid: str
     deathdate_estimated: bool
-    birthtime: datetime | None
-    cause_of_death_non_coded: str | None
+    birthtime: Optional[datetime]
+    cause_of_death_non_coded: Optional[str]
 
 
