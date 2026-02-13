@@ -1,4 +1,3 @@
-from typing import Union
 
 from faker import Faker
 
@@ -29,3 +28,11 @@ class RandomData:
     @staticmethod
     def get_bad_dt():
         return f"{faker.date(pattern='%Y/%m/%d')} {faker.time(pattern='%H:%M:%S')}"
+
+    @staticmethod
+    def get_bad_iso_utc_string() -> str:
+        return f"{faker.date(pattern='%Y-%m-%d')}T99:99:99Z"
+
+    @staticmethod
+    def get_impossible_iso_utc() -> str:
+        return "2026-13-40T25:61:61.000Z"

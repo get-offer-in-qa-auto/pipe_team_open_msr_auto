@@ -109,6 +109,12 @@ class Endpoint(Enum):
         response_model=CreateVisitResponse,
     )
 
+    UPDATE_VISIT = EndpointConfig(
+        url="/visit",
+        request_model=CreateVisitRequest,
+        response_model=CreateVisitResponse,
+    )
+
     GET_VISIT = EndpointConfig(
         url="/visit",
         request_model=None,

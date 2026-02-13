@@ -25,3 +25,6 @@ class ValidatedCrudRequester(HTTPRequest):
         response = self.crud_requester.update(model=model)
         return self.endpoint.value.response_model.model_validate(response.json())
 
+    def update_by_post(self, model: Optional[T], id: str):
+        response = self.crud_requester.update_by_post(model=model, id=id)
+        return self.endpoint.value.response_model.model_validate(response.json())

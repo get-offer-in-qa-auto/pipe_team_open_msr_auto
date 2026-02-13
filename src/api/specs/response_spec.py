@@ -92,3 +92,14 @@ class ResponseSpecs:
             )
 
         return check
+
+    @staticmethod
+    def request_returns_not_found_with_message(error_msg: str) -> Callable:
+        def check(response: Response):
+            assert response.status_code == HTTPStatus.NOT_FOUND, response.text
+            try:
+                msg = response.json().get("error", {}).get("message")
+            except JSONDecodeError:
+                msg = response.text
+            assert error_msg in str(msg), response.text
+        return check

@@ -12,6 +12,7 @@ class CreateVisitRequest(BaseModel):
     patient: str
     visitType: str
     startDatetime: str
+    stopDatetime: Optional[str] = None
     location: str
     indication: Optional[str] = None
     encounters: Optional[List[str]] = None
