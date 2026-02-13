@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from enum import Enum
-from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar, List, cast
 
 import mysql.connector
 
@@ -43,6 +43,11 @@ def fetch_one(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[Di
             row = cur.fetchone()
             return row
 
+def fetch_all(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[List[Dict[str, Any]]]:
+    with db_conn() as conn:
+        with conn.cursor(dictionary=True) as cur:
+            cur.execute(sql, params or ())
+            return cast(List[Dict[str, Any]], cur.fetchall())
 
 @dataclass(frozen=True)
 class Condition:
@@ -129,17 +134,18 @@ class DBRequestBuilder:
             return None
         return dao_cls(**row)  # type: ignore[arg-type]
 
-    # can be used to get only defined fields in dataclass.
-    # def extract_as(self, dao_cls: Type[T]) -> T:
-    #     # ... ваш код формирования SQL ...
-    #     row = fetch_one(sql, params)
-    #     if row is None:
-    #         raise AssertionError(f"DB row not found. SQL={sql}, params={params}")
-    #
-    #     return self._map_to_dao(dao_cls, row)
+    def extract_all_as(self, dao_cls: Type[T]) -> list[T]:
+        if self._request_type != RequestType.SELECT:
+            raise NotImplementedError(f"Request type not supported: {self._request_type}")
+        if not self._table:
+            raise ValueError("Table is required")
 
-    def _map_to_dao(self, dao_cls: Type[T], row: Dict[str, Any]) -> T:
-        # Получаем только те ключи из словаря row, которые описаны в dataclass
-        dao_fields = {f.name for f in fields(dao_cls)}
-        filtered_row = {k: v for k, v in row.items() if k in dao_fields}
-        return dao_cls(**filtered_row)
+        sql = f"SELECT * FROM {self._table}"
+        params: tuple[Any, ...] = ()
+
+        if self._where:
+            sql += f" WHERE {self._where.sql}"
+            params = self._where.params
+
+        rows = fetch_all(sql, params)
+        return [dao_cls(**row) for row in rows]

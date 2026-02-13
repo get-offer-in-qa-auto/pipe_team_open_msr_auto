@@ -81,3 +81,12 @@ class DatabaseSteps:
 
         patient_dao = DatabaseSteps.find_patient_by_id(person_dao.person_id)
         assert patient_dao is None, f"Patient '{person_dao.person_id}' should NOT exist in DB after invalid create, but was found: {patient_dao}"
+
+    @staticmethod
+    def get_all_patients() -> List[PatientDao]:
+        return (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("patient")
+            .extract_all_as(PatientDao)
+        )

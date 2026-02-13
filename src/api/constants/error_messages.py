@@ -14,6 +14,8 @@ class ErrorMessages:
 
     USER_IS_NOT_LOGGED_IN = "User is not logged in [Privileges required: Get People]"
 
+    OBJECT_WITH_UUID_DOES_NOT_EXIST = "Object with given uuid doesn't exist [null]"
+
     @staticmethod
     def privileges_required(privileges: List[str]):
         return f'User is logged in but doesn\'t have the relevant privilege [Privileges required: {",".join(privileges)}]'

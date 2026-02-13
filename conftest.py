@@ -1,6 +1,7 @@
 from src.api.fixtures.user_fixtures import *
 from src.api.fixtures.api_fixtures import *
 from src.api.fixtures.objects_fixture import *
+from src.api.fixtures.assertion_fixtures import *
 
 
 import time
@@ -49,13 +50,13 @@ def pytest_configure(config: pytest.Config) -> None:
         opt = config.getoption("--seed")
         seed = int(opt) if opt is not None else int(time.time_ns() % 2_000_000_000)
 
-    config._nbank_seed = int(seed)
+    config._openMRS_seed = int(seed)
     _apply_global_seed(int(seed))
 
 
 def pytest_configure_node(node) -> None:
     # Pass the master seed to all workers so collection is identical.
-    seed = getattr(node.config, "_nbank_seed", None)
+    seed = getattr(node.config, "_openMRS_seed", None)
     if seed is not None:
         node.workerinput["seed"] = int(seed)
 
@@ -69,7 +70,7 @@ def pytest_collection_finish(session: pytest.Session) -> None:
       generate identical usernames/passwords and clash on shared external resources.
     """
     config = session.config
-    base_seed = getattr(config, "_nbank_seed", None)
+    base_seed = getattr(config, "_openMRS_seed", None)
     if base_seed is None:
         return
 
