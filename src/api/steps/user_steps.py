@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, date
 from typing import Optional, List, Any, Callable
 
 from src.api.constants.error_messages import ErrorMessages
@@ -25,6 +26,7 @@ from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
 from src.api.steps import database_steps
 from src.api.steps.base_steps import BaseSteps
+from src.api.steps.database_steps import DatabaseSteps
 
 
 class UserSteps(BaseSteps):
@@ -115,13 +117,46 @@ class UserSteps(BaseSteps):
         return full
 
 
-    def verify_person_updated(self, expected_update: UpdatePersonRequest, actual_person_update: CreatePersonResponse):
+
+    def verify_person_updated(
+        self,
+        expected_update: UpdatePersonRequest,
+        actual_person_update: CreatePersonResponse,
+    ):
         """
-        Verify person was updated correctly.
+        Verify person was updated correctly:
+        - update response contains updated fields
+        - DB person record contains updated fields
         Only fields provided in expected_update are checked.
         """
 
-        ModelAssertions(request=expected_update,response=actual_person_update).match()
+        ModelAssertions(request=expected_update, response=actual_person_update).match()
+
+        person_uuid = actual_person_update.uuid
+        person_db = DatabaseSteps.get_person_by_uuid(person_uuid)
+
+        if expected_update.gender is not None:
+            assert person_db.gender == expected_update.gender, (
+                f"DB person.gender mismatch. "
+                f"Expected: {expected_update.gender}, got: {person_db.gender}"
+            )
+
+        if expected_update.birthdate is not None:
+            assert person_db.birthdate is not None, (
+                f"DB person.birthdate is None, expected: {expected_update.birthdate}"
+            )
+
+            db_date = (
+                person_db.birthdate.date()
+                if isinstance(person_db.birthdate, datetime)
+                else person_db.birthdate
+            )
+            exp_date = date.fromisoformat(expected_update.birthdate)
+
+            assert db_date == exp_date, (
+                f"DB person.birthdate mismatch. "
+                f"Expected: {exp_date}, got: {db_date}"
+            )
 
 
     def create_patient_from_person_invalid_data(
