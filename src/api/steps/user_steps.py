@@ -53,7 +53,7 @@ class UserSteps(BaseSteps):
             id=person_uuid, params=params
         )
 
-    def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_key: str, error_value: str):
+    def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_value: str, error_key: str ="error",):
         self._cr(
             Endpoint.CREATE_PERSON,
             ResponseSpecs.request_returns_bad_request(error_key, error_value),
