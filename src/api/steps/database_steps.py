@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from src.api.database.dao.patient_dao import PatientDao
 from src.api.database.dao.patient_identifier_dao import PatientIdentifierDao
-from src.api.database.dao.person_dao import PersonDao
+from src.api.database.dao.person_dao import PersonDao, PersonAddressDao
 from src.api.database.dao.user_dao import UserDao
 from src.api.database.db_client import DBRequest, RequestType, Condition
 from src.api.models.comparison.dao_and_model_assertions import DaoAndModelAssertions
@@ -51,12 +51,32 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    def get_person_by_address(address: str) -> PersonAddressDao:
+        return (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("person_address")
+            .where(Condition.equal_to("address1", address))
+            .extract_as(PersonAddressDao)
+        )
+
+    @staticmethod
     def get_person_by_uuid(uuid: str):
         return (
             DBRequest.builder()
             .request_type(RequestType.SELECT)
             .table("person")
             .where(Condition.equal_to("uuid", uuid))
+            .extract_as(PersonDao)
+        )
+
+    @staticmethod
+    def get_person_by_id(id: int):
+        return (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("person")
+            .where(Condition.equal_to("person_id", id))
             .extract_as(PersonDao)
         )
 
@@ -90,3 +110,22 @@ class DatabaseSteps:
             .table("patient")
             .extract_all_as(PatientDao)
         )
+    @staticmethod
+    def get_person_by_birthdate(person_birthdate) -> Optional[PersonDao]:
+        try:
+            return (
+                DBRequest.builder()
+                .request_type(RequestType.SELECT)
+                .table("person")
+                .where(Condition.equal_to("birthdate", person_birthdate))
+                .extract_as(PersonDao)
+            )
+        except AssertionError:
+            return None
+
+    @staticmethod
+    def verify_person_does_not_exist(person_birthdate: str):
+        person_dao = DatabaseSteps.get_person_by_birthdate(person_birthdate)
+        assert person_dao is None, f"Person '{person_dao.person_id}' should NOT exist in DB after invalid create"
+
+
