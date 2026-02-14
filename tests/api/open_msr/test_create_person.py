@@ -14,7 +14,6 @@ def test_create_person(api_manager):
         expected_request=create_person_request,
     )
 
-@pytest.mark.xfail(reason = "Person created in db")
 @pytest.mark.api
 @pytest.mark.parametrize(
     "field, value, error_value",

@@ -68,4 +68,4 @@ class VisitSteps(BaseSteps):
         return self._cr(
             endpoint=Endpoint.UPDATE_VISIT,
             response_spec=ResponseSpecs.request_returns_bad_request(error_key, error_value),
-        ).update_by_post(payload, visit_uuid)
+        ).update_by_post(model=payload, id=visit_uuid),

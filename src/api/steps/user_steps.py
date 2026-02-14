@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, date
 from typing import Optional, List, Any, Callable
 
 from src.api.constants.error_messages import ErrorMessages
@@ -14,6 +15,7 @@ from src.api.models.requests.create_patient_from_person_request import (
 from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
 from src.api.models.requests.create_provider_request import CreateProviderRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
+from src.api.models.requests.update_person_request import UpdatePersonRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse, PatientFullResponse
 from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
 from src.api.models.responses.create_user_response import CreateUserResponse
@@ -22,7 +24,9 @@ from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
 from src.api.requests.sceleton.requesters.validated_crud_requester import ValidatedCrudRequester
 from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
+from src.api.steps import database_steps
 from src.api.steps.base_steps import BaseSteps
+from src.api.steps.database_steps import DatabaseSteps
 
 
 class UserSteps(BaseSteps):
@@ -111,6 +115,49 @@ class UserSteps(BaseSteps):
         if expected_request:
             ModelAssertions(expected_request, full).match()
         return full
+
+
+
+    def verify_person_updated(
+        self,
+        expected_update: UpdatePersonRequest,
+        actual_person_update: CreatePersonResponse,
+    ):
+        """
+        Verify person was updated correctly:
+        - update response contains updated fields
+        - DB person record contains updated fields
+        Only fields provided in expected_update are checked.
+        """
+
+        ModelAssertions(request=expected_update, response=actual_person_update).match()
+
+        person_uuid = actual_person_update.uuid
+        person_db = DatabaseSteps.get_person_by_uuid(person_uuid)
+
+        if expected_update.gender is not None:
+            assert person_db.gender == expected_update.gender, (
+                f"DB person.gender mismatch. "
+                f"Expected: {expected_update.gender}, got: {person_db.gender}"
+            )
+
+        if expected_update.birthdate is not None:
+            assert person_db.birthdate is not None, (
+                f"DB person.birthdate is None, expected: {expected_update.birthdate}"
+            )
+
+            db_date = (
+                person_db.birthdate.date()
+                if isinstance(person_db.birthdate, datetime)
+                else person_db.birthdate
+            )
+            exp_date = date.fromisoformat(expected_update.birthdate)
+
+            assert db_date == exp_date, (
+                f"DB person.birthdate mismatch. "
+                f"Expected: {exp_date}, got: {db_date}"
+            )
+
 
     def create_patient_from_person_invalid_data(
         self,
@@ -217,6 +264,15 @@ class UserSteps(BaseSteps):
             preferred=True,
         )
 
+    def update_person(self, person_uuid: str, payload: UpdatePersonRequest):
+        return self._vcr(
+            endpoint=Endpoint.UPDATE_PERSON,
+            response_spec=ResponseSpecs.request_returns_ok(),
+        ).update_by_post(
+            id=person_uuid,
+            model=payload,
+        )
+
     def _get_visit_uuids_by_patient(self, patient_uuid: str) -> List[str]:
         resp = self._cr(Endpoint.GET_VISIT, ResponseSpecs.request_returns_ok()).get(params={"patient": patient_uuid})
 
@@ -231,3 +287,33 @@ class UserSteps(BaseSteps):
         self._cr(Endpoint.DELETE_VISIT, ResponseSpecs.entity_was_deleted()).delete_with_params(
             id=visit_uuid, params={"purge": "true"}
         )
+
+    def update_person_invalid(
+            self,
+            person_uuid: str,
+            update_person_request: UpdatePersonRequest,
+            error_value: str,
+            error_key: str = "error",
+    ):
+        CrudRequester(
+            request_spec=RequestSpecs.admin_auth_spec(),
+            endpoint=Endpoint.UPDATE_PERSON,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_value),
+        ).update_by_post(
+            id=person_uuid,
+            model=update_person_request,
+        )
+
+
+    def verify_person_not_changed(self, before: PersonFullResponse, after: PersonFullResponse) -> None:
+        """
+        ModelAssertions-based invariant:
+        after must contain the same updatable fields as before.
+        """
+
+        expected = UpdatePersonRequest(
+            gender=before.gender,
+            birthdate=str(before.birthdate)[:10] if getattr(before, "birthdate", None) else None,
+        )
+
+        ModelAssertions(request=expected, response=after).match()

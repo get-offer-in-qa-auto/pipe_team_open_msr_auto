@@ -1,5 +1,6 @@
 from typing import List, Optional, Any
 from src.api.models.base_model import BaseModel
+from datetime import date, datetime
 
 #TODO: понять с full
 class Link(BaseModel):
@@ -19,6 +20,7 @@ class CreatePersonResponse(BaseModel):
     display: str
     gender: str
     voided: bool
+    birthdate: Optional[str]
     preferredName: PreferredName
     links: List[Link]
     resourceVersion: Optional[str] = None
@@ -30,6 +32,7 @@ class PersonFullResponse(BaseModel):
     display: str
     gender: str
     voided: bool
+    birthdate: Optional[str]
 
     # поля, которые точно встречаются в full
     names: List[Any]

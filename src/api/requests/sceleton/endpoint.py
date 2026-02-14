@@ -9,6 +9,7 @@ from src.api.models.requests.create_provider_request import CreateProviderReques
 from src.api.models.requests.create_role_request import CreateRoleRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
 from src.api.models.requests.create_visit_request import CreateVisitRequest
+from src.api.models.requests.update_person_request import UpdatePersonRequest
 from src.api.models.responses.create_patient_response import PatientFullResponse, PatientCreateResponse
 from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
 from src.api.models.responses.create_provider_response import CreateProviderResponse
@@ -155,4 +156,10 @@ class Endpoint(Enum):
         url="/provider",
         request_model=None,
         response_model=None
+    )
+
+    UPDATE_PERSON = EndpointConfig(
+        url="/person",
+        request_model=UpdatePersonRequest,
+        response_model=CreatePersonResponse,
     )
