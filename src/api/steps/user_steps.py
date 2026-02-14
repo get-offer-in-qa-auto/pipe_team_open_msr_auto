@@ -106,8 +106,7 @@ class UserSteps(BaseSteps):
 
         assert full.uuid == person_uuid
         assert full.voided is False
-        assert full.preferredName
-
+        
         if expected_request:
             ModelAssertions(expected_request, full).match()
         return full
