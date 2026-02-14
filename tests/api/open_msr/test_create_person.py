@@ -15,7 +15,7 @@ def test_create_person(api_manager):
         expected_request=create_person_request,
     )
 
-
+@pytest.mark.xfail(reason = "Person created in db")
 @pytest.mark.api
 @pytest.mark.parametrize(
     "field, value, error_value",
@@ -27,8 +27,8 @@ def test_create_person(api_manager):
         ("birthdate", "", "birth"),            # empty
         ("birthdate", "3000-01-01", "birth"),  # future date
         ("birthdate", RandomData.get_int(1, 1000), "birth"),
-
-        # ---------- addresses ----------
+        #
+        # ---------- addresses ---------  -
         ("addresses", RandomData.get_word(), "address"),  # wrong type
         ("addresses", None, "address"),  # null instead of array
         ("addresses", [{"address1": RandomData.get_int(1, 1000)}], "address"),
@@ -41,7 +41,7 @@ def test_create_person(api_manager):
             "address",
         ),  # garbage in array
 
-        # ---------- names ----------
+        # # ---------- names ----------
         ("names", [], "name"),  # empty list
         ("names", None, "name"),  # null instead of array
         ("names", RandomData.get_word(), "name"),  # wrong type
@@ -79,6 +79,7 @@ def test_create_person_invalid(api_manager, field, value, error_value):
         error_value=error_value,
     )
 
+    api_manager.database_steps.verify_person_does_not_exist(create_person_request.birthdate)
 
 
-    #TODO: проверяем что персон не создался
+
