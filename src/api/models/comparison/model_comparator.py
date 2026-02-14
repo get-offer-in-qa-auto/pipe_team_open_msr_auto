@@ -21,14 +21,46 @@ class ComparisonResult:
 
 class ModelComparator:
     @staticmethod
-    def compare_fields(request: Any, response: Any, field_mapping: Dict[str,str]):
+    def compare_fields(request: Any, response: Any, field_mapping: Dict[str, str]):
         mismatches = []
         for request_field, response_field in field_mapping.items():
             request_value = ModelComparator._get_field_value(request, request_field)
+
+            # ✅ partial update: None = поле не передавали → не сравниваем
+            if request_value is None:
+                continue
+
             response_value = ModelComparator._get_field_value(response, response_field)
-            if str(request_value)!=str(response_value):
-                mismatches.append(Mismatch(f'{request_field} -> {response_field}', request_value, response_value))
+
+            exp = ModelComparator._normalize_value(request_value)
+            act = ModelComparator._normalize_value(response_value)
+
+            if exp != act:
+                mismatches.append(
+                    Mismatch(f"{request_field} -> {response_field}", request_value, response_value)
+                )
+
         return ComparisonResult(mismatches)
+
+    @staticmethod
+    def _normalize_value(value: Any) -> str:
+        """
+        Приводит значения к стабильному виду для сравнения.
+        - YYYY-MM-DD
+        - YYYY-MM-DDT00:00:00.000+0000
+        → сравниваем только дату
+        """
+        if value is None:
+            return ""
+
+        s = str(value)
+
+        # ISO date или datetime → берём только дату
+        if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+            return s[:10]
+
+        return s
+
 
     @staticmethod
     def _get_field_value(obj: Any, path: str) -> Any:

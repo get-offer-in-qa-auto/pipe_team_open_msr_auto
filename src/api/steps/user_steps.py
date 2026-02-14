@@ -115,11 +115,12 @@ class UserSteps(BaseSteps):
         return full
 
 
-    def verify_person_updated(self, person_uuid: str, expected_update: UpdatePersonRequest, actual_person_update: CreatePersonResponse):
+    def verify_person_updated(self, expected_update: UpdatePersonRequest, actual_person_update: CreatePersonResponse):
         """
         Verify person was updated correctly.
         Only fields provided in expected_update are checked.
         """
+
         ModelAssertions(request=expected_update,response=actual_person_update).match()
 
 

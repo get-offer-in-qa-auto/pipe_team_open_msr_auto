@@ -19,6 +19,7 @@ class CreatePersonResponse(BaseModel):
     display: str
     gender: str
     voided: bool
+    birthdate: Optional[str]
     preferredName: PreferredName
     links: List[Link]
     resourceVersion: Optional[str] = None
