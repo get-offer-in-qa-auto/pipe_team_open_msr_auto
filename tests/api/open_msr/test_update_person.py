@@ -3,6 +3,10 @@ import pytest
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.update_person_request import UpdatePersonRequest
+from src.api.requests.sceleton.endpoint import Endpoint
+from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
+from src.api.specs.request_spec import RequestSpecs
+from src.api.specs.response_spec import ResponseSpecs
 
 
 @pytest.mark.api
@@ -37,5 +41,31 @@ class TestUpdatePerson:
             expected_update=update_req,
             actual_person_update=updated_person_response,
         )
+
+    @pytest.mark.parametrize(
+        "field, value, error_value",
+        [
+            ("birthdate", "1997-99-99", "birth"),   # invalid date
+            ("birthdate", "1997-02-30", "birth"),   # non-existing date
+            ("birthdate", "abcd-ef-gh", "birth"),   # not a date
+            ("birthdate", "", "birth"),             # empty
+        ],
+    )
+    def test_update_person_invalid(self, api_manager, created_person, field, value, error_value):
+        before = api_manager.user_steps.get_person_full(created_person.uuid)
+
+        update_req = UpdatePersonRequest()
+        setattr(update_req, field, value)
+
+        api_manager.user_steps.update_person_invalid(
+            person_uuid=created_person.uuid,
+            update_person_request=update_req,
+            error_value=error_value,
+        )
+
+        after = api_manager.user_steps.get_person_full(created_person.uuid)
+        api_manager.user_steps.verify_person_not_changed(before, after)
+
+
 
 

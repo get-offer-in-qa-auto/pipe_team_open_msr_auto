@@ -32,6 +32,7 @@ class PersonFullResponse(BaseModel):
     display: str
     gender: str
     voided: bool
+    birthdate: Optional[str]
 
     # поля, которые точно встречаются в full
     names: List[Any]

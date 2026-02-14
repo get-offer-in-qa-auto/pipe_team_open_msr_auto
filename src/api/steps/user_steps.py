@@ -287,3 +287,33 @@ class UserSteps(BaseSteps):
         self._cr(Endpoint.DELETE_VISIT, ResponseSpecs.entity_was_deleted()).delete_with_params(
             id=visit_uuid, params={"purge": "true"}
         )
+
+    def update_person_invalid(
+            self,
+            person_uuid: str,
+            update_person_request: UpdatePersonRequest,
+            error_value: str,
+            error_key: str = "error",
+    ):
+        CrudRequester(
+            request_spec=RequestSpecs.admin_auth_spec(),
+            endpoint=Endpoint.UPDATE_PERSON,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_value),
+        ).update_by_post(
+            id=person_uuid,
+            model=update_person_request,
+        )
+
+
+    def verify_person_not_changed(self, before: PersonFullResponse, after: PersonFullResponse) -> None:
+        """
+        ModelAssertions-based invariant:
+        after must contain the same updatable fields as before.
+        """
+
+        expected = UpdatePersonRequest(
+            gender=before.gender,
+            birthdate=str(before.birthdate)[:10] if getattr(before, "birthdate", None) else None,
+        )
+
+        ModelAssertions(request=expected, response=after).match()
