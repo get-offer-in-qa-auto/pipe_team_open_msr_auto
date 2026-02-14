@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from src.api.database.dao.patient_dao import PatientDao
 from src.api.database.dao.patient_identifier_dao import PatientIdentifierDao
-from src.api.database.dao.person_dao import PersonDao
+from src.api.database.dao.person_dao import PersonDao, PersonAddressDao
 from src.api.database.dao.user_dao import UserDao
 from src.api.database.db_client import DBRequest, RequestType, Condition
 from src.api.models.comparison.dao_and_model_assertions import DaoAndModelAssertions
