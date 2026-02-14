@@ -3,10 +3,7 @@ import pytest
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.update_person_request import UpdatePersonRequest
-from src.api.requests.sceleton.endpoint import Endpoint
-from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
-from src.api.specs.request_spec import RequestSpecs
-from src.api.specs.response_spec import ResponseSpecs
+
 
 
 @pytest.mark.api
