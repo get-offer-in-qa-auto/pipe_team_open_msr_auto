@@ -14,6 +14,7 @@ from src.api.models.requests.create_patient_from_person_request import (
 from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
 from src.api.models.requests.create_provider_request import CreateProviderRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
+from src.api.models.requests.update_person_request import UpdatePersonRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse, PatientFullResponse
 from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
 from src.api.models.responses.create_user_response import CreateUserResponse
@@ -22,6 +23,7 @@ from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
 from src.api.requests.sceleton.requesters.validated_crud_requester import ValidatedCrudRequester
 from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
+from src.api.steps import database_steps
 from src.api.steps.base_steps import BaseSteps
 
 
@@ -111,6 +113,15 @@ class UserSteps(BaseSteps):
         if expected_request:
             ModelAssertions(expected_request, full).match()
         return full
+
+
+    def verify_person_updated(self, person_uuid: str, expected_update: UpdatePersonRequest, actual_person_update: CreatePersonResponse):
+        """
+        Verify person was updated correctly.
+        Only fields provided in expected_update are checked.
+        """
+        ModelAssertions(request=expected_update,response=actual_person_update).match()
+
 
     def create_patient_from_person_invalid_data(
         self,
@@ -215,6 +226,15 @@ class UserSteps(BaseSteps):
             identifierType=identifier_type_uuid,
             location=location_uuid,
             preferred=True,
+        )
+
+    def update_person(self, person_uuid: str, payload: UpdatePersonRequest):
+        return self._vcr(
+            endpoint=Endpoint.UPDATE_PERSON,
+            response_spec=ResponseSpecs.request_returns_ok(),
+        ).update_by_post(
+            id=person_uuid,
+            model=payload,
         )
 
     def _get_visit_uuids_by_patient(self, patient_uuid: str) -> List[str]:
