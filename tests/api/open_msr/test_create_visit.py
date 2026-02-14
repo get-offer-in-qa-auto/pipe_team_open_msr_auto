@@ -16,9 +16,9 @@ class TestCreateVisit:
     def test_create_visit(self, api_manager: ApiManager, create_visit_request: CreateVisitRequest):
         api_manager.visit_steps.create_visit(create_visit_request)
 
-    @pytest.mark.check_visit_not_created(expected_count=0)
+    @pytest.mark.check_visit_not_created
     @pytest.mark.parametrize(
-        "field_name,bad_value,expected_error",
+        "field_name, incorrect_value, expected_error",
         [
             ("patient", None, ErrorMessages.PATIENT_ID_IS_REQUIRED),
             ("patient", "", ErrorMessages.PATIENT_ID_IS_REQUIRED),
@@ -33,11 +33,10 @@ class TestCreateVisit:
             ("startDatetime", RandomData.get_bad_dt(), ErrorMessages.START_DATETIME_HAS_INVALID_FORMAT),
             ("startDatetime", "", ErrorMessages.START_DATETIME_HAS_INVALID_FORMAT),
             ("startDatetime", RandomData.get_string(30), ErrorMessages.START_DATETIME_HAS_INVALID_FORMAT),
-        ],
-        ids=lambda x: str(x),
+        ]
     )
     def test_create_visit_invalid_required_fields(self, api_manager, patient_context, visit_type_uuid: str,
-                                                  field_name: str, bad_value, expected_error: str):
+                                                  field_name: str, incorrect_value, expected_error: str):
         payload = CreateVisitInvalidRequest(
             patient=patient_context.patient_uuid,
             visitType=visit_type_uuid,
