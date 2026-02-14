@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List, Any, Callable
 
+from src.api.constants.error_messages import ErrorMessages
 from src.api.generators.mod30 import generate_mod30_identifier
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.comparison.model_assertions import ModelAssertions
@@ -34,6 +35,11 @@ class UserSteps(BaseSteps):
     def get_patient_full(self, patient_uuid: str) -> PatientFullResponse:
         return self._vcr(Endpoint.GET_PATIENT, ResponseSpecs.request_returns_ok()).get(
             id=patient_uuid, params={"v": "full"}
+        )
+
+    def verify_patient_with_uuid_does_not_exist(self, patient_uuid: str):
+        self._cr(Endpoint.GET_PATIENT, ResponseSpecs.entity_not_found(ErrorMessages.OBJECT_WITH_UUID_DOES_NOT_EXIST)).get(
+            id=patient_uuid,
         )
 
     def create_person(self, create_person_request: CreatePersonRequest) -> CreatePersonResponse:

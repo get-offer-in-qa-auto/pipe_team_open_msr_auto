@@ -56,6 +56,17 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
+    def update_by_post(self, model: Optional[T], id: str) -> Response:
+        server_url = Config.get("server")
+        api_version_url = Config.get("api_version")
+
+        url = f"{server_url}{api_version_url}{self.endpoint.value.url}/{id}"
+        body = model.model_dump(exclude_none=True) if model else {}
+
+        response = requests.post(url=url, headers=self.request_spec, json=body)
+        self.response_spec(response)
+        return response
+
     def delete(self, id: int) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')

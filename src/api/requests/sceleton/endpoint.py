@@ -14,7 +14,7 @@ from src.api.models.responses.create_person_response import CreatePersonResponse
 from src.api.models.responses.create_provider_response import CreateProviderResponse
 from src.api.models.responses.create_role_response import CreateRoleResponse
 from src.api.models.responses.create_user_response import CreateUserResponse
-from src.api.models.responses.create_visit_response import VisitCreateResponse
+from src.api.models.responses.create_visit_response import CreateVisitResponse
 from src.api.models.responses.get_location_response import LocationListResponse
 from src.api.models.responses.get_privileges_response import GetPrivilegesResponse
 from src.api.models.responses.get_roles_response import RoleListResponse
@@ -106,7 +106,13 @@ class Endpoint(Enum):
     CREATE_VISIT = EndpointConfig(
         url="/visit",
         request_model=CreateVisitRequest,
-        response_model=VisitCreateResponse,
+        response_model=CreateVisitResponse,
+    )
+
+    UPDATE_VISIT = EndpointConfig(
+        url="/visit",
+        request_model=CreateVisitRequest,
+        response_model=CreateVisitResponse,
     )
 
     GET_VISIT = EndpointConfig(
