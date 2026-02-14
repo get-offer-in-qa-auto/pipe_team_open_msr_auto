@@ -96,6 +96,18 @@ class UserSteps(BaseSteps):
         patient_full = self.get_patient_full(created_patient_response.uuid)
         ModelAssertions(req, patient_full).match()
 
+    def verify_person_created(self, person_uuid, expected_request=None):
+        full = self.get_person_full(person_uuid)
+
+        assert full.uuid == person_uuid
+        assert full.voided is False
+        assert full.preferredName
+        assert full.preferredName.uuid
+
+        if expected_request:
+            ModelAssertions(expected_request, full).match()
+        return full
+
     def create_patient_from_person_invalid_data(
         self,
         person: str,

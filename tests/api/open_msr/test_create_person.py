@@ -1,6 +1,5 @@
 import pytest
 
-from src.api.assertions.person_creation_verifier import PersonCreationVerifier
 from src.api.generators.random_data import RandomData
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
@@ -10,7 +9,7 @@ from src.api.models.requests.create_person_request import CreatePersonRequest, C
 def test_create_person(api_manager):
     create_person_request = RandomModelGenerator.generate(CreatePersonRequest)
     person = api_manager.user_steps.create_person(create_person_request)
-    PersonCreationVerifier(api_manager).verify_person_created(
+    api_manager.user_steps.verify_person_created(
         person.uuid,
         expected_request=create_person_request,
     )
