@@ -49,9 +49,6 @@ class UserSteps(BaseSteps):
         assert person.voided is False
         assert person.preferredName.uuid
 
-        full = self.get_person_full(person.uuid)
-        ModelAssertions(create_person_request, full).match()
-
         self.created_objects.append(person)
         return person
 
@@ -61,7 +58,7 @@ class UserSteps(BaseSteps):
             id=person_uuid, params=params
         )
 
-    def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_key: str, error_value: str):
+    def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_value: str, error_key: str ="error",):
         self._cr(
             Endpoint.CREATE_PERSON,
             ResponseSpecs.request_returns_bad_request(error_key, error_value),
@@ -103,6 +100,17 @@ class UserSteps(BaseSteps):
         req = CreatePatientFromPersonRequest(person=created_patient_response.uuid, identifiers=identifiers)
         patient_full = self.get_patient_full(created_patient_response.uuid)
         ModelAssertions(req, patient_full).match()
+
+    def verify_person_created(self, person_uuid, expected_request=None):
+        full = self.get_person_full(person_uuid)
+
+        assert full.uuid == person_uuid
+        assert full.voided is False
+        assert full.preferredName
+
+        if expected_request:
+            ModelAssertions(expected_request, full).match()
+        return full
 
     def create_patient_from_person_invalid_data(
         self,
