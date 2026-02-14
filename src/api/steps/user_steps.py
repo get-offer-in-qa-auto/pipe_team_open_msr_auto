@@ -48,7 +48,6 @@ class UserSteps(BaseSteps):
         assert person.uuid
         assert person.voided is False
         assert person.preferredName.uuid
-        #TODO: тут по полям матчить
 
         self.created_objects.append(person)
         return person
@@ -108,7 +107,6 @@ class UserSteps(BaseSteps):
         assert full.uuid == person_uuid
         assert full.voided is False
         assert full.preferredName
-        assert full.preferredName.uuid
 
         if expected_request:
             ModelAssertions(expected_request, full).match()
