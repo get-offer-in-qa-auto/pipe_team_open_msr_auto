@@ -1,6 +1,7 @@
 import pytest
 
 from src.api.assertions.person_creation_verifier import PersonCreationVerifier
+from src.api.generators.random_data import RandomData
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
 
@@ -30,27 +31,52 @@ def test_create_person(api_manager):
         ("birthdate", "abcd-ef-gh", "error", "birth"),  # not a date
         ("birthdate", "", "error", "birth"),            # empty
         ("birthdate", "3000-01-01", "error", "birth"),  # future date
+        ("birthdate", RandomData.get_int(1, 1000), "error", "birth"),  # future date
 
         # ---------- addresses ----------
-        ("addresses", "some address", "error", "address"),  # неверный тип
-        ("addresses", None, "error", "address"),  # null вместо массива
-        ("addresses", [{"address1": 123}], "error", "address"),  # неверный тип address1
-        ("addresses", [{"postalCode": 560037}], "error", "address"),  # неверный тип postalCode
-        ("addresses", [{"cityVillage": 1}], "error", "address"),  # неверный тип cityVillage
-        ("addresses", [{"country": 999}], "error", "address"),  # неверный тип country
-        ("addresses", [{"address1": "x"}, "bad"], "error", "address"),  # мусор в массиве
+        ("addresses", RandomData.get_word(), "error", "address"),  # wrong type
+        ("addresses", None, "error", "address"),  # null instead of array
+        ("addresses", [{"address1": RandomData.get_int(1, 1000)}], "error", "address"),
+        ("addresses", [{"postalCode": RandomData.get_int(1, 1000)}], "error", "address"),
+        ("addresses", [{"cityVillage": RandomData.get_int(1, 1000)}], "error", "address"),
+        ("addresses", [{"country": RandomData.get_int(1, 1000)}], "error", "address"),
+        (
+                "addresses",
+                [{"address1": RandomData.get_word()}, RandomData.get_word()],
+                "error",
+                "address",
+        ),  # garbage in array
 
         # ---------- names ----------
-        ("names", [], "error", "name"),  # пустой список
-        ("names", None, "error", "name"),  # null вместо массива
-        ("names", "Mohit Kumar", "error", "name"),  # неверный тип
-        ("names", [{}], "error", "name"),  # нет givenName/familyName
-        ("names", [{"familyName": "Kumar"}], "error", "name"),  # нет givenName
-        ("names", [{"givenName": "", "familyName": "Kumar"}], "error", "name"),  # пустой givenName
-        ("names", [{"givenName": None, "familyName": "Kumar"}], "error", "name"),  # null givenName
-        ("names", [{"givenName": 1, "familyName": "Kumar"}], "error", "name"),  # неверный тип givenName
-        ("names", [{"givenName": "Mohit", "familyName": 2}], "error", "name"),  # неверный тип familyName
-        ("names", [{"givenName": "Mohit", "familyName": "Kumar"}, "bad"], "error", "name"),  # мусор в массиве
+        # ---------- names ----------
+        ("names", [], "error", "name"),  # empty list
+        ("names", None, "error", "name"),  # null instead of array
+        ("names", RandomData.get_word(), "error", "name"),  # wrong type
+        ("names", [{}], "error", "name"),  # missing givenName/familyName
+        ("names", [{"familyName": RandomData.get_word()}], "error", "name"),  # missing givenName
+        ("names", [{"givenName": "", "familyName": RandomData.get_word()}], "error", "name"),
+        ("names", [{"givenName": None, "familyName": RandomData.get_word()}], "error", "name"),
+        (
+                "names",
+                [{"givenName": RandomData.get_int(1, 1000), "familyName": RandomData.get_word()}],
+                "error",
+                "name",
+        ),
+        (
+                "names",
+                [{"givenName": RandomData.get_word(), "familyName": RandomData.get_int(1, 1000)}],
+                "error",
+                "name",
+        ),
+        (
+                "names",
+                [
+                    {"givenName": RandomData.get_word(), "familyName": RandomData.get_word()},
+                    RandomData.get_word(),
+                ],
+                "error",
+                "name",
+        ),  # garbage in array
     ],
 )
 def test_create_person_invalid(api_manager, field, value, error_key, error_value):
