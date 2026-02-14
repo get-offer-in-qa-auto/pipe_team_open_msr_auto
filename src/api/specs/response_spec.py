@@ -36,7 +36,9 @@ class ResponseSpecs:
                 error_content = response.content
             error_text = str(error_content)
 
-            assert error_value in error_text
+            assert error_value in error_text, (
+                    f"\nExpected {error_text}\n, "
+                    f"Got {error_content}")
 
         return check
 
@@ -89,4 +91,15 @@ class ResponseSpecs:
                 f"Expected error message '{error_msg}',\nbut got '{error_text}'."
             )
 
+        return check
+
+    @staticmethod
+    def request_returns_not_found_with_message(error_msg: str) -> Callable:
+        def check(response: Response):
+            assert response.status_code == HTTPStatus.NOT_FOUND, response.text
+            try:
+                msg = response.json().get("error", {}).get("message")
+            except JSONDecodeError:
+                msg = response.text
+            assert error_msg in str(msg), response.text
         return check

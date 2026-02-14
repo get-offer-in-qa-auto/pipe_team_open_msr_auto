@@ -17,7 +17,7 @@ class Ref(BaseModel):
     links: Optional[List[Link]] = None
 
 
-class VisitCreateResponse(BaseModel):
+class CreateVisitResponse(BaseModel):
     """Response for POST /visit.
     """
 
