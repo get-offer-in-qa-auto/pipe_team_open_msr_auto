@@ -12,11 +12,13 @@ class PatientPerson(BaseModel):
     birthdate: str
     names: List[PatientName]
 
+class UuidRef(BaseModel):
+    uuid: str
 
 class PatientIdentifier(BaseModel):
     identifier: str
-    identifierType: str
-    location: str
+    identifierType: UuidRef
+    location: UuidRef
     preferred: bool = True
 
 

@@ -94,3 +94,19 @@ class ResponseSpecs:
     def _standard_error_extractor(data: dict) -> Any:
         """Стандартный путь для большинства ошибок: error -> message"""
         return data.get("error", {}).get("message")
+
+    def request_returns_not_found_with_message(error_msg: str) -> Callable:
+        def check(response: Response):
+            assert response.status_code == HTTPStatus.NOT_FOUND, response.text
+            try:
+                msg = response.json().get("error", {}).get("message")
+            except JSONDecodeError:
+                msg = response.text
+            assert error_msg in str(msg), response.text
+        return check
+
+    @staticmethod
+    def request_returns_ok_or_not_found():
+        def check(response: Response):
+            assert response.status_code in (HTTPStatus.OK, HTTPStatus.NOT_FOUND), response.text
+        return check

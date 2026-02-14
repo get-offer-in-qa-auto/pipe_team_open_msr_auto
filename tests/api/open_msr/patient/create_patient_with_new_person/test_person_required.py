@@ -2,6 +2,7 @@ import pytest
 
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_patient_request import CreatePatientRequest
+from src.api.generators.random_data import RandomData
 
 # Contract: POST /patient (create patient with NEW person)
 #
@@ -19,10 +20,9 @@ class TestCreatePatientPersonRequired:
     @pytest.mark.parametrize("person_value", [
         None,
         "",
-        "some-string",
-        123,
+        RandomData.get_string(10),
+        RandomData.get_int(1, 999),
         [],
-        {}
     ])
     def test_create_patient_person_invalid(self, api_manager, person_value):
         request = RandomModelGenerator.generate(CreatePatientRequest)

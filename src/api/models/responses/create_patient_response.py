@@ -12,7 +12,15 @@ class PatientCreateResponse(BaseModel):
     display: Optional[str] = None
     links: Optional[List[Link]] = None
 
+class PatientPreferredName(BaseModel):
+    display: str
 
+
+class PatientPersonResponse(BaseModel):
+    uuid: str
+    gender: str
+    birthdate: str
+    preferredName: Optional[PatientPreferredName] = None
 
 class PatientIdentifierResponse(BaseModel):
     uuid: str
@@ -26,3 +34,4 @@ class PatientFullResponse(BaseModel):
     uuid: str
     display: str
     identifiers: Optional[List[PatientIdentifierResponse]] = None
+    person: Optional[PatientPersonResponse] = None

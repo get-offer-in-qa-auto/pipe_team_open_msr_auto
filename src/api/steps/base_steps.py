@@ -89,10 +89,30 @@ class BaseSteps:
             response_spec=ResponseSpecs.request_returns_ok()
         ).get()
 
+    # def get_identifier_request(
+    #         self,
+    #         identifier_request: Optional[PatientIdentifierRequest] = RandomModelGenerator.generate(PatientIdentifierRequest)
+    # ) -> PatientIdentifierRequest:
+    #     types = self.get_patient_identifier_types()
+    #     identifier_type_uuid = types.results[0].uuid
+    #
+    #     locations = self.get_locations()
+    #     location_uuid = random.choice(locations.results).uuid
+    #
+    #     identifier_request.identifierType = identifier_type_uuid
+    #     identifier_request.location = location_uuid
+    #     identifier_request.preferred = True
+    #
+    #     return identifier_request
+
     def get_identifier_request(
             self,
-            identifier_request: Optional[PatientIdentifierRequest] = RandomModelGenerator.generate(PatientIdentifierRequest)
+            identifier_request: Optional[PatientIdentifierRequest] = None
     ) -> PatientIdentifierRequest:
+
+        if identifier_request is None:
+            identifier_request = RandomModelGenerator.generate(PatientIdentifierRequest)
+
         types = self.get_patient_identifier_types()
         identifier_type_uuid = types.results[0].uuid
 

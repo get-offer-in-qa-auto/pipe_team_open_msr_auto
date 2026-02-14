@@ -3,13 +3,18 @@ import uuid
 from datetime import datetime
 from typing import get_type_hints, Any, get_origin, Annotated, get_args, Union
 from datetime import date, timedelta
-
+from pydantic import BaseModel as PydanticBaseModel
 
 import rstr
 
+from src.api.models.requests.create_patient_request import PatientPerson
 from src.api.generators.generating_rule import GeneratingRule
 from src.api.generators.mod30 import generate_mod30_identifier, luhn_mod_n_is_valid
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
+from src.api.models.requests.create_patient_request import PatientIdentifier, UuidRef
+from src.api.generators.generator_context import GeneratorContext
+
+
 
 
 class RandomModelGenerator:
@@ -28,16 +33,63 @@ class RandomModelGenerator:
                     if isinstance(ann, GeneratingRule):
                         rule = ann
 
+            if cls is PatientIdentifier and field_name == "identifierType":
+                if GeneratorContext.has_provider():
+                    uuid = GeneratorContext.reference_provider.get_required_identifier_type_uuid()
+                else:
+                    uuid = "00000000-0000-0000-0000-000000000000"  # safe stub
+
+                init_data[field_name] = {"uuid": uuid}
+                continue
+
+            if cls is PatientIdentifier and field_name == "location":
+                if GeneratorContext.has_provider():
+                    uuid = GeneratorContext.reference_provider.get_random_location_uuid()
+                else:
+                    uuid = "00000000-0000-0000-0000-000000000000"
+
+                init_data[field_name] = {"uuid": uuid}
+                continue
+
+            if cls is PatientIdentifier and field_name == "identifier":
+                value = generate_mod30_identifier(total_len=random.randint(6, 12))
+                assert luhn_mod_n_is_valid(value), f"Generated invalid Mod-30 id: {value}"
+                init_data[field_name] = value
+                continue
+
             if cls is PatientIdentifierRequest and field_name == "identifier":
                 value = generate_mod30_identifier(total_len=random.randint(6, 12))
                 assert luhn_mod_n_is_valid(value), f"Generated invalid Mod-30 id: {value}"
                 init_data[field_name] = value
                 continue
 
+            # OpenMRS reference data (dynamic)
+            if cls is PatientIdentifierRequest and field_name == "identifierType":
+                uuid = (
+                    GeneratorContext.reference_provider.get_random_identifier_type_uuid()
+                    if GeneratorContext.has_provider()
+                    else "00000000-0000-0000-0000-000000000000"
+                )
+                init_data[field_name] = {"uuid": uuid}
+                continue
+
+            if cls is PatientIdentifierRequest and field_name == "location":
+                uuid = (
+                    GeneratorContext.reference_provider.get_random_location_uuid()
+                    if GeneratorContext.has_provider()
+                    else "00000000-0000-0000-0000-000000000000"
+                )
+                init_data[field_name] = {"uuid": uuid}
+                continue
+
             if field_name == "birthdate" and actual_type is str:
                 days_ago = random.randint(0, 365 * 90)
                 d = date.today() - timedelta(days=days_ago)
                 init_data[field_name] = d.isoformat()
+                continue
+            # OpenMRS enum gender
+            if cls is PatientPerson and field_name == "gender":
+                init_data[field_name] = random.choice(["M", "F"])
                 continue
 
             if rule:
@@ -89,8 +141,9 @@ class RandomModelGenerator:
         elif field_type is datetime:
             return datetime.now() - timedelta(seconds=random.randint(0, 100000))
 
-        if isinstance(field_type, type):
-            return RandomModelGenerator.generate(field_type)
+        if isinstance(field_type, type) and issubclass(field_type, PydanticBaseModel):
+            # возвращаем dict, а не объект
+            return RandomModelGenerator.generate(field_type).model_dump()
 
         return None
 

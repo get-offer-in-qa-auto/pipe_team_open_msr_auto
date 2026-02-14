@@ -23,6 +23,7 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         body = model.model_dump() if model else ''
         response = requests.post(url=f'{server_url}{api_version_url}{self.endpoint.value.url}',
                                  headers=self.request_spec, json=body)
+
         self.response_spec(response)
         return response
 
