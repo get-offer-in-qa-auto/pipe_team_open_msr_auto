@@ -76,7 +76,7 @@ def check_visit_deleted(request):
 
     api_manager.visit_steps.get_visit_raw_by_uuid(
         visit_uuid,
-        response_spec=ResponseSpecs.request_returns_not_found_with_message("doesn't exist"),
+        response_spec=ResponseSpecs.entity_not_found("doesn't exist"),
     )
 
 

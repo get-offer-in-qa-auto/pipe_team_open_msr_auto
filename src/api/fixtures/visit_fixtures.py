@@ -13,11 +13,6 @@ from src.api.models.responses.create_patient_response import PatientCreateRespon
 
 
 @pytest.fixture
-def api_manager(created_objects) -> ApiManager:
-    return ApiManager(created_objects)
-
-
-@pytest.fixture
 def created_patient(api_manager: ApiManager) -> PatientCreateResponse:
     """Create a fresh patient (person + patient) for tests.
 

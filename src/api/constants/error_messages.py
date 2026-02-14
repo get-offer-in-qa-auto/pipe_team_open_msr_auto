@@ -18,7 +18,7 @@ class ErrorMessages:
     VISIT_TYPE_IS_REQUIRED = "Visit Type is required"
     START_DATETIME_HAS_INVALID_FORMAT = "Invalid format"
     VISIT_OVERLAPS = "This visit overlaps with another visit of the same patient"
-    EXISTED_UUID = "Object with given uuid doesn't exist [null]"
+    OBJECT_WITH_UUID_DOES_NOT_EXIST = "Object with given uuid doesn't exist [null]"
 
     @staticmethod
     def privileges_required(privileges: List[str]):

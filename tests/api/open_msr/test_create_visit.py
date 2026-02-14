@@ -44,7 +44,7 @@ class TestCreateVisit:
             location=patient_context.location_uuid,
         )
 
-        setattr(payload, field_name, bad_value)
+        setattr(payload, field_name, incorrect_value)
 
         api_manager.visit_steps.create_raw_visit(
             payload=payload,
