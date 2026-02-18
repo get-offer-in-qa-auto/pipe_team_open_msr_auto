@@ -5,3 +5,5 @@ faker
 rstr
 mysql-connector-python
 pytest-xdist
+playwright
+pytest-playwright

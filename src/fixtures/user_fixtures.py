@@ -3,11 +3,40 @@ from typing import Optional, List
 import pytest
 
 from src.api.classes.api_manager import ApiManager
+from src.api.classes.session_storage import SessionStorage
+from src.api.configs.config import Config
 from src.api.generators.random_model_generator import RandomModelGenerator
+from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
 from src.api.models.responses.create_person_response import CreatePersonResponse
 from src.api.models.responses.create_user_response import CreateUserResponse
+
+@pytest.fixture
+def user_factory(api_manager: ApiManager):
+    def create_user() -> BaseCreateUserRequest:
+        user_data = RandomModelGenerator.generate(BaseCreateUserRequest)
+        #api_manager.user_steps.
+        return user_data
+
+    yield create_user
+
+
+@pytest.fixture(scope="function")
+def user_request(user_factory):
+    try:
+        return SessionStorage.get_user(0)
+    except Exception:
+        user = user_factory()
+        return user
+
+
+@pytest.fixture
+def admin_user_request():
+    return BaseCreateUserRequest(
+        username =  Config.get('ADMIN_USERNAME'),
+        password = Config.get('ADMIN_PASSWORD'),
+    )
 
 
 @pytest.fixture
