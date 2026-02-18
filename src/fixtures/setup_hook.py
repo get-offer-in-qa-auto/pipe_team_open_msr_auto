@@ -44,6 +44,7 @@ def admin_session_autologin(
 ):
     mark = request.node.get_closest_marker("admin_session")
     if not mark:
+        yield
         return
 
     locations = api_manager.user_steps.get_locations()
