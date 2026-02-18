@@ -48,9 +48,6 @@ class TestCreatePatientByAdminUser:
         patient_uuid = patient_summary_page.get_patient_uuid()
         person_full = api_manager.user_steps.get_person_full(patient_uuid)
 
-        patient_uuid = patient_summary_page.get_patient_uuid()
-        person_full = api_manager.user_steps.get_person_full(patient_uuid)
-
         ModelAssertions(person_request, person_full).match()
 
 

@@ -1,13 +1,10 @@
 import json
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, Callable, List
-from urllib.parse import urlparse
 
-import requests
 from playwright.sync_api import Page, Dialog, Locator
 
 from src.api.configs.config import Config
-from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.api.specs.request_spec import RequestSpecs
 
 T = TypeVar("T", bound="BasePage")
@@ -28,12 +25,6 @@ class BasePage(ABC):
             for index in range(element.count())
         ]
 
-    # def  auth_as_user(self, page: Page, user_request: BaseCreateUserRequest):
-    #     auth_token = RequestSpecs.auth_as_user(user_request.username, user_request.password).get('Authorization')
-    #     page.set_viewport_size({"width": 1920, "height": 1080})
-    #     page.goto(self.base_url)
-    #     page.evaluate('token => localStorage.setItem("authToken", token)', auth_token)
-
     def auth_as_user(
             self,
             user_request,
@@ -48,11 +39,9 @@ class BasePage(ABC):
         api_ver = str(Config.get("api_version")).strip("/")  # v1
         api_base = f"{server}/{api_ver}"
 
-        # 0) origin
         page.set_viewport_size({"width": 1920, "height": 1080})
         page.goto(ui_base + "/login", wait_until="domcontentloaded")
 
-        # 1) логин через REST /session -> получаем JSESSIONID в контекст
         auth = RequestSpecs.auth_as_user(user_request.username, user_request.password)["Authorization"]
 
         r1 = page.request.get(
@@ -65,7 +54,6 @@ class BasePage(ABC):
         assert any(c["name"] == "JSESSIONID" for c in cookies), \
             f"JSESSIONID not found in browser context cookies: {[c['name'] for c in cookies]}"
 
-        # 2) если локацию не передали — берём через API первую
         if not location_uuid or not location_display:
             rloc = page.request.get(
                 f"{api_base}/location",
@@ -81,7 +69,6 @@ class BasePage(ABC):
             location_uuid = target["uuid"]
             location_display = target.get("display") or "Unknown"
 
-        # 3) ВАЖНО: выставляем sessionLocation в серверной сессии
         payload = {"sessionLocation": location_uuid}
 
         r2 = page.request.post(
@@ -94,7 +81,6 @@ class BasePage(ABC):
         )
         assert r2.ok, f"POST /session (set sessionLocation) failed: {r2.status} {r2.text()}"
 
-        # 4) Дублируем в storage для SPA (на всякий случай)
         page.add_init_script(f"""
             (() => {{
                 const loc = {{ uuid: "{location_uuid}", display: "{location_display}" }};
@@ -113,48 +99,6 @@ class BasePage(ABC):
     @abstractmethod
     def url(self) -> str:
         raise NotImplementedError
-
-    # def auth_as_user(
-    #         self,
-    #         page: Page,
-    #         user_request: BaseCreateUserRequest,
-    #         location_name: str,
-    #         location_uuid: str,
-    # ):
-    #     auth_token = RequestSpecs.auth_as_user(
-    #         user_request.username,
-    #         user_request.password
-    #     ).get("Authorization")
-    #
-    #     ui_base = self.base_url  # уже из Config, как у тебя
-    #     page.set_viewport_size({"width": 1920, "height": 1080})
-    #
-    #     # 1) заходим на origin, чтобы storage был привязан к нему
-    #     page.goto(ui_base, wait_until="domcontentloaded")
-    #
-    #     # 2) кладём токен
-    #     page.evaluate(
-    #         "token => localStorage.setItem('authToken', token)",
-    #         auth_token
-    #     )
-    #
-    #     # 3) кладём выбранную локацию (Session Storage)
-    #     page.evaluate(
-    #         """({name, uuid}) => {
-    #           localStorage.setItem("queueLocationName", name);
-    #           localStorage.setItem("queueLocationUuid", uuid);
-    #           localStorage.setItem("queueServiceDisplay", "All");
-    #
-    #           // на всякий случай продублируем в sessionStorage тоже
-    #           sessionStorage.setItem("queueLocationName", name);
-    #           sessionStorage.setItem("queueLocationUuid", uuid);
-    #           sessionStorage.setItem("queueServiceDisplay", "All");
-    #         }""",
-    #         {"name": location_name, "uuid": location_uuid},
-    #     )
-    #
-    #     page.reload(wait_until="domcontentloaded")
-    #     page.goto(f"{ui_base}/home/service-queues", wait_until="domcontentloaded")
 
 
     @abstractmethod
