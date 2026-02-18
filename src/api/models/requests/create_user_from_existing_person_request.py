@@ -1,6 +1,6 @@
 from typing import List
 
-from src.api.models.requests.BaseCreateUserRequest import BaseCreateUserRequest
+from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 
 
 class CreateUserFromExistingPersonRequest(BaseCreateUserRequest):

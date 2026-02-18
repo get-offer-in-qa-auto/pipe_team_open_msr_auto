@@ -7,7 +7,7 @@ from src.api.constants.error_messages import ErrorMessages
 from src.api.generators.mod30 import generate_mod30_identifier
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.comparison.model_assertions import ModelAssertions
-from src.api.models.requests.BaseCreateUserRequest import BaseCreateUserRequest
+from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.api.models.requests.create_patient_from_person_request import (
     CreatePatientFromPersonRequest,
     PatientIdentifierRequest,

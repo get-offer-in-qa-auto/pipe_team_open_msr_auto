@@ -1,13 +1,20 @@
-from src.api.fixtures.user_fixtures import *
-from src.api.fixtures.api_fixtures import *
-from src.api.fixtures.objects_fixture import *
-from src.api.fixtures.visit_fixtures import *
-from src.api.fixtures.assertion_fixtures.patient_assertion_fixtures import *
-from src.api.fixtures.assertion_fixtures.visit_assertion_fixtures import *
+from typing import List
+
+from playwright.sync_api import BrowserType
+
+from src.fixtures.objects_fixture import *
+from src.fixtures.user_fixtures import *
+from src.fixtures.api_fixtures import *
+from src.fixtures.visit_fixtures import *
+from src.fixtures.setup_hook import *
+from src.fixtures.assertion_fixtures.visit_assertion_fixtures import *
+from src.fixtures.assertion_fixtures.patient_assertion_fixtures import *
 
 
 import time
 import random
+
+from src.utils.browsers import norm_browser_name
 
 
 def _apply_global_seed(seed: int) -> None:
@@ -49,7 +56,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
     # In the master (or non-xdist runs), derive seed from CLI/env or generate a new one.
     if seed is None:
-        opt = config.getoption("--seed")
+        opt = config.getoption("seed")
         seed = int(opt) if opt is not None else int(time.time_ns() % 2_000_000_000)
 
     config._openMRS_seed = int(seed)
@@ -90,3 +97,40 @@ def pytest_collection_finish(session: pytest.Session) -> None:
         runtime_seed = int(base_seed)
 
     _apply_global_seed(runtime_seed)
+
+
+def pytest_collection_modifyitems(
+    config: pytest.Config,
+    items: List[pytest.Item],
+):
+    preferred = "chromium"
+
+    filtered: List[pytest.Item] = []
+
+    for item in items:
+        is_ui = bool(item.get_closest_marker("ui"))
+        fixts = getattr(item, "fixturenames", ())
+
+        if (not is_ui) and ("browser_name" in fixts):
+            callspec = getattr(item, "callspec", None)
+            if callspec is not None and "browser_name" in callspec.params:
+                bn = norm_browser_name(
+                    callspec.params.get("browser_name")
+                )
+                if bn != preferred:
+                    continue
+
+        filtered.append(item)
+
+    items[:] = filtered
+
+@pytest.fixture(scope="session")
+def browser_name(request):
+    return request.config.getoption("--browser")
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type: BrowserType):
+    return {
+        "headless": False,   # 👈 ВАЖНО
+        "slow_mo": 300,      # 👈 необязательно, но очень помогает
+    }
