@@ -14,6 +14,7 @@ from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
 
 @pytest.mark.ui
+@pytest.mark.usefixtures("admin_session_autologin")
 class TestCreatePatientByAdminUser:
     @pytest.mark.admin_session
     def test_add_patient_with_correct_data(
@@ -41,9 +42,7 @@ class TestCreatePatientByAdminUser:
             .should_be_opened()
         )
 
-        expect(patient_summary_page.patient_name).to_contain_text(
-            f"{ui_data.given} {ui_data.family}"
-        )
+        expect(patient_summary_page.get_patient_name_locator(f"{ui_data.given} {ui_data.family}")).to_be_visible()
 
         patient_uuid = patient_summary_page.get_patient_uuid()
         person_full = api_manager.user_steps.get_person_full(patient_uuid)

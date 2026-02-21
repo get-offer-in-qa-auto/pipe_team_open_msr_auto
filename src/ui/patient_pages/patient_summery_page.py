@@ -1,3 +1,5 @@
+from playwright.sync_api import Locator
+
 from src.ui.base_page import BasePage
 
 
@@ -23,11 +25,6 @@ class PatientSummaryPage(BasePage):
         return f"/patient/{self.patient_uuid}/chart/Patient%20Summary"
 
     # ---------- Patient Banner ----------
-
-    @property
-    def patient_name(self):
-        # имя — это текст рядом с иконкой пола (Male/Female) в баннере
-        return self.patient_banner.locator("span").first
 
     @property
     def openmrs_id(self):
@@ -85,3 +82,5 @@ class PatientSummaryPage(BasePage):
 
         return self
 
+    def get_patient_name_locator(self, name: str) -> Locator:
+        return self.patient_banner.get_by_text(name)

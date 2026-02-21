@@ -10,7 +10,7 @@ from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.utils.browsers import norm_browser_name
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def user_session_extension(
     request: pytest.FixtureRequest,
     page: Page,
@@ -35,7 +35,7 @@ def user_session_extension(
     SessionStorage.clear()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def admin_session_autologin(
     request: pytest.FixtureRequest,
     page: Page,
@@ -62,7 +62,7 @@ def admin_session_autologin(
 
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def browser_match_guard(request):
     mark = request.node.get_closest_marker("browsers")
     if not mark:
