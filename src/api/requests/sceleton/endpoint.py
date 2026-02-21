@@ -62,6 +62,12 @@ class Endpoint(Enum):
         response_model=LocationListResponse
     )
 
+    DELETE_PATIENT_IDENTIFIER = EndpointConfig(
+        url="/patient/:target_patient_uuid/identifier",
+        request_model=None,
+        response_model=None
+    )
+
     GET_PATIENT_IDENTIFIER_TYPES = EndpointConfig(
         url="/patientidentifiertype",
         request_model=None,

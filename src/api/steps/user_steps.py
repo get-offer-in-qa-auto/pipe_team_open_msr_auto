@@ -215,9 +215,14 @@ class UserSteps(BaseSteps):
         for visit_uuid in self._get_visit_uuids_by_patient(patient_uuid):
             self._purge_visit(visit_uuid)
 
+        patient = self.get_patient_full(patient_uuid)
+
         self._cr(Endpoint.DELETE_PATIENT, ResponseSpecs.entity_was_deleted()).delete_with_params(
             id=patient_uuid, params={"purge": "true"}
         )
+
+        for identifier in patient.identifiers:
+            self.delete_patient_identifier(patient_uuid, identifier.uuid)
 
     def create_user_from_existing_person(self, create_user_request: CreateUserFromExistingPersonRequest) -> CreateUserResponse:
         user = self._vcr(Endpoint.CREATE_USER_FROM_PERSON, ResponseSpecs.entity_was_created()).post(create_user_request)
@@ -227,6 +232,9 @@ class UserSteps(BaseSteps):
         return user
 
     def delete_user(self, user_uuid: str, purge: bool = True):
+        user_dao = DatabaseSteps.get_user_by_uuid(user_uuid)
+        DatabaseSteps.delete_log_entry_for_user(user_dao.user_id)
+
         params = {"purge": "true"} if purge else None
         self._cr(Endpoint.DELETE_USER, ResponseSpecs.entity_was_deleted()).delete_with_params(id=user_uuid, params=params)
 
@@ -263,6 +271,15 @@ class UserSteps(BaseSteps):
             location=location_uuid,
             preferred=True,
         )
+
+    def delete_patient_identifier(self, patient_uuid: str, identifier_uuid: str, purge: bool = True):
+        params = {"purge": "true"} if purge else None
+
+        self._cr(Endpoint.DELETE_PATIENT_IDENTIFIER, ResponseSpecs.entity_was_deleted())\
+            .delete_with_params(id=identifier_uuid, params=params,
+                                url_metadata={
+                                    "target_patient_uuid": patient_uuid
+                                })
 
     def update_person(self, person_uuid: str, payload: UpdatePersonRequest):
         return self._vcr(

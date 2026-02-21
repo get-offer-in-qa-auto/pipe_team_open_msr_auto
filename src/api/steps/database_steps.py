@@ -26,6 +26,16 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    def get_user_by_uuid(user_uuid: str) -> UserDao:
+        return (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("users")
+            .where(Condition.equal_to("uuid", user_uuid))
+            .extract_as(UserDao)
+        )
+
+    @staticmethod
     def get_patient_by_id(patient_id: int) -> PatientDao:
         return (
             DBRequest.builder()
@@ -246,3 +256,14 @@ class DatabaseSteps:
             f"Got (sec):      {actual_stop}\n"
             f"Raw got:        {row['date_stopped']}"
         )
+
+    @staticmethod
+    def delete_log_entry_for_user(user_id: int):
+        deleted_logs = (
+            DBRequest.builder()
+            .request_type(RequestType.DELETE)
+            .table("idgen_log_entry")
+            .where(Condition.equal_to("generated_by", user_id))
+            .execute()
+        )
+        return deleted_logs

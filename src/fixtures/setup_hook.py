@@ -25,10 +25,10 @@ def user_session_extension(
     auth_index = int(mark.kwargs.get("auth", 0))
 
     users: List[BaseCreateUserRequest] = [
-        user_factory() for _ in range(count)
+        req for req, _ in (user_factory() for _ in range(count))
     ]
     SessionStorage.add_users(users)
-    LoginPage(page).auth_as_user(page, users[auth_index])
+    LoginPage(page).auth_as_user(users[auth_index])
 
     yield
 
@@ -59,7 +59,6 @@ def admin_session_autologin(
 
     OpenMsrHomePage(page).open().wait_until_loaded()
     yield
-
 
 
 @pytest.fixture()

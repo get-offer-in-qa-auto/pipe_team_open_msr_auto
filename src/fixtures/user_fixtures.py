@@ -14,19 +14,25 @@ from src.api.models.responses.create_user_response import CreateUserResponse
 
 @pytest.fixture
 def user_factory(api_manager: ApiManager):
-    def create_user() -> BaseCreateUserRequest:
-        user_data = RandomModelGenerator.generate(BaseCreateUserRequest)
-        #api_manager.user_steps.
-        return user_data
+    def _create_user(roles: Optional[List[str]] = None) -> tuple[BaseCreateUserRequest, CreateUserResponse]:
+        create_person_request: CreatePersonRequest = RandomModelGenerator.generate(CreatePersonRequest)
+        person_data: CreatePersonResponse = api_manager.user_steps.create_person(create_person_request)
 
-    yield create_user
+        if roles is None:
+            roles = ["Privilege Level: Full"]
+
+        roles_uuids = [role_info.uuid for role_info in api_manager.user_steps.get_roles().results if role_info.display in roles]
+
+        return _create_user_with_roles(api_manager, person_data.uuid, roles_uuids)
+
+    yield _create_user
 
 
 @pytest.fixture(scope="function")
 def user_request(user_factory):
     try:
-        return SessionStorage.get_user(0)
-    except Exception:
+        return SessionStorage.get_user(-1)
+    except:
         user = user_factory()
         return user
 
@@ -82,7 +88,7 @@ def create_user_with_privileges(api_manager: ApiManager):
 def created_person(api_manager: ApiManager):
     return api_manager.user_steps.create_person(RandomModelGenerator.generate(CreatePersonRequest))
 
-def _create_user_with_roles(api_manager: ApiManager, person_uuid: str, roles: List[str]):
+def _create_user_with_roles(api_manager: ApiManager, person_uuid: str, roles: List[str]) -> tuple[BaseCreateUserRequest, CreateUserResponse]:
     create_user_request: Optional[CreateUserFromExistingPersonRequest] = RandomModelGenerator.generate(
         CreateUserFromExistingPersonRequest)
     create_user_request.person = person_uuid
