@@ -43,7 +43,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--seed",
         action="store",
-        default=100, # move to env files later
+        default=Config.get("default_seed", 100), # move to env files later
         help="Seed for random generators. If not set, a new seed is generated per run (and shared across xdist workers).",
     )
 

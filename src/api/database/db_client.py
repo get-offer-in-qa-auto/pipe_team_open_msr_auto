@@ -14,6 +14,7 @@ T = TypeVar("T")
 
 class RequestType(str, Enum):
     SELECT = "SELECT"
+    DELETE = "DELETE"
 
 def _db_config() -> dict:
     """
@@ -48,6 +49,14 @@ def fetch_all(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[Li
         with conn.cursor(dictionary=True) as cur:
             cur.execute(sql, params or ())
             return cast(List[Dict[str, Any]], cur.fetchall())
+
+def execute_non_query(sql: str, params: Optional[tuple[Any, ...]] = None) -> int:
+    """Выполняет UPDATE/DELETE/INSERT и возвращает количество измененных строк."""
+    with db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params or ())
+            conn.commit()  # Важно для MariaDB/MySQL
+            return cur.rowcount
 
 @dataclass(frozen=True)
 class Condition:
@@ -149,3 +158,22 @@ class DBRequestBuilder:
 
         rows = fetch_all(sql, params)
         return [dao_cls(**row) for row in rows]
+
+    def execute(self) -> int:
+        """Метод для выполнения DELETE запросов."""
+        if self._request_type != RequestType.DELETE:
+            raise NotImplementedError(f"Use extract methods for {self._request_type}")
+        if not self._table:
+            raise ValueError("Table is required")
+
+        sql = f"DELETE FROM {self._table}"
+        params: tuple[Any, ...] = ()
+
+        if self._where:
+            sql += f" WHERE {self._where.sql}"
+            params = self._where.params
+        else:
+            # Защита от случайного удаления всей таблицы
+            raise ValueError("DELETE request must have a WHERE condition for safety")
+
+        return execute_non_query(sql, params)

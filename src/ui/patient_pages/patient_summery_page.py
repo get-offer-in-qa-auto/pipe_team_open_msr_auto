@@ -78,7 +78,6 @@ class PatientSummaryPage(BasePage):
     def should_be_opened(self):
         url = self.page.url
         assert "/patient/" in url
-        #assert "Summary" in url???
 
         return self
 
