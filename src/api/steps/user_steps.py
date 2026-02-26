@@ -27,6 +27,9 @@ from src.api.specs.response_spec import ResponseSpecs
 from src.api.steps import database_steps
 from src.api.steps.base_steps import BaseSteps
 from src.api.steps.database_steps import DatabaseSteps
+from src.api.models.requests.create_patient_request import CreatePatientRequest
+from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
+from src.api.models.responses.create_patient_response import PatientCreateResponse
 
 
 class UserSteps(BaseSteps):
@@ -97,6 +100,79 @@ class UserSteps(BaseSteps):
 
         self.created_objects.append(patient_created)
         return patient_created
+
+    def create_patient(
+            self,
+            patient_request: CreatePatientRequest,
+            user_request: Optional[BaseCreateUserRequest] = None,
+    ) -> PatientCreateResponse:
+        request_spec = (
+            RequestSpecs.auth_as_user(user_request.username, user_request.password)
+            if user_request
+            else RequestSpecs.admin_auth_spec()
+        )
+
+        patient_created = ValidatedCrudRequester(
+            request_spec=request_spec,
+            endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
+            response_spec=ResponseSpecs.entity_was_created(),
+        ).post(patient_request)
+
+        assert patient_created.uuid, f"patient_created.uuid is falsy: {patient_created}"
+
+        self.created_objects.append(patient_created)
+        return patient_created
+
+    def build_create_patient_request(self) -> CreatePatientRequest:
+        identifier_template = self.build_identifier_request()
+
+        unique_identifier = generate_mod30_identifier(total_len=10)
+
+        person = RandomModelGenerator.generate(
+            CreatePatientRequest.model_fields["person"].annotation
+        )
+
+        return CreatePatientRequest(
+            identifiers=[
+                PatientIdentifierRequest(
+                    identifier=unique_identifier,
+                    identifierType=identifier_template.identifierType,
+                    location=identifier_template.location,
+                    preferred=True,
+                )
+            ],
+            person=person
+        )
+
+    def create_patient_invalid_request(
+            self,
+            patient_request: CreatePatientRequest,
+            user_request: BaseCreateUserRequest,
+            response_spec
+    ):
+        CrudRequester(
+            request_spec=RequestSpecs.auth_as_user(
+                user_request.username,
+                user_request.password
+            ),
+            endpoint=Endpoint.CREATE_PATIENT_FROM_PERSON,
+            response_spec=response_spec
+        ).post(patient_request)
+
+    def create_patient_with_new_person_invalid_request(
+            self,
+            patient_request: CreatePatientRequest,
+            user_request: BaseCreateUserRequest,
+            response_spec
+    ):
+        CrudRequester(
+            request_spec=RequestSpecs.auth_as_user(
+                user_request.username,
+                user_request.password
+            ),
+            endpoint=Endpoint.CREATE_PATIENT,  # ← правильный endpoint
+            response_spec=response_spec
+        ).post(patient_request)
 
     def verify_patient_created(self,
                                created_patient_response: PatientCreateResponse,
