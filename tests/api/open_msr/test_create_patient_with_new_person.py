@@ -110,3 +110,21 @@ class TestCreatePatientWithNewPerson:
         api_manager.database_steps.verify_patient_not_created_by_identifier(
             original_identifier
         )
+
+    # invalid person root field
+    @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
+    def test_create_patient_missing_person(self, api_manager):
+        request = api_manager.user_steps.build_create_patient_request()
+
+        original_identifier = request.identifiers[0].identifier
+
+        del request.person
+
+        api_manager.user_steps.create_patient_with_new_person_invalid_request(
+            patient_request=request,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message("person")
+        )
+
+        api_manager.database_steps.verify_patient_not_created_by_identifier(
+            original_identifier
+        )

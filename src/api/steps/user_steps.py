@@ -162,15 +162,18 @@ class UserSteps(BaseSteps):
     def create_patient_with_new_person_invalid_request(
             self,
             patient_request: CreatePatientRequest,
-            user_request: BaseCreateUserRequest,
-            response_spec
+            user_request: Optional[BaseCreateUserRequest] = None,
+            response_spec=None
     ):
+        request_spec = (
+            RequestSpecs.auth_as_user(user_request.username, user_request.password)
+            if user_request
+            else RequestSpecs.admin_auth_spec()
+        )
+
         CrudRequester(
-            request_spec=RequestSpecs.auth_as_user(
-                user_request.username,
-                user_request.password
-            ),
-            endpoint=Endpoint.CREATE_PATIENT,  # ← правильный endpoint
+            request_spec=request_spec,
+            endpoint=Endpoint.CREATE_PATIENT,
             response_spec=response_spec
         ).post(patient_request)
 
