@@ -177,6 +177,17 @@ class UserSteps(BaseSteps):
             response_spec=response_spec
         ).post(patient_request)
 
+        # response = CrudRequester(
+        #     request_spec=request_spec,
+        #     endpoint=Endpoint.CREATE_PATIENT,
+        #     response_spec=response_spec
+        # ).post(patient_request)
+        #
+        # print("STATUS:", response.status_code)
+        # print("BODY:", response.text)
+        #
+        # return response
+
     def verify_patient_created(self,
                                created_patient_response: PatientCreateResponse,
                                identifiers: List[PatientIdentifierRequest]):

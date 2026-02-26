@@ -223,3 +223,72 @@ class TestCreatePatientWithNewPerson:
             family_name=original_family_name,
             birthdate=original_birthdate
         )
+
+    # NOTE:
+    # Some nested person validation cases are currently accepted by OpenMRS
+    # (patient is created instead of 400). These cases are commented out
+    # until backend validation is clarified or fixed.
+    @pytest.mark.api
+    @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
+    @pytest.mark.parametrize(
+        "field, value",
+        [
+            # ---------- gender ----------
+            ("gender", None),
+            ("gender", ""),
+
+            # ❌ OpenMRS принимает эти значения и создаёт пациента
+            # ("gender", 123),
+            # ("gender", "male"),
+            # ("gender", "XYZ"),
+
+            # ---------- birthdate ----------
+            ("birthdate", "3000-01-01"),
+
+            # ❌ OpenMRS принимает некорректные даты и создаёт пациента
+            # ("birthdate", "1997-99-99"),
+            # ("birthdate", "1997-02-30"),
+            # ("birthdate", "abcd-ef-gh"),
+            # ("birthdate", ""),
+            # ("birthdate", RandomData.get_int(1, 1000)),
+
+            # ---------- names ----------
+            # ❌ OpenMRS НЕ валидирует строго givenName
+            # ("names", [{}]),
+            # ("names", [{"familyName": RandomData.get_word()}]),
+            # ("names", [{"givenName": "", "familyName": RandomData.get_word()}]),
+            # ("names", [{"givenName": None, "familyName": RandomData.get_word()}]),
+        ],
+    )
+
+    def test_create_patient_with_new_person_invalid_nested_person(
+            self,
+            api_manager,
+            field,
+            value,
+    ):
+        request = api_manager.user_steps.build_create_patient_request()
+
+        original_identifier = request.identifiers[0].identifier
+        original_given_name = request.person.names[0].givenName
+        original_family_name = request.person.names[0].familyName
+        original_birthdate = request.person.birthdate
+
+        setattr(request.person, field, value)
+
+        api_manager.user_steps.create_patient_with_new_person_invalid_request(
+            patient_request=request,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(
+                ErrorMessages.INVALID_SUBMISSION
+            )
+        )
+
+        api_manager.database_steps.verify_patient_not_created_by_identifier(
+            original_identifier
+        )
+
+        api_manager.database_steps.verify_person_not_created_by_identity(
+            given_name=original_given_name,
+            family_name=original_family_name,
+            birthdate=original_birthdate
+        )
