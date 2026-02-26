@@ -73,6 +73,15 @@ class Condition:
         return Condition(sql=f"{column} = %s", params=(value,))
 
     @staticmethod
+    def raw(sql: str, *params: Any) -> "Condition":
+        """
+        Allows passing custom SQL condition with parameters.
+        Example:
+            Condition.raw("DATE(p.birthdate) = DATE(%s)", birthdate)
+        """
+        return Condition(sql=sql, params=tuple(params))
+
+    @staticmethod
     def and_(*conditions: "Condition") -> "Condition":
         conds = [c for c in conditions if c is not None]
         if not conds:
@@ -93,6 +102,7 @@ class DBRequestBuilder:
         self._request_type: Optional[RequestType] = None
         self._table: Optional[str] = None
         self._where: Optional[Condition] = None
+        self._joins: list[str] = []
 
     def request_type(self, request_type: RequestType) -> "DBRequestBuilder":
         self._request_type = request_type
@@ -106,6 +116,15 @@ class DBRequestBuilder:
         self._where = condition
         return self
 
+    def join(self, table: str, condition: str) -> "DBRequestBuilder":
+        """
+        Adds INNER JOIN to the query.
+        Example:
+            .join("person_name pn", "pn.person_id = p.person_id")
+        """
+        self._joins.append(f"JOIN {table} ON {condition}")
+        return self
+
     def extract_as(self, dao_cls: Type[T]) -> T:
         if self._request_type != RequestType.SELECT:
             raise NotImplementedError(f"Request type not supported: {self._request_type}")
@@ -113,6 +132,10 @@ class DBRequestBuilder:
             raise ValueError("Table is required")
 
         sql = f"SELECT * FROM {self._table}"
+
+        if self._joins:
+            sql += " " + " ".join(self._joins)
+
         params: tuple[Any, ...] = ()
         if self._where:
             sql += f" WHERE {self._where.sql}"
@@ -132,6 +155,10 @@ class DBRequestBuilder:
             raise ValueError("Table is required")
 
         sql = f"SELECT * FROM {self._table}"
+
+        if self._joins:
+            sql += " " + " ".join(self._joins)
+
         params: tuple[Any, ...] = ()
         if self._where:
             sql += f" WHERE {self._where.sql}"
@@ -150,6 +177,10 @@ class DBRequestBuilder:
             raise ValueError("Table is required")
 
         sql = f"SELECT * FROM {self._table}"
+
+        if self._joins:
+            sql += " " + " ".join(self._joins)
+
         params: tuple[Any, ...] = ()
 
         if self._where:

@@ -128,3 +128,98 @@ class TestCreatePatientWithNewPerson:
         api_manager.database_steps.verify_patient_not_created_by_identifier(
             original_identifier
         )
+
+    # @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
+    # def test_create_patient_rollback_on_invalid_identifier(self, api_manager):
+    #     request = api_manager.user_steps.build_create_patient_request()
+    #
+    #     original_identifier = request.identifiers[0].identifier
+    #     original_given_name = request.person.names[0].givenName
+    #     original_family_name = request.person.names[0].familyName
+    #     original_birthdate = request.person.birthdate
+    #
+    #     # ломаем identifier
+    #     request.identifiers[0].identifier = ""
+    #
+    #     api_manager.user_steps.create_patient_with_new_person_invalid_request(
+    #         patient_request=request,
+    #         response_spec=ResponseSpecs.request_returns_bad_request_with_message(
+    #             ErrorMessages.INVALID_SUBMISSION
+    #         )
+    #     )
+    #
+    #     # patient не создан
+    #     api_manager.database_steps.verify_patient_not_created_by_identifier(
+    #         original_identifier
+    #     )
+    #
+    #     # person не создан (rollback check)
+    #     api_manager.database_steps.verify_person_not_created_by_identity(
+    #         given_name=original_given_name,
+    #         family_name=original_family_name,
+    #         birthdate=original_birthdate
+    #     )
+
+    @pytest.mark.api
+    @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
+    @pytest.mark.parametrize(
+        "field, value, error_message",
+        [
+            # identifierType
+            ("identifierType", "", ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+            ("identifierType", None, ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+            ("identifierType", RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER_TYPE),
+            ("identifierType", RandomData.get_word(), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+            ("identifierType", str(RandomData.get_uuid()), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+
+            # location
+            ("location", "", ErrorMessages.EMPTY_LOCATION),
+            ("location", None, ErrorMessages.EMPTY_LOCATION),
+            ("location", RandomData.get_int(1, 1000), ErrorMessages.INT_LOCATION),
+            ("location", RandomData.get_word(), ErrorMessages.EMPTY_LOCATION),
+            ("location", str(RandomData.get_uuid()), ErrorMessages.EMPTY_LOCATION),
+
+            # identifier
+            ("identifier", "", ErrorMessages.INVALID_SUBMISSION),
+            ("identifier", None, ErrorMessages.INVALID_SUBMISSION),
+            ("identifier", RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER),
+            ("identifier", RandomData.get_word(), ErrorMessages.INVALID_SUBMISSION),
+            ("identifier", "a", ErrorMessages.INVALID_SUBMISSION),
+            ("identifier", "MRN#123", ErrorMessages.INVALID_SUBMISSION),
+            ("identifier", RandomData.get_string(256), ErrorMessages.INVALID_SUBMISSION),
+        ],
+    )
+    def test_create_patient_with_new_person_invalid_identifier(
+            self,
+            api_manager,
+            field,
+            value,
+            error_message
+    ):
+        request = api_manager.user_steps.build_create_patient_request()
+
+        identifier = request.identifiers[0]
+
+        original_identifier = identifier.identifier
+        original_given_name = request.person.names[0].givenName
+        original_family_name = request.person.names[0].familyName
+        original_birthdate = request.person.birthdate
+
+        setattr(identifier, field, value)
+
+        api_manager.user_steps.create_patient_with_new_person_invalid_request(
+            patient_request=request,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(
+                error_message
+            )
+        )
+
+        api_manager.database_steps.verify_patient_not_created_by_identifier(
+            original_identifier
+        )
+
+        api_manager.database_steps.verify_person_not_created_by_identity(
+            given_name=original_given_name,
+            family_name=original_family_name,
+            birthdate=original_birthdate
+        )

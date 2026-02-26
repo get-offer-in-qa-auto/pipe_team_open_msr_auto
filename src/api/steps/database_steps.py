@@ -178,11 +178,8 @@ class DatabaseSteps:
         )
 
         assert not persons, (
-            f"Person unexpectedly created in DB "
-            f"(found {len(persons)} records) "
-            f"given_name='{given_name}', "
-            f"family_name='{family_name}', "
-            f"birthdate='{birthdate}'"
+            f"Person was created but should not exist. "
+            f"Found: {persons}"
         )
 
     @staticmethod
@@ -200,8 +197,9 @@ class DatabaseSteps:
                 "pn.given_name = %s AND pn.family_name = %s AND DATE(p.birthdate) = DATE(%s)",
                 given_name, family_name, birthdate
             ))
-            .extract_as(PersonDao)
+            .extract_all_as(PersonDao)
         )
+
     @staticmethod
     def verify_patient_created_from_existing_person(person_uuid: str, identifiers: List[PatientIdentifierRequest]):
         person_dao = DatabaseSteps.get_person_by_uuid(person_uuid)
