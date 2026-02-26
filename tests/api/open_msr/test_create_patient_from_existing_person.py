@@ -26,7 +26,7 @@ class TestCreatePatientFromExistingPerson:
         "Organizational: Doctor",
     ])
     def test_create_patient_from_existing_person_with_role(self, api_manager, create_user_with_roles, created_person, role):
-        user_request, _ = create_user_with_roles()
+        user_request, _ = create_user_with_roles([role])
 
         identifiers = [api_manager.user_steps.build_identifier_request()]
         create_patient_response  = api_manager.user_steps.create_patient_from_person(person=created_person.uuid,

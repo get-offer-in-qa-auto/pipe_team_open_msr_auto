@@ -1,6 +1,7 @@
 import pytest
 from playwright.sync_api import expect, Page
 
+from src.api.constants.error_messages import ErrorMessages
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.ui.login_pages.login_location_page import LoginLocationPage
 from src.ui.login_pages.login_page import LoginPage
@@ -38,6 +39,15 @@ class TestLoginUser:
 
         expect(open_msr_home_page.add_patient_button).to_be_visible()
 
+    @pytest.mark.usefixtures('api_manager', 'create_user_with_roles')
+    def test_login_as_disabled_user(self, api_manager, page, create_user_with_roles):
+        user_request, user_data = create_user_with_roles()
+        api_manager.user_steps.delete_user(user_data.uuid, purge=False)
 
-
-
+        LoginPage(page)\
+        .open()\
+        .login(
+            user_request.username,
+            user_request.password
+        )\
+        .should_have_error_message(ErrorMessages.INVALID_USERNAME_OR_PASSWORD)
