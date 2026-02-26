@@ -129,36 +129,36 @@ class TestCreatePatientWithNewPerson:
             original_identifier
         )
 
-    # @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
-    # def test_create_patient_rollback_on_invalid_identifier(self, api_manager):
-    #     request = api_manager.user_steps.build_create_patient_request()
-    #
-    #     original_identifier = request.identifiers[0].identifier
-    #     original_given_name = request.person.names[0].givenName
-    #     original_family_name = request.person.names[0].familyName
-    #     original_birthdate = request.person.birthdate
-    #
-    #     # ломаем identifier
-    #     request.identifiers[0].identifier = ""
-    #
-    #     api_manager.user_steps.create_patient_with_new_person_invalid_request(
-    #         patient_request=request,
-    #         response_spec=ResponseSpecs.request_returns_bad_request_with_message(
-    #             ErrorMessages.INVALID_SUBMISSION
-    #         )
-    #     )
-    #
-    #     # patient не создан
-    #     api_manager.database_steps.verify_patient_not_created_by_identifier(
-    #         original_identifier
-    #     )
-    #
-    #     # person не создан (rollback check)
-    #     api_manager.database_steps.verify_person_not_created_by_identity(
-    #         given_name=original_given_name,
-    #         family_name=original_family_name,
-    #         birthdate=original_birthdate
-    #     )
+    @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
+    def test_create_patient_rollback_on_invalid_identifier(self, api_manager):
+        request = api_manager.user_steps.build_create_patient_request()
+
+        original_identifier = request.identifiers[0].identifier
+        original_given_name = request.person.names[0].givenName
+        original_family_name = request.person.names[0].familyName
+        original_birthdate = request.person.birthdate
+
+        # ломаем identifier
+        request.identifiers[0].identifier = ""
+
+        api_manager.user_steps.create_patient_with_new_person_invalid_request(
+            patient_request=request,
+            response_spec=ResponseSpecs.request_returns_bad_request_with_message(
+                ErrorMessages.INVALID_SUBMISSION
+            )
+        )
+
+        # patient не создан
+        api_manager.database_steps.verify_patient_not_created_by_identifier(
+            original_identifier
+        )
+
+        # person не создан (rollback check)
+        api_manager.database_steps.verify_person_not_created_by_identity(
+            given_name=original_given_name,
+            family_name=original_family_name,
+            birthdate=original_birthdate
+        )
 
     @pytest.mark.api
     @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
