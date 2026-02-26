@@ -44,6 +44,58 @@ def check_visit_persisted(request):
 
 
 @pytest.fixture(autouse=True)
+def check_visit_created_in_db(request, api_manager):
+    mark = request.node.get_closest_marker("check_visit_created_in_db")
+    if not mark:
+        yield
+        return
+
+    request.getfixturevalue("created_objects")
+
+    expected_delta = mark.kwargs.get("expected_delta", 1)
+    patient_fixture = mark.kwargs.get("patient_fixture", "created_patient")
+
+    patient = request.getfixturevalue(patient_fixture)
+
+    person = api_manager.database_steps.get_person_by_uuid(patient.uuid)
+    patient_id = person.person_id
+
+    before = api_manager.database_steps.count_visits_by_patient_id(patient_id)
+
+    yield
+
+    after = api_manager.database_steps.count_visits_by_patient_id(patient_id)
+
+    assert after - before == expected_delta, (
+        f"check_visit_created_in_db expects delta={expected_delta}, got {after - before}. "
+        f"(before={before}, after={after}, patient_id={patient_id}, patient_uuid={patient.uuid})"
+    )
+
+
+@pytest.fixture(autouse=True)
+def check_visit_ended_in_db(request, api_manager):
+    mark = request.node.get_closest_marker("check_visit_ended_in_db")
+    if not mark:
+        yield
+        return
+
+    request.getfixturevalue("created_objects")
+
+    visit_fixture = mark.kwargs.get("visit_fixture", "created_visit")
+    visit = request.getfixturevalue(visit_fixture)
+
+    visit_uuid = visit.uuid
+
+    before = api_manager.database_steps.get_visit_by_uuid(visit_uuid)
+    assert before.date_stopped is None, f"Visit already stopped before test: uuid={visit_uuid}, date_stopped={before.date_stopped}"
+
+    yield
+
+    after = api_manager.database_steps.get_visit_by_uuid(visit_uuid)
+    assert after.date_stopped is not None, f"Visit was not ended in DB: uuid={visit_uuid}"
+
+
+@pytest.fixture(autouse=True)
 def check_visit_not_created(request):
     mark = request.node.get_closest_marker("check_visit_not_created")
     if not mark:

@@ -258,6 +258,30 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    def get_active_visit_uuid_by_patient_id(patient_id: int) -> Optional[str]:
+        row = fetch_one(
+            """
+            SELECT uuid
+            FROM visit
+            WHERE patient_id = %s
+              AND voided = 0
+              AND date_stopped IS NULL
+            ORDER BY date_started DESC
+            LIMIT 1
+            """,
+            (patient_id,)
+        )
+        return row["uuid"] if row else None
+
+    @staticmethod
+    def get_visit_date_stopped_by_uuid(visit_uuid: str):
+        row = fetch_one(
+            "SELECT date_stopped FROM visit WHERE uuid = %s LIMIT 1",
+            (visit_uuid,)
+        )
+        return row["date_stopped"] if row else None
+
+    @staticmethod
     def delete_log_entry_for_user(user_id: int):
         deleted_logs = (
             DBRequest.builder()
