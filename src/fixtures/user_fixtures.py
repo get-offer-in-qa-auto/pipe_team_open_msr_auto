@@ -2,6 +2,7 @@ from typing import Optional, List
 
 import pytest
 
+from src.api.generators.random_data import RandomData
 from src.api.classes.api_manager import ApiManager
 from src.api.classes.session_storage import SessionStorage
 from src.api.configs.config import Config
@@ -88,10 +89,21 @@ def create_user_with_privileges(api_manager: ApiManager):
 def created_person(api_manager: ApiManager):
     return api_manager.user_steps.create_person(RandomModelGenerator.generate(CreatePersonRequest))
 
-def _create_user_with_roles(api_manager: ApiManager, person_uuid: str, roles: List[str]) -> tuple[BaseCreateUserRequest, CreateUserResponse]:
-    create_user_request: Optional[CreateUserFromExistingPersonRequest] = RandomModelGenerator.generate(
-        CreateUserFromExistingPersonRequest)
+import uuid
+
+def _create_user_with_roles(api_manager: ApiManager, person_uuid: str, roles: List[str]) \
+        -> tuple[BaseCreateUserRequest, CreateUserResponse]:
+
+    create_user_request: CreateUserFromExistingPersonRequest = \
+        RandomModelGenerator.generate(CreateUserFromExistingPersonRequest)
+
+    # 🔥 ГАРАНТИРОВАННО УНИКАЛЬНЫЙ USERNAME
+    create_user_request.username = f"user_{RandomData.get_uuid()}"
+
     create_user_request.person = person_uuid
     create_user_request.roles = roles
-    user_data: CreateUserResponse = api_manager.user_steps.create_user_from_existing_person(create_user_request)
+
+    user_data: CreateUserResponse = \
+        api_manager.user_steps.create_user_from_existing_person(create_user_request)
+
     return create_user_request, user_data

@@ -97,6 +97,110 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    def verify_patient_created_with_new_person(
+            patient_uuid: str,
+            identifiers: List[PatientIdentifierRequest]
+    ):
+        # 1️⃣ Получаем Person по UUID (именно здесь uuid существует)
+        person_dao = (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("person")
+            .where(Condition.equal_to("uuid", patient_uuid))
+            .extract_as(PersonDao)
+        )
+
+        assert person_dao.voided == False, (
+            f"Person {patient_uuid} is voided in DB"
+        )
+
+        # 2️⃣ Получаем Patient по person_id
+        patient_dao = (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("patient")
+            .where(Condition.equal_to("patient_id", person_dao.person_id))
+            .extract_as(PatientDao)
+        )
+
+        assert patient_dao.voided == False, (
+            f"Patient linked to person_id={person_dao.person_id} is voided in DB"
+        )
+
+        # 3️⃣ Проверяем identifiers
+        for identifier in identifiers:
+            patient_identifier_dao = (
+                DBRequest.builder()
+                .request_type(RequestType.SELECT)
+                .table("patient_identifier")
+                .where(Condition.equal_to("identifier", identifier.identifier))
+                .extract_as(PatientIdentifierDao)
+            )
+
+            assert patient_identifier_dao.voided == False
+            assert patient_identifier_dao.patient_id == person_dao.person_id
+
+            DaoAndModelAssertions.assert_that(
+                identifier,
+                patient_identifier_dao
+            ).match()
+
+    @staticmethod
+    def verify_patient_not_created_by_identifier(identifier: str):
+        patient_identifier = DatabaseSteps.find_patient_identifier_by_identifier(identifier)
+
+        assert patient_identifier is None, (
+            f"Patient with identifier '{identifier}' was unexpectedly created"
+        )
+
+    @staticmethod
+    def find_patient_identifier_by_identifier(identifier: str):
+        try:
+            return (
+                DBRequest.builder()
+                .request_type(RequestType.SELECT)
+                .table("patient_identifier")
+                .where(Condition.equal_to("identifier", identifier))
+                .extract_optional_as(PatientIdentifierDao)
+            )
+        except AssertionError:
+            return None
+
+    @staticmethod
+    def verify_person_not_created_by_identity(
+            given_name: str,
+            family_name: str,
+            birthdate: str
+    ):
+        persons = DatabaseSteps.get_persons_by_identity(
+            given_name=given_name,
+            family_name=family_name,
+            birthdate=birthdate
+        )
+
+        assert not persons, (
+            f"Person was created but should not exist. "
+            f"Found: {persons}"
+        )
+
+    @staticmethod
+    def get_persons_by_identity(
+            given_name: str,
+            family_name: str,
+            birthdate: str
+    ):
+        return (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("person p")
+            .join("person_name pn", "pn.person_id = p.person_id")
+            .where(Condition.raw(
+                "pn.given_name = %s AND pn.family_name = %s AND DATE(p.birthdate) = DATE(%s)",
+                given_name, family_name, birthdate
+            ))
+            .extract_all_as(PersonDao)
+        )
+
     def find_person_name_by_given_and_last_name(given_name: str, family_name: str):
         return (
             DBRequest.builder()
@@ -105,7 +209,6 @@ class DatabaseSteps:
             .where(Condition.equal_to("given_name", given_name).and_(Condition.equal_to("family_name", family_name)))
             .extract_optional_as(PersonNameDao)
         )
-
 
     @staticmethod
     def verify_patient_created_from_existing_person(person_uuid: str, identifiers: List[PatientIdentifierRequest]):
