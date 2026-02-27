@@ -3,6 +3,7 @@ from typing import List, Optional
 from src.api.database.dao.patient_dao import PatientDao
 from src.api.database.dao.patient_identifier_dao import PatientIdentifierDao
 from src.api.database.dao.person_dao import PersonDao, PersonAddressDao
+from src.api.database.dao.person_name_dao import PersonNameDao
 from src.api.database.dao.user_dao import UserDao
 from src.api.database.db_client import DBRequest, RequestType, Condition
 from src.api.models.comparison.dao_and_model_assertions import DaoAndModelAssertions
@@ -198,6 +199,15 @@ class DatabaseSteps:
                 given_name, family_name, birthdate
             ))
             .extract_all_as(PersonDao)
+        )
+
+    def find_person_name_by_given_and_last_name(given_name: str, family_name: str):
+        return (
+            DBRequest.builder()
+            .request_type(RequestType.SELECT)
+            .table("person_name")
+            .where(Condition.equal_to("given_name", given_name).and_(Condition.equal_to("family_name", family_name)))
+            .extract_optional_as(PersonNameDao)
         )
 
     @staticmethod

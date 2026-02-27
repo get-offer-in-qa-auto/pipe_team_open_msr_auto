@@ -1,3 +1,5 @@
+from playwright.sync_api import expect
+
 from src.ui.base_page import BasePage
 
 
@@ -19,6 +21,10 @@ class LoginPage(BasePage):
     def login_button(self):
         return self.page.get_by_role("button", name="Log in")
 
+    @property
+    def notification_error(self):
+        return self.page.locator(".cds--inline-notification--error[role='status']")
+
     def url(self) -> str:
         return "/login"
 
@@ -29,3 +35,7 @@ class LoginPage(BasePage):
         self.login_button.click()
         return self
 
+    def should_have_error_message(self, message: str):
+        expect(self.notification_error).to_be_visible()
+        expect(self.notification_error).to_contain_text(message)
+        return self
