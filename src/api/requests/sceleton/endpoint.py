@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from src.api.models.requests.create_patient_request import CreatePatientRequest
 from src.api.models.base_model import BaseModel
 from src.api.models.requests.create_patient_from_person_request import CreatePatientFromPersonRequest
 from src.api.models.requests.create_person_request import CreatePersonRequest
@@ -95,6 +96,12 @@ class Endpoint(Enum):
     CREATE_PATIENT_FROM_PERSON = EndpointConfig(
         url="/patient",
         request_model=CreatePatientFromPersonRequest,
+        response_model=PatientCreateResponse
+    )
+
+    CREATE_PATIENT = EndpointConfig(
+        url="/patient",
+        request_model=CreatePatientRequest,
         response_model=PatientCreateResponse
     )
 
