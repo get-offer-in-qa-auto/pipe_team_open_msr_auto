@@ -20,6 +20,8 @@ class ErrorMessages:
     VISIT_OVERLAPS = "This visit overlaps with another visit of the same patient"
     OBJECT_WITH_UUID_DOES_NOT_EXIST = "Object with given uuid doesn't exist [null]"
 
+    INVALID_USERNAME_OR_PASSWORD = "Invalid username or password"
+
     @staticmethod
     def privileges_required(privileges: List[str]):
         return f'User is logged in but doesn\'t have the relevant privilege [Privileges required: {",".join(privileges)}]'
