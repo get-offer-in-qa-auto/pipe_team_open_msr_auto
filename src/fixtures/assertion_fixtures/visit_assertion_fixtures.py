@@ -72,28 +72,6 @@ def check_visit_created_in_db(request, api_manager):
     )
 
 
-@pytest.fixture(autouse=True)
-def check_visit_ended_in_db(request, api_manager):
-    mark = request.node.get_closest_marker("check_visit_ended_in_db")
-    if not mark:
-        yield
-        return
-
-    request.getfixturevalue("created_objects")
-
-    visit_fixture = mark.kwargs.get("visit_fixture", "created_visit")
-    visit = request.getfixturevalue(visit_fixture)
-
-    visit_uuid = visit.uuid
-
-    before = api_manager.database_steps.get_visit_by_uuid(visit_uuid)
-    assert before.date_stopped is None, f"Visit already stopped before test: uuid={visit_uuid}, date_stopped={before.date_stopped}"
-
-    yield
-
-    after = api_manager.database_steps.get_visit_by_uuid(visit_uuid)
-    assert after.date_stopped is not None, f"Visit was not ended in DB: uuid={visit_uuid}"
-
 
 @pytest.fixture(autouse=True)
 def check_visit_not_created(request):
@@ -154,26 +132,6 @@ def check_visit_deleted(request):
 
 
 @pytest.fixture(autouse=True)
-def check_visit_voided_in_db(request, api_manager):
-    mark = request.node.get_closest_marker("check_visit_voided_in_db")
-    if not mark:
-        yield
-        return
-
-    request.getfixturevalue("created_objects")
-
-    visit_fixture = mark.kwargs.get("visit_fixture", "created_visit")
-    visit = request.getfixturevalue(visit_fixture)
-    visit_uuid = visit.uuid
-
-    yield
-
-    row = api_manager.database_steps.get_visit_row_by_uuid(visit_uuid)
-    assert row is not None, f"Visit row not found by uuid={visit_uuid}"
-    assert bool(row["voided"]) is True, f"Visit was not voided in DB, uuid={visit_uuid}, voided={row['voided']}"
-
-
-@pytest.fixture(autouse=True)
 def check_visit_updated(request):
     mark = request.node.get_closest_marker("check_visit_updated")
     if not mark:
@@ -210,8 +168,8 @@ def check_visit_updated(request):
 
 
 @pytest.fixture(autouse=True)
-def check_visit_not_ended_in_db(request, api_manager):
-    mark = request.node.get_closest_marker("check_visit_not_ended_in_db")
+def check_visit_db_state(request, api_manager):
+    mark = request.node.get_closest_marker("check_visit_db_state")
     if not mark:
         yield
         return
@@ -219,10 +177,26 @@ def check_visit_not_ended_in_db(request, api_manager):
     request.getfixturevalue("created_objects")
 
     visit_fixture = mark.kwargs.get("visit_fixture", "created_visit")
+    expected_ended = mark.kwargs.get("ended", None)     # True/False/None
+    expected_voided = mark.kwargs.get("voided", None)   # True/False/None
+
     visit = request.getfixturevalue(visit_fixture)
     visit_uuid = visit.uuid
 
     yield
 
     db_visit = api_manager.database_steps.get_visit_by_uuid(visit_uuid)
-    assert db_visit.date_stopped is None, f"Visit unexpectedly ended in DB: uuid={visit_uuid}, date_stopped={db_visit.date_stopped}"
+
+    if expected_ended is not None:
+        is_ended = db_visit.date_stopped is not None
+        assert is_ended == bool(expected_ended), (
+            f"check_visit_db_state ended mismatch: expected ended={expected_ended}, got ended={is_ended}. "
+            f"uuid={visit_uuid}, date_stopped={db_visit.date_stopped}"
+        )
+
+    if expected_voided is not None:
+        is_voided = bool(db_visit.voided)
+        assert is_voided == bool(expected_voided), (
+            f"check_visit_db_state voided mismatch: expected voided={expected_voided}, got voided={is_voided}. "
+            f"uuid={visit_uuid}, voided={db_visit.voided}"
+        )

@@ -26,7 +26,7 @@ class TestVisitActions:
 
     @pytest.mark.usefixtures("admin_session_autologin")
     @pytest.mark.admin_session
-    @pytest.mark.check_visit_ended_in_db(visit_fixture="created_visit")
+    @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=True)
     def test_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
             .should_be_opened() \
@@ -38,7 +38,7 @@ class TestVisitActions:
 
     @pytest.mark.usefixtures("admin_session_autologin")
     @pytest.mark.admin_session
-    @pytest.mark.check_visit_voided_in_db(visit_fixture="created_visit")
+    @pytest.mark.check_visit_db_state(visit_fixture="created_visit", voided=True)
     def test_delete_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
             .should_be_opened() \
@@ -50,7 +50,7 @@ class TestVisitActions:
 
     @pytest.mark.usefixtures("admin_session_autologin")
     @pytest.mark.admin_session
-    @pytest.mark.check_visit_not_ended_in_db(visit_fixture="created_visit")
+    @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=False)
     def test_cancel_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open() \
             .should_be_opened() \
