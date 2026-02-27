@@ -160,7 +160,7 @@ class DatabaseSteps:
                 .request_type(RequestType.SELECT)
                 .table("patient_identifier")
                 .where(Condition.equal_to("identifier", identifier))
-                .extract_as(PatientIdentifierDao)
+                .extract_optional_as(PatientIdentifierDao)
             )
         except AssertionError:
             return None

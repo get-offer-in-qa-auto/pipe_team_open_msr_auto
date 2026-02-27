@@ -2,6 +2,7 @@ from typing import Optional, List
 
 import pytest
 
+from src.api.generators.random_data import RandomData
 from src.api.classes.api_manager import ApiManager
 from src.api.classes.session_storage import SessionStorage
 from src.api.configs.config import Config
@@ -97,7 +98,7 @@ def _create_user_with_roles(api_manager: ApiManager, person_uuid: str, roles: Li
         RandomModelGenerator.generate(CreateUserFromExistingPersonRequest)
 
     # 🔥 ГАРАНТИРОВАННО УНИКАЛЬНЫЙ USERNAME
-    create_user_request.username = f"user_{uuid.uuid4().hex}"
+    create_user_request.username = f"user_{RandomData.get_uuid()}"
 
     create_user_request.person = person_uuid
     create_user_request.roles = roles
