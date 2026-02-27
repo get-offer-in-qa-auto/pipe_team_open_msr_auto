@@ -7,7 +7,6 @@ from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.comparison.model_assertions import ModelAssertions
 
 from src.api.models.requests.create_person_request import CreatePersonRequest
-from src.ui.mappers.person_ui_mapper import PersonUiMapper
 from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_create_page import PatientCreatePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
@@ -24,24 +23,22 @@ class TestCreatePatientByAdminUser:
     ):
         ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
 
-        person_full = (
-            OpenMsrHomePage(page)
-            .open()
-            .click_add_patient()
-            .get_page(PatientCreatePage)
+        person_full = OpenMsrHomePage(page) \
+            .open() \
+            .click_add_patient() \
+            .get_page(PatientCreatePage) \
             .fill_basic_info(
-                given=ui_data.given,
-                family=ui_data.family,
-                gender=ui_data.gender,
-                age=ui_data.age,
-            )
-            .submit()
-            .get_page(PatientSummaryPage)
-            .should_be_opened()
-            .should_have_patient(ui_data.given, ui_data.family)
-            .switch_to_api(api_manager)
+            given=ui_data.given,
+            family=ui_data.family,
+            gender=ui_data.gender,
+            age=ui_data.age,
+        ) \
+            .submit() \
+            .get_page(PatientSummaryPage) \
+            .should_be_opened() \
+            .should_have_patient(ui_data.given, ui_data.family) \
+            .switch_to_api(api_manager) \
             .get_person_full()
-        )
 
         ModelAssertions(ui_data, person_full).match()
 
