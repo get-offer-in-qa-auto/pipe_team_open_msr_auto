@@ -38,7 +38,7 @@ class TestCreatePatientByAdminUser:
             .should_be_opened() \
             .should_have_patient(ui_data.given, ui_data.family) \
             .switch_to_api(api_manager) \
-            .get_person_full()
+            .call_api(api_manager.user_steps.get_person_full)
 
         ModelAssertions(ui_data, person_full).match()
 

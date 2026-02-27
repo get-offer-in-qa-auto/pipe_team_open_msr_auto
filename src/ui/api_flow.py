@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Callable
 
 from src.api.classes.api_manager import ApiManager
+from src.api.models.responses.create_patient_response import PatientCreateResponse
+
 
 @dataclass
 class ApiFlow:
@@ -12,7 +14,24 @@ class ApiFlow:
         self.patient_uuid = patient_uuid
         return self
 
-    def get_person_full(self):
+    def register_created_patient(self, created_objects: list) -> "ApiFlow":
+        """
+        Добавляет PatientCreateResponse(uuid=patient_uuid) в created_objects
+        чтобы teardown удалил пациента.
+        """
         if not self.patient_uuid:
             raise AssertionError("patient_uuid is not set")
-        return self.api_manager.user_steps.get_person_full(self.patient_uuid)
+        created_objects.append(PatientCreateResponse(uuid=self.patient_uuid))
+        return self
+
+    def call_api(self, api_method: Callable):
+        """
+        Вызов любого API-метода с текущим patient_uuid.
+
+        Пример:
+            .call_api(api_manager.user_steps.get_person_full)
+        """
+        if not self.patient_uuid:
+            raise AssertionError("patient_uuid is not set")
+
+        return api_method(self.patient_uuid)

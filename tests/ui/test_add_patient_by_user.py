@@ -42,13 +42,8 @@ class TestCreatePatientByUser:
             .should_be_opened() \
             .should_have_patient(ui_data.given, ui_data.family) \
             .switch_to_api(api_manager) \
-            .get_person_full()
-
-        # чтобы teardown удалил созданного пациента (purge)
-        # TODO: в админ тест или куда - то в подкоморку
-        created_objects.append(
-            PatientCreateResponse(uuid=person_full.uuid)
-        )
+            .register_created_patient(created_objects) \
+            .call_api(api_manager.user_steps.get_person_full)
 
         ModelAssertions(ui_data, person_full).match()
 
@@ -87,11 +82,8 @@ class TestCreatePatientByUser:
             .should_be_opened() \
             .should_have_patient(ui_data.given, ui_data.family) \
             .switch_to_api(api_manager) \
-            .get_person_full()
-
-        created_objects.append(
-            PatientCreateResponse(uuid=person_full.uuid)
-        )
+            .register_created_patient(created_objects) \
+            .call_api(api_manager.user_steps.get_person_full)
 
         ModelAssertions(ui_data, person_full).match()
 
