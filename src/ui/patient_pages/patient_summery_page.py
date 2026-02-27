@@ -1,5 +1,5 @@
-from playwright.sync_api import Locator, expect
 import re
+from playwright.sync_api import Locator, expect
 
 from src.ui.base_page import BasePage
 
@@ -218,3 +218,8 @@ class PatientSummaryPage(BasePage):
 
     def get_patient_name_locator(self, name: str) -> Locator:
         return self.patient_banner.get_by_text(name)
+
+    def should_have_patient(self, given_name: str, family_name: str):
+        expect(self.get_patient_name_locator(f"{given_name} {family_name}")).to_be_visible()
+
+        return self

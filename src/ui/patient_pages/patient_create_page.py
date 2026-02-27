@@ -98,3 +98,9 @@ class PatientCreatePage(BasePage):
     def submit(self):
         self.register_button.click()
         return self
+
+    def should_be_opened(self):
+        url = self.page.url
+        assert self.url() in url
+
+        return self

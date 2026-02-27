@@ -5,6 +5,7 @@ from typing import TypeVar, Type, Callable, List
 from playwright.sync_api import Page, Dialog, Locator
 
 from src.api.configs.config import Config
+from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.api.specs.request_spec import RequestSpecs
 
 T = TypeVar("T", bound="BasePage")
@@ -27,7 +28,7 @@ class BasePage(ABC):
 
     def auth_as_user(
             self,
-            user_request,
+            user_request: BaseCreateUserRequest,
             *,
             location_uuid: str | None = None,
             location_display: str | None = None,
@@ -99,12 +100,6 @@ class BasePage(ABC):
     @abstractmethod
     def url(self) -> str:
         raise NotImplementedError
-
-
-    @abstractmethod
-    def url(self) -> str:
-        raise NotImplementedError
-
 
     def open(self: T) -> T:
         taget = self.url()
