@@ -9,6 +9,10 @@ class PatientSummaryPage(BasePage):
         super().__init__(page)
         self.patient_uuid = patient_uuid
 
+    def remember_patient_uuid(self) -> "PatientSummaryPage":
+        self.patient_uuid = self.get_patient_uuid_from_summery_page()
+        return self
+
     # ---------- URL ----------
 
     def url(self) -> str:
@@ -72,7 +76,7 @@ class PatientSummaryPage(BasePage):
 
     # ---------- Helpers ----------
 
-    def get_patient_uuid(self) -> str:
+    def get_patient_uuid_from_summery_page(self) -> str:
         return self.page.url.split("/patient/")[1].split("/")[0]
 
     def should_be_opened(self):
@@ -88,3 +92,7 @@ class PatientSummaryPage(BasePage):
         expect(self.get_patient_name_locator(f"{given_name} {family_name}")).to_be_visible()
 
         return self
+
+    def switch_to_api(self, api_manager):
+        patient_uuid = self.get_patient_uuid_from_summery_page()
+        return super().switch_to_api(api_manager).with_patient(patient_uuid)

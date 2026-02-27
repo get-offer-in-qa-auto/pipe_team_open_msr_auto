@@ -45,7 +45,7 @@ class TestCreatePatientByUser:
             .should_have_patient(ui_data.given, ui_data.family)
         )
 
-        patient_uuid = patient_summary_page.get_patient_uuid()
+        patient_uuid = patient_summary_page.get_patient_uuid_from_summery_page()
         person_full = api_manager.user_steps.get_person_full(patient_uuid)
         created_objects.append(PatientCreateResponse(uuid=patient_uuid))
 
@@ -67,6 +67,7 @@ class TestCreatePatientByUser:
         user_request, _ = create_user_with_roles([role])
         LoginPage(page).auth_as_user(user_request)
 
+        # объедениь
         person_request = RandomModelGenerator.generate(CreatePersonRequest)
         ui_data = PersonUiMapper.from_request(person_request)
 
@@ -87,7 +88,7 @@ class TestCreatePatientByUser:
             .should_have_patient(ui_data.given, ui_data.family)
         )
 
-        patient_uuid = patient_summary_page.get_patient_uuid()
+        patient_uuid = patient_summary_page.get_patient_uuid_from_summery_page()
         person_full = api_manager.user_steps.get_person_full(patient_uuid)
         created_objects.append(PatientCreateResponse(uuid=patient_uuid))
 

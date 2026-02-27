@@ -22,10 +22,9 @@ class TestCreatePatientByAdminUser:
             page: Page,
             api_manager: ApiManager,
     ):
-        person_request = RandomModelGenerator.generate(CreatePersonRequest)
-        ui_data = PersonUiMapper.from_request(person_request)
+        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
 
-        patient_summary_page = (
+        person_full = (
             OpenMsrHomePage(page)
             .open()
             .click_add_patient()
@@ -40,12 +39,11 @@ class TestCreatePatientByAdminUser:
             .get_page(PatientSummaryPage)
             .should_be_opened()
             .should_have_patient(ui_data.given, ui_data.family)
+            .switch_to_api(api_manager)
+            .get_person_full()
         )
 
-        patient_uuid = patient_summary_page.get_patient_uuid()
-        person_full = api_manager.user_steps.get_person_full(patient_uuid)
-
-        ModelAssertions(person_request, person_full).match()
+        ModelAssertions(ui_data, person_full).match()
 
 
 
