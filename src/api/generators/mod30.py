@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 from typing import Final
+import secrets
 
 # charset из практики OpenMRS Mod-30 (без B I O Q S Z)
 MOD30_ALPHABET: Final[str] = "0123456789ACDEFGHJKLMNPRTUVWXY"
@@ -72,6 +73,6 @@ def generate_mod30_identifier(total_len: int = 10, alphabet: str = MOD30_ALPHABE
         raise ValueError("total_len must be >= 2")
 
     body_len = total_len - 1
-    body = "".join(random.choice(alphabet) for _ in range(body_len))
+    body = "".join(secrets.choice(alphabet) for _ in range(body_len))
     check = luhn_mod_n_check_char(body, alphabet)
     return body + check
