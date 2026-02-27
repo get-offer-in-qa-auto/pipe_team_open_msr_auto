@@ -11,12 +11,24 @@ from src.api.models.responses.create_user_response import CreateUserResponse
 def cleanup_object(objects: list):
     api_manager = ApiManager(objects)
 
+    patients = [o for o in objects if isinstance(o, PatientCreateResponse)]
+    for p in patients:
+        try:
+            person = api_manager.database_steps.get_person_by_uuid(p.uuid)
+            patient_id = person.person_id
+
+            visits = api_manager.database_steps.get_visits_by_patient_id(patient_id)
+            for v in visits:
+                api_manager.visit_steps.delete_visit(v.uuid, purge=True)
+        except Exception:
+            pass
+
     cleanup_tasks = [
-        (PatientCreateResponse, 'delete_patient'),
-        (CreateProviderResponse, 'delete_provider'),
-        (CreateUserResponse, 'delete_user'),
-        (CreatePersonResponse, 'delete_person'),
-        (CreateRoleResponse, 'delete_role'),
+        (PatientCreateResponse, "delete_patient"),
+        (CreateProviderResponse, "delete_provider"),
+        (CreateUserResponse, "delete_user"),
+        (CreatePersonResponse, "delete_person"),
+        (CreateRoleResponse, "delete_role"),
     ]
     for resp_class, method_name in cleanup_tasks:
         delete_objects_by_uuid(api_manager, objects, resp_class, method_name)

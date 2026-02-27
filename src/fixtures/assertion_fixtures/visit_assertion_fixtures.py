@@ -44,6 +44,36 @@ def check_visit_persisted(request):
 
 
 @pytest.fixture(autouse=True)
+def check_visit_created_in_db(request, api_manager):
+    mark = request.node.get_closest_marker("check_visit_created_in_db")
+    if not mark:
+        yield
+        return
+
+    request.getfixturevalue("created_objects")
+
+    expected_delta = mark.kwargs.get("expected_delta", 1)
+    patient_fixture = mark.kwargs.get("patient_fixture", "created_patient")
+
+    patient = request.getfixturevalue(patient_fixture)
+
+    person = api_manager.database_steps.get_person_by_uuid(patient.uuid)
+    patient_id = person.person_id
+
+    before = api_manager.database_steps.count_visits_by_patient_id(patient_id)
+
+    yield
+
+    after = api_manager.database_steps.count_visits_by_patient_id(patient_id)
+
+    assert after - before == expected_delta, (
+        f"check_visit_created_in_db expects delta={expected_delta}, got {after - before}. "
+        f"(before={before}, after={after}, patient_id={patient_id}, patient_uuid={patient.uuid})"
+    )
+
+
+
+@pytest.fixture(autouse=True)
 def check_visit_not_created(request):
     mark = request.node.get_closest_marker("check_visit_not_created")
     if not mark:
@@ -135,3 +165,38 @@ def check_visit_updated(request):
         visit_uuid=visit_uuid,
         stop_datetime_iso=update_visit_request.stopDatetime,
     )
+
+
+@pytest.fixture(autouse=True)
+def check_visit_db_state(request, api_manager):
+    mark = request.node.get_closest_marker("check_visit_db_state")
+    if not mark:
+        yield
+        return
+
+    request.getfixturevalue("created_objects")
+
+    visit_fixture = mark.kwargs.get("visit_fixture", "created_visit")
+    expected_ended = mark.kwargs.get("ended", None)     # True/False/None
+    expected_voided = mark.kwargs.get("voided", None)   # True/False/None
+
+    visit = request.getfixturevalue(visit_fixture)
+    visit_uuid = visit.uuid
+
+    yield
+
+    db_visit = api_manager.database_steps.get_visit_by_uuid(visit_uuid)
+
+    if expected_ended is not None:
+        is_ended = db_visit.date_stopped is not None
+        assert is_ended == bool(expected_ended), (
+            f"check_visit_db_state ended mismatch: expected ended={expected_ended}, got ended={is_ended}. "
+            f"uuid={visit_uuid}, date_stopped={db_visit.date_stopped}"
+        )
+
+    if expected_voided is not None:
+        is_voided = bool(db_visit.voided)
+        assert is_voided == bool(expected_voided), (
+            f"check_visit_db_state voided mismatch: expected voided={expected_voided}, got voided={is_voided}. "
+            f"uuid={visit_uuid}, voided={db_visit.voided}"
+        )

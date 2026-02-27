@@ -3,6 +3,7 @@ import random
 from src.api.generators.random_data import RandomData
 from src.api.models.contexts.patient_context import PatientContext
 from src.api.models.requests.update_visit_request import UpdateVisitRequest
+from src.api.models.responses.create_visit_response import CreateVisitResponse
 from src.api.utils.datetime_utils import now_iso_utc, future_iso_utc, past_iso_utc
 
 import pytest
@@ -19,6 +20,12 @@ def created_patient(api_manager: ApiManager) -> PatientCreateResponse:
     The created objects are automatically registered in created_objects and removed in teardown.
     """
     return api_manager.user_steps.create_patient_from_existing_person()
+
+
+@pytest.fixture
+def created_visit(api_manager: ApiManager, create_visit_request: CreateVisitRequest) -> CreateVisitResponse:
+    """Create visit via API and register it in created_objects."""
+    return api_manager.visit_steps.create_visit(create_visit_request)
 
 
 @pytest.fixture
