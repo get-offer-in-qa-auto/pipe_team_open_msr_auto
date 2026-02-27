@@ -6,13 +6,13 @@ from src.api.models.responses.create_visit_response import CreateVisitResponse
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
 
+@pytest.mark.usefixtures("admin_session_autologin")
+@pytest.mark.admin_session
 class TestVisitActions:
 
     PUNCTUALITY_ON_TIME = "On time"
     FACILITY_VISIT = "Facility Visit"
 
-    @pytest.mark.usefixtures("admin_session_autologin")
-    @pytest.mark.admin_session
     @pytest.mark.check_visit_created_in_db
     def test_create_visit_for_patient(self, page: Page, api_manager: ApiManager, created_patient):
         PatientSummaryPage(page, patient_uuid=created_patient.uuid).open()\
@@ -24,8 +24,6 @@ class TestVisitActions:
             .should_have_active_visit() \
             .should_have_punctuality(self.PUNCTUALITY_ON_TIME)
 
-    @pytest.mark.usefixtures("admin_session_autologin")
-    @pytest.mark.admin_session
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=True)
     def test_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
@@ -36,8 +34,6 @@ class TestVisitActions:
             .confirm_end_visit() \
             .should_not_have_active_visit()
 
-    @pytest.mark.usefixtures("admin_session_autologin")
-    @pytest.mark.admin_session
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", voided=True)
     def test_delete_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
@@ -48,8 +44,6 @@ class TestVisitActions:
             .confirm_delete_visit() \
             .should_not_have_active_visit()
 
-    @pytest.mark.usefixtures("admin_session_autologin")
-    @pytest.mark.admin_session
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=False)
     def test_cancel_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open() \
