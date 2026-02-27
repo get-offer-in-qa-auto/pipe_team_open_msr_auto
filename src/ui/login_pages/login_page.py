@@ -36,12 +36,19 @@ class LoginPage(BasePage):
         expect(self.notification_error).to_contain_text(message)
         return self
 
-    def login(self, username: str, password: str) -> LoginLocationPage:
+    def login(self, username: str, password: str) -> "LoginPage":
         self.username_input.fill(username)
         self.continue_button.click()
         self.password_input.fill(password)
         self.login_button.click()
+        return self
+
+    def login_success(self, username: str, password: str) -> LoginLocationPage:
+        self.login(username, password)
         return LoginLocationPage(self.page)
 
-    def login_as(self, user: BaseCreateUserRequest) -> LoginLocationPage:
+    def login_as(self, user: BaseCreateUserRequest) -> "LoginPage":
         return self.login(user.username, user.password)
+
+    def login_as_success(self, user: BaseCreateUserRequest) -> LoginLocationPage:
+        return self.login_success(user.username, user.password)

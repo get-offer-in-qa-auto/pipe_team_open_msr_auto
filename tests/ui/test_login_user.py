@@ -16,7 +16,7 @@ class TestLoginUser:
     def test_admin_can_login_with_correct_data(self, page: Page, admin_user_request: BaseCreateUserRequest):
         LoginPage(page) \
             .open() \
-            .login_as(admin_user_request) \
+            .login_as_success(admin_user_request) \
             .should_see_welcome() \
             .select_location() \
             .should_have_add_patient_button()
@@ -27,10 +27,7 @@ class TestLoginUser:
         user_request, user_data = create_user_with_roles()
         api_manager.user_steps.delete_user(user_data.uuid, purge=False)
 
-        LoginPage(page)\
-        .open()\
-        .login(
-            user_request.username,
-            user_request.password
-        )\
-        .should_have_error_message(ErrorMessages.INVALID_USERNAME_OR_PASSWORD)
+        LoginPage(page) \
+            .open() \
+            .login(user_request.username, user_request.password) \
+            .should_have_error_message(ErrorMessages.INVALID_USERNAME_OR_PASSWORD)

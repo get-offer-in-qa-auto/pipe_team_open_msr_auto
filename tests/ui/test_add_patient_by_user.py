@@ -25,31 +25,32 @@ class TestCreatePatientByUser:
             created_objects,
             api_manager: ApiManager,
     ):
-        person_request = RandomModelGenerator.generate(CreatePersonRequest)
-        ui_data = PersonUiMapper.from_request(person_request)
+        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
 
-        patient_summary_page = (
-            OpenMsrHomePage(page)
-            .open()
-            .click_add_patient()
-            .get_page(PatientCreatePage)
+        person_full = OpenMsrHomePage(page) \
+            .open() \
+            .click_add_patient() \
+            .get_page(PatientCreatePage) \
             .fill_basic_info(
-                given=ui_data.given,
-                family=ui_data.family,
-                gender=ui_data.gender,
-                age=ui_data.age,
-            )
-            .submit()
-            .get_page(PatientSummaryPage)
-            .should_be_opened()
-            .should_have_patient(ui_data.given, ui_data.family)
+            given=ui_data.given,
+            family=ui_data.family,
+            gender=ui_data.gender,
+            age=ui_data.age,
+        ) \
+            .submit() \
+            .get_page(PatientSummaryPage) \
+            .should_be_opened() \
+            .should_have_patient(ui_data.given, ui_data.family) \
+            .switch_to_api(api_manager) \
+            .get_person_full()
+
+        # чтобы teardown удалил созданного пациента (purge)
+        # TODO: в админ тест или куда - то в подкоморку
+        created_objects.append(
+            PatientCreateResponse(uuid=person_full.uuid)
         )
 
-        patient_uuid = patient_summary_page.get_patient_uuid_from_summery_page()
-        person_full = api_manager.user_steps.get_person_full(patient_uuid)
-        created_objects.append(PatientCreateResponse(uuid=patient_uuid))
-
-        ModelAssertions(person_request, person_full).match()
+        ModelAssertions(ui_data, person_full).match()
 
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
     @pytest.mark.parametrize('role', [
@@ -65,58 +66,70 @@ class TestCreatePatientByUser:
             role
     ):
         user_request, _ = create_user_with_roles([role])
+
+        # логинимся под созданным пользователем
         LoginPage(page).auth_as_user(user_request)
 
-        # объедениь
-        person_request = RandomModelGenerator.generate(CreatePersonRequest)
-        ui_data = PersonUiMapper.from_request(person_request)
+        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
 
-        patient_summary_page = (
-            OpenMsrHomePage(page)
-            .open()
-            .click_add_patient()
-            .get_page(PatientCreatePage)
+        person_full = OpenMsrHomePage(page) \
+            .open() \
+            .click_add_patient() \
+            .get_page(PatientCreatePage) \
             .fill_basic_info(
-                given=ui_data.given,
-                family=ui_data.family,
-                gender=ui_data.gender,
-                age=ui_data.age,
-            )
-            .submit()
-            .get_page(PatientSummaryPage)
-            .should_be_opened()
-            .should_have_patient(ui_data.given, ui_data.family)
+            given=ui_data.given,
+            family=ui_data.family,
+            gender=ui_data.gender,
+            age=ui_data.age,
+        ) \
+            .submit() \
+            .get_page(PatientSummaryPage) \
+            .should_be_opened() \
+            .should_have_patient(ui_data.given, ui_data.family) \
+            .switch_to_api(api_manager) \
+            .get_person_full()
+
+        created_objects.append(
+            PatientCreateResponse(uuid=person_full.uuid)
         )
 
-        patient_uuid = patient_summary_page.get_patient_uuid_from_summery_page()
-        person_full = api_manager.user_steps.get_person_full(patient_uuid)
-        created_objects.append(PatientCreateResponse(uuid=patient_uuid))
-
-        ModelAssertions(person_request, person_full).match()
+        ModelAssertions(ui_data, person_full).match()
 
     @pytest.mark.usefixtures('api_manager', 'create_user_with_privileges')
-    def test_create_patient_no_create_edit_patient_privilege_user(self, api_manager, page,
-                                                                  create_user_with_privileges):
+    def test_create_patient_no_create_edit_patient_privilege_user(
+            self,
+            api_manager,
+            page,
+            create_user_with_privileges
+    ):
         exclude_privilege_names = ['Add Patients', 'Edit Patients']
-        user_request, _ = create_user_with_privileges(exclude_privilege_names=exclude_privilege_names)
+        user_request, _ = create_user_with_privileges(
+            exclude_privilege_names=exclude_privilege_names
+        )
+
         LoginPage(page).auth_as_user(user_request)
 
-        person_request = RandomModelGenerator.generate(CreatePersonRequest)
-        ui_data = PersonUiMapper.from_request(person_request)
+        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
 
-        OpenMsrHomePage(page)\
-            .open()\
-            .click_add_patient()\
-            .get_page(PatientCreatePage)\
+        OpenMsrHomePage(page) \
+            .open() \
+            .click_add_patient() \
+            .get_page(PatientCreatePage) \
             .fill_basic_info(
-                given=ui_data.given,
-                family=ui_data.family,
-                gender=ui_data.gender,
-                age=ui_data.age,
-            )\
-            .submit()\
+            given=ui_data.given,
+            family=ui_data.family,
+            gender=ui_data.gender,
+            age=ui_data.age,
+        ) \
+            .submit() \
             .should_be_opened()
 
-        person_dao = api_manager.database_steps.find_person_name_by_given_and_last_name(ui_data.given, ui_data.family)
-        assert person_dao is None,\
-            f"Person with name '{ui_data.given} {ui_data.family}' should NOT exist in DB after invalid create, but was found: {person_dao}"
+        person_dao = api_manager.database_steps.find_person_name_by_given_and_last_name(
+            ui_data.given,
+            ui_data.family,
+        )
+
+        assert person_dao is None, (
+            f"Person with name '{ui_data.given} {ui_data.family}' "
+            f"should NOT exist in DB after invalid create, but was found: {person_dao}"
+        )
