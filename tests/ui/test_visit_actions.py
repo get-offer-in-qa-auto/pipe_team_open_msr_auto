@@ -35,3 +35,27 @@ class TestVisitActions:
             .click_end_active_visit() \
             .confirm_end_visit() \
             .should_not_have_active_visit()
+
+    @pytest.mark.usefixtures("admin_session_autologin")
+    @pytest.mark.admin_session
+    @pytest.mark.check_visit_voided_in_db(visit_fixture="created_visit")
+    def test_delete_visit(self, page, created_visit: CreateVisitResponse):
+        PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
+            .should_be_opened() \
+            .should_have_active_visit() \
+            .open_actions() \
+            .click_delete_active_visit() \
+            .confirm_delete_visit() \
+            .should_not_have_active_visit()
+
+    @pytest.mark.usefixtures("admin_session_autologin")
+    @pytest.mark.admin_session
+    @pytest.mark.check_visit_not_ended_in_db(visit_fixture="created_visit")
+    def test_cancel_end_visit(self, page, created_visit: CreateVisitResponse):
+        PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open() \
+            .should_be_opened() \
+            .should_have_active_visit() \
+            .open_actions() \
+            .click_end_active_visit() \
+            .cancel_end_visit() \
+            .should_have_active_visit()

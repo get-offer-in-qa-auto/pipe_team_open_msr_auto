@@ -92,12 +92,20 @@ class PatientSummaryPage(BasePage):
     def end_active_visit_button(self):
         return self.page.get_by_role("menuitem", name="End active visit")
 
+    @property
+    def delete_active_visit_button(self):
+        return self.page.get_by_role("menuitem", name="Delete active visit")
+
     def click_add_visit(self):
         self.add_visit_button.click()
         return self
 
     def click_end_active_visit(self):
         self.end_active_visit_button.click()
+        return self
+
+    def click_delete_active_visit(self):
+        self.delete_active_visit_button.click()
         return self
 
     # ---Start visit modal --------
@@ -170,6 +178,10 @@ class PatientSummaryPage(BasePage):
     def end_visit_confirm_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"End Visit", re.I))
 
+    @property
+    def delete_visit_confirm_button(self) -> Locator:
+        return self.end_visit_modal.get_by_role("button", name=re.compile(r"Delete Visit", re.I))
+
     def should_see_end_visit_modal(self):
         expect(self.end_visit_modal).to_be_visible()
         expect(self.end_visit_modal_title).to_contain_text("end this active visit")
@@ -178,6 +190,18 @@ class PatientSummaryPage(BasePage):
     def confirm_end_visit(self):
         expect(self.end_visit_modal).to_be_visible()
         self.end_visit_confirm_button.click()
+        expect(self.end_visit_modal).to_be_hidden()
+        return self
+
+    def cancel_end_visit(self):
+        expect(self.end_visit_modal).to_be_visible()
+        self.end_visit_cancel_button.click()
+        expect(self.end_visit_modal).to_be_hidden()
+        return self
+
+    def confirm_delete_visit(self):
+        expect(self.end_visit_modal).to_be_visible()
+        self.delete_visit_confirm_button.click()
         expect(self.end_visit_modal).to_be_hidden()
         return self
 
