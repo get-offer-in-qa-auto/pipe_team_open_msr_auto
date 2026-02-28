@@ -1,7 +1,7 @@
 import random
 import uuid
 from datetime import datetime
-from typing import get_type_hints, Any, get_origin, Annotated, get_args, Union
+from typing import get_type_hints, Any, get_origin, Annotated, get_args, Union, Dict, Callable, Type
 from datetime import date, timedelta
 
 
@@ -12,7 +12,9 @@ from src.api.generators.mod30 import generate_mod30_identifier, luhn_mod_n_is_va
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
 
 
+
 class RandomModelGenerator:
+
     @staticmethod
     def generate(cls: type) -> Any:
         type_hints = get_type_hints(cls, include_extras=True)

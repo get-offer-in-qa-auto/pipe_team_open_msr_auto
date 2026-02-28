@@ -3,6 +3,7 @@ import random
 from playwright.sync_api import expect
 
 from src.ui.base_page import BasePage
+from src.ui.open_msr_home_page import OpenMsrHomePage
 
 
 class LoginLocationPage(BasePage):
@@ -53,7 +54,12 @@ class LoginLocationPage(BasePage):
     def url(self) -> str:
         return "/login/location"
 
-    def select_location(self):
+
+    def should_see_welcome(self):
+        expect(self.welcome_text).to_be_visible()
+        return self
+
+    def select_location(self) -> OpenMsrHomePage:
         self.select_random_location()
         self.confirm_button.click()
-        return self
+        return OpenMsrHomePage(self.page)

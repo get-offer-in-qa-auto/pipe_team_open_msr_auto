@@ -7,6 +7,7 @@ from playwright.sync_api import Page, Dialog, Locator
 from src.api.configs.config import Config
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.api.specs.request_spec import RequestSpecs
+from src.ui.api_flow import ApiFlow
 
 T = TypeVar("T", bound="BasePage")
 
@@ -117,3 +118,10 @@ class BasePage(ABC):
             d.accept()
         self.page.once("dialog", _handler)
         return self
+
+    def switch_to_api(self, api_manager):
+        """
+        Generic UI → API switch.
+        Specific data (uuid etc.) should be provided by concrete pages.
+        """
+        return ApiFlow(api_manager=api_manager)

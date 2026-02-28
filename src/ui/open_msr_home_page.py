@@ -28,4 +28,8 @@ class OpenMsrHomePage(BasePage):
         ).to_be_visible(timeout=15_000)
         return self
 
+    def should_have_add_patient_button(self):
+        expect(self.add_patient_button).to_be_visible()
+        return self
+
 
