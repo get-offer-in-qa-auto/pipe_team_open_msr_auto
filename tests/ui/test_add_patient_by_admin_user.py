@@ -7,6 +7,7 @@ from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.comparison.model_assertions import ModelAssertions
 
 from src.api.models.requests.create_person_request import CreatePersonRequest
+from src.ui.models.create_person_ui_model import CreatePersonUi
 from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_create_page import PatientCreatePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
@@ -21,7 +22,7 @@ class TestCreatePatientByAdminUser:
             page: Page,
             api_manager: ApiManager,
     ):
-        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
+        ui_data = RandomModelGenerator.generate(CreatePersonUi)
 
         person_full = OpenMsrHomePage(page) \
             .open() \

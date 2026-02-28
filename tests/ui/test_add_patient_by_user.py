@@ -10,6 +10,7 @@ from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse
 from src.ui.login_pages.login_page import LoginPage
 from src.ui.mappers.person_ui_mapper import PersonUiMapper
+from src.ui.models.create_person_ui_model import CreatePersonUi
 from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_create_page import PatientCreatePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
@@ -25,7 +26,7 @@ class TestCreatePatientByUser:
             created_objects,
             api_manager: ApiManager,
     ):
-        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
+        ui_data = RandomModelGenerator.generate(CreatePersonUi)
 
         person_full = OpenMsrHomePage(page) \
             .open() \
@@ -65,7 +66,7 @@ class TestCreatePatientByUser:
         # логинимся под созданным пользователем
         LoginPage(page).auth_as_user(user_request)
 
-        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
+        ui_data = RandomModelGenerator.generate(CreatePersonUi)
 
         person_full = OpenMsrHomePage(page) \
             .open() \
@@ -101,7 +102,7 @@ class TestCreatePatientByUser:
 
         LoginPage(page).auth_as_user(user_request)
 
-        ui_data = RandomModelGenerator.generate_ui_data(CreatePersonRequest)
+        ui_data = RandomModelGenerator.generate(CreatePersonUi)
 
         OpenMsrHomePage(page) \
             .open() \
