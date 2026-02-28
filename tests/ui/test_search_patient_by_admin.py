@@ -1,53 +1,92 @@
-import pytest
-from playwright.sync_api import Page
+import re
 
-from src.api.models.requests.create_patient_request import CreatePatientRequest
+import pytest
+from playwright.sync_api import expect, Page
+
 from src.api.classes.api_manager import ApiManager
 from src.api.generators.random_model_generator import RandomModelGenerator
-from src.api.models.requests.create_person_request import CreatePersonRequest
+from src.api.models.requests.create_patient_request import CreatePatientRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse
-from src.api.models.comparison.model_assertions import ModelAssertions
 
-from src.ui.mappers.person_ui_mapper import PersonUiMapper
 from src.ui.open_msr_home_page import OpenMsrHomePage
-from src.ui.patient_pages.patient_create_page import PatientCreatePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
+
 @pytest.mark.ui
-class TestSearchPatientByUser:
+@pytest.mark.usefixtures("admin_session_autologin")
+@pytest.mark.admin_session
+class TestSearchPatientByAdmin:
 
-    @pytest.mark.usefixtures("user_session_extension")
-    def test_search_existing_patient_by_name(
-            self,
-            page: Page,
-            created_objects,
-            api_manager: ApiManager,
+    #  Search by Fullname
+    def test_search_patient_by_fullname_by_admin(
+        self,
+        page: Page,
+        api_manager: ApiManager,
+        created_objects
     ):
-        # -------- Arrange (API) --------
-        patient_request = RandomModelGenerator.generate(CreatePatientRequest)
-        created_patient = api_manager.user_steps.create_patient(patient_request)
 
-        created_objects.append(created_patient)
+        request = api_manager.user_steps.build_create_patient_request()
+        response = api_manager.user_steps.create_patient(request)
 
-        expected_name = created_patient.person.preferredName.display
+        given = request.person.names[0].givenName
+        family = request.person.names[0].familyName
+        full_name = f"{given} {family}"
 
-        # -------- Act (UI Search) --------
-        summary_page = (
-            OpenMsrHomePage(page)
-            .open()
-            .header_search
-            .search_and_open(created_patient.person.preferredName.givenName)
+        home_page = OpenMsrHomePage(page).open().wait_until_loaded()
+
+        home_page.header_search \
+            .open_search() \
+            .search(full_name) \
+            .should_have_result(full_name) \
+            .select_first_result()
+
+        expect(page).to_have_url(
+            re.compile(rf"/patient/{response.uuid}/chart")
+        )
+        PatientSummaryPage(page, patient_uuid=response.uuid) \
+            .should_be_opened() \
+            .should_have_patient(given, family)
+
+
+
+    #  Search by Identifier
+    def test_search_patient_by_id_by_admin(
+        self,
+        page: Page,
+        api_manager
+    ):
+        # --- Create patient ---
+        request = api_manager.user_steps.build_create_patient_request()
+        response = api_manager.user_steps.create_patient(request)
+
+        identifier = request.identifiers[0].identifier
+
+        # --- Search by ID ---
+        OpenMsrHomePage(page).open().wait_until_loaded() \
+            .header_search \
+            .open_search() \
+            .search(identifier) \
+            .select_first_result()
+
+        # --- Verify redirect ---
+        expect(page).to_have_url(
+            re.compile(rf"/patient/{response.uuid}/chart")
         )
 
-        # -------- Assert (UI) --------
-        summary_page \
-            .should_be_opened() \
-            .should_have_patient(
-            created_patient.person.preferredName.givenName,
-            created_patient.person.preferredName.familyName
-        ) \
-            .should_have_uuid(created_patient.uuid)
+        PatientSummaryPage(page, patient_uuid=response.uuid) \
+            .should_be_opened()
 
-        # -------- Assert (API) --------
-        person_full = api_manager.user_steps.get_person_full(created_patient.uuid)
-        ModelAssertions(patient_request, person_full).match()
+    #  Search non-existent patient
+    def test_search_patient_by_nonexistent_fullname_by_admin(
+        self,
+        page: Page,
+    ):
+        fake_name = "ZZZ Nonexistent Patient"
+
+        home = OpenMsrHomePage(page).open().wait_until_loaded()
+
+        search_component = home.header_search \
+            .open_search() \
+            .search(fake_name)
+
+        search_component.should_have_no_results()
