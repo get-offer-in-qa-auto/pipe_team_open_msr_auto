@@ -10,14 +10,10 @@ import rstr
 from src.api.generators.generating_rule import GeneratingRule
 from src.api.generators.mod30 import generate_mod30_identifier, luhn_mod_n_is_valid
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
-from src.api.models.requests.create_person_request import CreatePersonRequest
-from src.ui.mappers.person_ui_mapper import PersonUiMapper
+
 
 
 class RandomModelGenerator:
-    _UI_MAPPERS: Dict[Type, Callable[[Any], Any]] = {
-        CreatePersonRequest: PersonUiMapper.from_request,
-    }
 
     @staticmethod
     def generate(cls: type) -> Any:
@@ -68,22 +64,6 @@ class RandomModelGenerator:
             return float(generated)
 
         return generated
-
-    @staticmethod
-    def generate_ui_data(cls: Type) -> Any:
-        """
-        Генерирует request-модель и автоматически применяет
-        соответствующий UI-mapper, если он зарегистрирован.
-        """
-        req = RandomModelGenerator.generate(cls)
-
-        mapper = RandomModelGenerator._UI_MAPPERS.get(cls)
-        if not mapper:
-            raise TypeError(
-                f"No UI mapper registered for {cls.__name__}"
-            )
-
-        return mapper(req)
 
     @staticmethod
     def _generate_value(field_type: Any) -> Any:

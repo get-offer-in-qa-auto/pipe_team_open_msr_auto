@@ -6,7 +6,6 @@ from src.api.classes.api_manager import ApiManager
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.comparison.model_assertions import ModelAssertions
 
-from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.ui.models.create_person_ui_model import CreatePersonUi
 from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_create_page import PatientCreatePage
