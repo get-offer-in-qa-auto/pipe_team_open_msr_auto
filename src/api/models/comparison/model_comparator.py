@@ -42,24 +42,6 @@ class ModelComparator:
 
         return ComparisonResult(mismatches)
 
-    @staticmethod
-    def _normalize_value(value: Any) -> str:
-        """
-        Приводит значения к стабильному виду для сравнения.
-        - YYYY-MM-DD
-        - YYYY-MM-DDT00:00:00.000+0000
-        → сравниваем только дату
-        """
-        if value is None:
-            return ""
-
-        s = str(value)
-
-        # ISO date или datetime → берём только дату
-        if len(s) >= 10 and s[4] == "-" and s[7] == "-":
-            return s[:10]
-
-        return s
 
 
     @staticmethod
@@ -95,3 +77,31 @@ class ModelComparator:
                     current = getattr(current, part)
 
         return current
+
+    @staticmethod
+    def _normalize_value(value: Any) -> str:
+        if value is None:
+            return ""
+
+        s = str(value).strip()
+
+        # ✅ normalize gender UI -> API
+        gender_map = {
+            "male": "M",
+            "female": "F",
+            "unknown": "U",
+            "other": "U",
+        }
+        low = s.lower()
+        if low in gender_map:
+            return gender_map[low]
+
+        # also allow API -> API passthrough
+        if s in ("M", "F", "U"):
+            return s
+
+        # ISO date/datetime → compare only date
+        if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+            return s[:10]
+
+        return s
