@@ -30,7 +30,6 @@ class LoginPage(BasePage):
     def url(self) -> str:
         return "/login"
 
-
     def should_have_error_message(self, message: str):
         expect(self.notification_error).to_be_visible()
         expect(self.notification_error).to_contain_text(message)

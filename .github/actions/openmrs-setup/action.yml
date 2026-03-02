@@ -12,3 +12,7 @@ runs:
       run: |
         docker compose up -d --wait
         curl -I http://localhost/openmrs/spa
+
+    - name: Run API tests
+      shell: bash
+      run: pytest -m app_setup
