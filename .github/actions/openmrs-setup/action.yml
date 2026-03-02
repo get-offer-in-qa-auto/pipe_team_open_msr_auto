@@ -1,0 +1,14 @@
+name: OpenMrs Setup
+description: 'OpenMRS Setup'
+runs:
+  using: composite
+  steps:
+    - name: Install ifconfig
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y net-tools
+
+    - name: Run OpenMRS
+      shell: bash
+      run: |
+        docker compose up -d --wait
+        curl -I http://localhost/openmrs/spa
