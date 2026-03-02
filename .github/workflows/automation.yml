@@ -13,20 +13,29 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Cache Playwright Browsers
+      id: playwright-cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/ms-playwright
+        # Ключ кэша привязан к ОС и версии pytest-playwright в requirements.txt
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/requirements.txt') }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Cache Playwright Browsers
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
-
     - name: Install Playwright Browsers
-      run: |
-        playwright install --with-deps
+      # Устанавливаем браузеры ТОЛЬКО если кэш не был найден
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      run: playwright install --with-deps
+
+    - name: Install Playwright System Deps
+      # Системные зависимости (libgbm и т.д.) нужно ставить всегда,
+      # так как они ставятся в систему (apt), а не в папку кэша
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      run: playwright install-deps
 
     - name: OpenMRS Setup
       uses: ./.github/actions/openmrs-setup
