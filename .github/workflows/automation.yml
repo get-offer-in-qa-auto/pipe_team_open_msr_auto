@@ -15,11 +15,11 @@ jobs:
 
     - name: Cache Playwright Browsers
       id: playwright-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
-        path: ~/.cache/ms-playwright
+        path: /home/runner/.cache/ms-playwright
         # Ключ кэша привязан к ОС и версии pytest-playwright в requirements.txt
-        key: ${{ runner.os }}-playwright-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
