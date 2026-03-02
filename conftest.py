@@ -131,6 +131,6 @@ def browser_name(request):
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type: BrowserType):
     return {
-        "headless": Config.get("HEADLESS", True),
+        "headless": Config.get_bool("HEADLESS"),
         "slow_mo": 300,      # 👈 необязательно, но очень помогает
     }
