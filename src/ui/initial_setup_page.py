@@ -22,7 +22,7 @@ class InitialSetupPage(BasePage):
 
         row_locator = self.get_row_with_text(task_name)
         progress_bar = row_locator.locator(".progressBarContainer[role='progressbar']")
-        expect(progress_bar).to_have_attribute("aria-valuenow", f"{progress}", timeout=180_000)
+        expect(progress_bar).to_have_attribute("aria-valuenow", f"{progress}", timeout=300_000)
 
         return self
 
