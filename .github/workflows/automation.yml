@@ -1,11 +1,7 @@
 name: Run tests
 on:
-  workflow_call:
-    inputs:
-      tests_folder:
-        description: Api | UI
-        required: true
-        type: string
+  workflow_dispatch:
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
