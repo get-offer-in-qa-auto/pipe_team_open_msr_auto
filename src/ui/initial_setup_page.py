@@ -7,7 +7,8 @@ from src.ui.base_page import BasePage
 class InitialSetupPage(BasePage):
     def open(self) -> "InitialSetupPage":
         base_url = str(Config.get('UI_BASE_URL', 'http://localhost:3000')).strip('/')
-        self.page.goto(base_url, wait_until="domcontentloaded")
+        target = f'{base_url}{self.url()}'
+        self.page.goto(target, wait_until="domcontentloaded")
         return self
 
     def url(self) -> str:
@@ -22,7 +23,7 @@ class InitialSetupPage(BasePage):
 
         row_locator = self.get_row_with_text(task_name)
         progress_bar = row_locator.locator(".progressBarContainer[role='progressbar']")
-        expect(progress_bar).to_have_attribute("aria-valuenow", f"{progress}", timeout=300_000)
+        expect(progress_bar).to_have_attribute("aria-valuenow", f"{progress}", timeout=120_000)
 
         return self
 

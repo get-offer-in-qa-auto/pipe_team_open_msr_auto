@@ -103,10 +103,10 @@ class BasePage(ABC):
         raise NotImplementedError
 
     def open(self: T) -> T:
-        taget = self.url()
-        if self.base_spa_url and taget.startswith('/'):
-            taget = f'{self.base_spa_url}{taget}'
-        self.page.goto(taget, wait_until="domcontentloaded")
+        target = self.url()
+        if self.base_spa_url and target.startswith('/'):
+            target = f'{self.base_spa_url}{target}'
+        self.page.goto(target, wait_until="domcontentloaded")
         return self
 
     def get_page(self, page_cls: Type[T]) -> T:
