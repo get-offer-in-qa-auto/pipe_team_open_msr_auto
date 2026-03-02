@@ -1,6 +1,7 @@
 from playwright.sync_api import expect
 
 from src.ui.base_page import BasePage
+from src.ui.components.header_search_component import HeaderSearchComponent
 
 
 class OpenMsrHomePage(BasePage):
@@ -9,6 +10,9 @@ class OpenMsrHomePage(BasePage):
     def add_patient_button(self):
         return self.page.locator('button[name="AddPatientIcon"]')
 
+    @property
+    def header_search(self):
+        return HeaderSearchComponent(self.page)
     #TODO:
     def url(self) -> str:
         return "/home/service-queues"

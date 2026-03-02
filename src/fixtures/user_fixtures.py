@@ -89,15 +89,12 @@ def create_user_with_privileges(api_manager: ApiManager):
 def created_person(api_manager: ApiManager):
     return api_manager.user_steps.create_person(RandomModelGenerator.generate(CreatePersonRequest))
 
-import uuid
-
 def _create_user_with_roles(api_manager: ApiManager, person_uuid: str, roles: List[str]) \
         -> tuple[BaseCreateUserRequest, CreateUserResponse]:
 
     create_user_request: CreateUserFromExistingPersonRequest = \
         RandomModelGenerator.generate(CreateUserFromExistingPersonRequest)
 
-    # 🔥 ГАРАНТИРОВАННО УНИКАЛЬНЫЙ USERNAME
     create_user_request.username = f"user_{RandomData.get_uuid()}"
 
     create_user_request.person = person_uuid
