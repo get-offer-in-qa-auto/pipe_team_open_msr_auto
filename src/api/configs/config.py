@@ -26,3 +26,8 @@ class Config:
         except ValueError:
             return default_value
 
+    @staticmethod
+    def get_int(key: str, default_value: int = 0):
+        return Config().config["DEFAULT"].getint(key, fallback=default_value)
+
+
