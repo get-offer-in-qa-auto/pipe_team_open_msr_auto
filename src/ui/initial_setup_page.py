@@ -36,5 +36,5 @@ class InitialSetupPage(BasePage):
                     return False
             return False
 
-        self.page.wait_for_event("response", is_finished, timeout=2_700_000)
+        self.page.wait_for_event("response", is_finished, timeout=3_600_000)
         return self
