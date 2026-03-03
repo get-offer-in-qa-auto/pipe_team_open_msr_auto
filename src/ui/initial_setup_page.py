@@ -29,12 +29,12 @@ class InitialSetupPage(BasePage):
 
     def wait_for_setup_to_be_finished(self):
         def is_finished(response):
-            if "progress.vm.ajaxRequest" in response.url and response.status == 200:
+            if "openmrs/initialsetup" in response.url and response.status == 200:
                 try:
                     return response.json().get("initializationComplete") is True
                 except:
                     return False
             return False
 
-        self.page.wait_for_event("response", is_finished, timeout=1_800_000)
+        self.page.wait_for_event("response", is_finished, timeout=2_700_000)
         return self
