@@ -40,8 +40,8 @@ services:
 #      OMRS_CONFIG_SEARCH_INDEX_UPDATE_ON_STARTUP: "false"
 
       OMRS_CONFIG_MODULE_WEB_ADMIN: "true"
-      OMRS_CONFIG_AUTO_UPDATE_DATABASE: "false"
-      OMRS_CONFIG_CREATE_TABLES: "false"
+      OMRS_CONFIG_AUTO_UPDATE_DATABASE: "true"
+      OMRS_CONFIG_CREATE_TABLES: "true"
       OMRS_CONFIG_CONNECTION_SERVER: db
       OMRS_CONFIG_CONNECTION_DATABASE: openmrs
       OMRS_CONFIG_CONNECTION_USERNAME: ${OMRS_DB_USER:-openmrs}
@@ -54,7 +54,7 @@ services:
 
   # MariaDB
   db:
-    image: edanilovich/openmrs-mariadb:latest
+    image: mariadb:10.11.7
     restart: "unless-stopped"
     ports:
       - "3306:3306"
