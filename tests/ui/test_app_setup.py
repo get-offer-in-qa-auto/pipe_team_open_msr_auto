@@ -13,13 +13,7 @@ class TestAppSetup:
     @pytest.mark.app_setup
     def test_app_setup(self, page: Page, admin_user_request: BaseCreateUserRequest):
         InitialSetupPage(page).open() \
-            .wait_for_progress("Create OpenMRS tables", 100)\
-            .wait_for_progress("Add OpenMRS core data", 100)\
             .wait_for_setup_to_be_finished()\
             .get_page(LoginPage).open() \
             .login_as_success(admin_user_request) \
             .should_see_welcome()
-
-        # .wait_for_progress("Update the database", 99) \
-
-
