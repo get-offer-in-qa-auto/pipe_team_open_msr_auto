@@ -8,3 +8,7 @@ mysql-connector-python
 pytest-xdist
 playwright
 pytest-playwright
+pre-commit
+ruff
+isort
+yapf

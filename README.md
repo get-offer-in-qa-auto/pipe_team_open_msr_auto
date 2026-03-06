@@ -1,68 +1,101 @@
 # pipe_team_open_msr_auto
 
-## Allure is required
+UI/API autotests with `pytest`, `playwright`, and `allure`.
 
-For correct test execution and report generation, install **Allure CLI** before running tests.
+## 1. Prerequisites
 
-### macOS
+### Python dependencies
 
-Install with Homebrew:
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+### Allure CLI (required for reports)
+
+macOS:
 
 ```bash
 brew install allure
-```
-
-Check installation:
-
-```bash
 allure --version
 ```
 
-### Windows
-
-Install with Chocolatey:
+Windows (Chocolatey):
 
 ```powershell
 choco install allure-commandline
-```
-
-or with Scoop:
-
-```powershell
-scoop install allure
-```
-
-Check installation:
-
-```powershell
 allure --version
 ```
 
-## How to run tests in parallel
+Windows (Scoop):
 
-```pytest --seed 123 -n 2```
-where [n] is number of workers
+```powershell
+scoop install allure
+allure --version
+```
 
-## How to run UI autotests
-Need to install browsers for Playwright:  
+## 2. Pre-commit checks
+
+Project uses these checks before commit:
+- remove unused imports (`ruff --fix --select F401`)
+- `ruff`
+- `isort`
+- `yapf` (style: `facebook`, column limit: `120`)
+
+Install git hooks:
+
 ```bash
-playwright install```
+pre-commit install
+```
 
-## How to generate Allure report locally
+Run all checks manually:
 
-Run tests and save Allure results:
+```bash
+pre-commit run --all-files
+```
+
+## 3. Run tests
+
+Default run:
+
+```bash
+pytest
+```
+
+Run in parallel (`-n` = number of workers):
+
+```bash
+pytest --seed 123 -n 2
+```
+
+## 4. UI tests (Playwright)
+
+Install browsers once:
+
+```bash
+playwright install
+```
+
+Run UI tests:
+
+```bash
+pytest tests/ui
+```
+
+## 5. Allure report
+
+Run tests and save results:
 
 ```bash
 pytest --alluredir=allure-results
 ```
 
-Open report in browser:
+Open interactive local report:
 
 ```bash
 allure serve allure-results
 ```
 
-Alternative (generate static report folder):
+Generate static report:
 
 ```bash
 allure generate allure-results -o allure-report --clean
