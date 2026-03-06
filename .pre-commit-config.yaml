@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-unused-imports
+        name: ruff-unused-imports
+        entry: ruff check --fix --select F401
+        language: system
+        types: [python]
+      - id: ruff
+        name: ruff
+        entry: ruff check
+        language: system
+        types: [python]
+      - id: isort
+        name: isort
+        entry: isort
+        language: system
+        types: [python]
+      - id: yapf
+        name: yapf
+        entry: yapf --style .style.yapf --in-place
+        language: system
+        types: [python]
