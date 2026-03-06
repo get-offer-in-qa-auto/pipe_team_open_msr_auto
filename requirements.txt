@@ -1,4 +1,5 @@
 pytest
+allure-pytest
 requests
 pydantic
 faker

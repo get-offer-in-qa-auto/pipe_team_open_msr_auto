@@ -1,3 +1,4 @@
+import allure
 import pytest
 
 from src.api.generators.random_data import RandomData
@@ -5,6 +6,7 @@ from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
 
 
+@allure.title("Create Person")
 @pytest.mark.api
 def test_create_person(api_manager):
     create_person_request = RandomModelGenerator.generate(CreatePersonRequest)
@@ -67,6 +69,7 @@ def test_create_person(api_manager):
         ),  # garbage in array
     ],
 )
+@allure.title("Create Person Invalid")
 def test_create_person_invalid(api_manager, field, value, error_value):
     create_person_request = RandomModelGenerator.generate(CreatePersonRequest)
 

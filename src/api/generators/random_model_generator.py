@@ -4,14 +4,11 @@ from datetime import datetime
 from typing import get_type_hints, Any, get_origin, Annotated, get_args, Union, Dict, Callable, Type
 from datetime import date, timedelta
 
-
 import rstr
 
 from src.api.generators.generating_rule import GeneratingRule
 from src.api.generators.mod30 import generate_mod30_identifier, luhn_mod_n_is_valid
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
-
-
 
 class RandomModelGenerator:
 
@@ -51,7 +48,6 @@ class RandomModelGenerator:
                 value = RandomModelGenerator._generate_value(actual_type)
             init_data[field_name] = value
         return cls(**init_data)
-
 
     @staticmethod
     def _generate_from_regex(regex: str, field_type: type) -> Any:
@@ -95,5 +91,4 @@ class RandomModelGenerator:
             return RandomModelGenerator.generate(field_type)
 
         return None
-
 

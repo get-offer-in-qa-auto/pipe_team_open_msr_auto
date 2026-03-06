@@ -3,7 +3,6 @@ from pathlib import Path
 import configparser
 from typing import Dict, Type, Optional
 
-
 from typing import Dict
 
 class ComparisonRule:
@@ -26,7 +25,6 @@ class ComparisonRule:
     @property
     def field_mapping(self) -> Dict[str, str]:
         return self._field_mapping
-
 
 class ModelComparisonConfigLoader:
     def __init__(self, config_file: str):
@@ -53,6 +51,4 @@ class ModelComparisonConfigLoader:
             response_class = target[0].strip()
             field_list = [field.strip()  for field in target[1].split(',')]
             self.rules[key.strip()] = ComparisonRule(response_class, field_list)
-
-
 

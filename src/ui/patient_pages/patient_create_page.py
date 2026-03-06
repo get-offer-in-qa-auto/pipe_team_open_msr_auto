@@ -1,5 +1,5 @@
+import allure
 from src.ui.base_page import BasePage
-
 
 class PatientCreatePage(BasePage):
 
@@ -66,6 +66,7 @@ class PatientCreatePage(BasePage):
 
     # ---------- Actions ----------
 
+    @allure.step("fill_basic_info")
     def fill_basic_info(
         self,
         given: str,
@@ -95,10 +96,12 @@ class PatientCreatePage(BasePage):
 
         return self
 
+    @allure.step("submit")
     def submit(self):
         self.register_button.click()
         return self
 
+    @allure.step("should_be_opened")
     def should_be_opened(self):
         url = self.page.url
         assert self.url() in url

@@ -11,7 +11,6 @@ from src.api.configs.config import Config
 
 T = TypeVar("T")
 
-
 class RequestType(str, Enum):
     SELECT = "SELECT"
     DELETE = "DELETE"
@@ -90,12 +89,10 @@ class Condition:
         params: Tuple[Any, ...] = tuple(p for c in conds for p in c.params) # ("alex") (1, ) -> ("alex", 1)
         return Condition(sql=sql, params=params)
 
-
 class DBRequest:
     @staticmethod
     def builder() -> "DBRequestBuilder":
         return DBRequestBuilder()
-
 
 class DBRequestBuilder:
     def __init__(self):

@@ -2,7 +2,6 @@ import configparser
 from pathlib import Path
 from typing import Any
 
-
 class Config:
     config = None
     _instance = None
@@ -18,5 +17,4 @@ class Config:
     @staticmethod
     def get(key:str, default_value: Any = None):
         return Config().config["DEFAULT"].get(key, fallback=default_value)
-
 

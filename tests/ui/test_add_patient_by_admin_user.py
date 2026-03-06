@@ -1,3 +1,4 @@
+import allure
 
 import pytest
 from playwright.sync_api import Page
@@ -11,10 +12,10 @@ from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_create_page import PatientCreatePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
-
 @pytest.mark.ui
 @pytest.mark.usefixtures("admin_session_autologin")
 class TestCreatePatientByAdminUser:
+    @allure.title("Add Patient With Correct Data")
     @pytest.mark.admin_session
     def test_add_patient_with_correct_data(
             self,
@@ -41,7 +42,4 @@ class TestCreatePatientByAdminUser:
             .call_api(api_manager.user_steps.get_person_full)
 
         ModelAssertions(ui_data, person_full).match()
-
-
-
 

@@ -3,7 +3,6 @@ from typing import Any
 from src.api.models.comparison.model_comparator import ModelComparator
 from src.api.models.comparison.model_comparison_configuration import ModelComparisonConfigLoader
 
-
 class ModelAssertions:
     def __init__(self, request: Any, response: Any):
         self.request = request

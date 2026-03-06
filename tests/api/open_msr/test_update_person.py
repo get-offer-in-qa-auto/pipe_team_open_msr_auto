@@ -1,13 +1,13 @@
+import allure
 import pytest
 
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.update_person_request import UpdatePersonRequest
 
-
-
 @pytest.mark.api
 class TestUpdatePerson:
+    @allure.title("Update Person Gender")
     @pytest.mark.usefixtures('api_manager', 'created_person')
     def test_update_person_gender(self, api_manager, created_person):
         new_user_data = RandomModelGenerator.generate(CreatePersonRequest)
@@ -23,7 +23,7 @@ class TestUpdatePerson:
             actual_person_update = updated_person_response
         )
 
-
+    @allure.title("Update Person Birthdate")
     @pytest.mark.usefixtures("api_manager", "created_person")
     def test_update_person_birthdate(self, api_manager, created_person):
         new_data = RandomModelGenerator.generate(CreatePersonRequest)
@@ -48,6 +48,7 @@ class TestUpdatePerson:
             ("birthdate", "", "birth"),             # empty
         ],
     )
+    @allure.title("Update Person Invalid")
     def test_update_person_invalid(self, api_manager, created_person, field, value, error_value):
         before = api_manager.user_steps.get_person_full(created_person.uuid)
 
@@ -62,7 +63,4 @@ class TestUpdatePerson:
 
         after = api_manager.user_steps.get_person_full(created_person.uuid)
         api_manager.user_steps.verify_person_not_changed(before, after)
-
-
-
 

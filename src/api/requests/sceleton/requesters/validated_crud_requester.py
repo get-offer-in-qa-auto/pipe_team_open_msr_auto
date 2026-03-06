@@ -7,7 +7,6 @@ from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
 
 T = TypeVar('T', bound=BaseModel)
 
-
 class ValidatedCrudRequester(HTTPRequest):
     def __init__(self, request_spec: Dict[str, str], endpoint: Endpoint, response_spec: Callable):
         super().__init__(request_spec, endpoint, response_spec)

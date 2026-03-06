@@ -5,7 +5,6 @@ from typing import Any
 
 from requests import Response
 
-
 class ResponseSpecs:
 
     @staticmethod

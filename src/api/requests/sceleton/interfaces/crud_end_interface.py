@@ -2,7 +2,6 @@ from typing import Protocol, Optional, Union
 
 from src.api.models.base_model import BaseModel
 
-
 class CrudEndPointInterface(Protocol):
     def post(self, model: BaseModel) -> BaseModel: ...
 

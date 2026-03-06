@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 class EntityAssertions:
     @staticmethod
     def has_uuid(entity: Any, field: str = "uuid") -> Any:
