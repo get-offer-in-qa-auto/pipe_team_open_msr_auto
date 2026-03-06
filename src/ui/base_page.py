@@ -1,3 +1,4 @@
+import allure
 import json
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, Callable, List
@@ -27,6 +28,7 @@ class BasePage(ABC):
             for index in range(element.count())
         ]
 
+    @allure.step("auth_as_user")
     def auth_as_user(
             self,
             user_request: BaseCreateUserRequest,
@@ -102,6 +104,7 @@ class BasePage(ABC):
     def url(self) -> str:
         raise NotImplementedError
 
+    @allure.step("open")
     def open(self: T) -> T:
         target = self.url()
         if self.base_spa_url and target.startswith('/'):
@@ -119,6 +122,7 @@ class BasePage(ABC):
         self.page.once("dialog", _handler)
         return self
 
+    @allure.step("switch_to_api")
     def switch_to_api(self, api_manager):
         """
         Generic UI → API switch.

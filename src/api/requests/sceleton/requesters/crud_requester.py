@@ -19,14 +19,11 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
 
-
         body = model.model_dump() if model else ''
         response = requests.post(url=f'{server_url}{api_version_url}{self.endpoint.value.url}',
                                  headers=self.request_spec, json=body)
         self.response_spec(response)
         return response
-
-
 
     def get(self, model: Optional[BaseModel] = None, id: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Response:
         server_url = Config.get('server')

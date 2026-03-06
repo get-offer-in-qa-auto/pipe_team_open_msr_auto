@@ -1,3 +1,4 @@
+import allure
 import pytest
 
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
@@ -19,6 +20,7 @@ class TestCreatePatientWithNewPerson:
     # --------------------------------------------------
     # ADMIN happy path
     # --------------------------------------------------
+    @allure.title("Create Patient With New Person Admin")
     @pytest.mark.check_all_patients_change(delta=1, should_exist=True)
     def test_create_patient_with_new_person_admin(
         self,
@@ -39,6 +41,7 @@ class TestCreatePatientWithNewPerson:
     @pytest.mark.parametrize("role", [
         "Registration Clerk",
     ])
+    @allure.title("Create Patient With New Person Allowed Roles")
     def test_create_patient_with_new_person_allowed_roles(
         self,
         api_manager,
@@ -61,6 +64,7 @@ class TestCreatePatientWithNewPerson:
     # --------------------------------------------------
     # Forbidden roles
     # --------------------------------------------------
+    @allure.title("Create Patient With New Person Without Required Privileges")
     @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
     @pytest.mark.usefixtures("create_user_with_privileges")
     def test_create_patient_with_new_person_without_required_privileges(
@@ -84,6 +88,7 @@ class TestCreatePatientWithNewPerson:
             response_spec=ResponseSpecs.request_returns_forbidden_with_message(error_message)
         )
 
+    @allure.title("Create Patient With New Person Disabled User")
     @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
     def test_create_patient_with_new_person_disabled_user(
             self,
@@ -112,6 +117,7 @@ class TestCreatePatientWithNewPerson:
         )
 
     # invalid person root field
+    @allure.title("Create Patient Missing Person")
     @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
     def test_create_patient_missing_person(self, api_manager):
         request = api_manager.user_steps.build_create_patient_request()
@@ -129,6 +135,7 @@ class TestCreatePatientWithNewPerson:
             original_identifier
         )
 
+    @allure.title("Create Patient Rollback On Invalid Identifier")
     @pytest.mark.check_all_patients_change(delta=0, should_exist=False)
     def test_create_patient_rollback_on_invalid_identifier(self, api_manager):
         request = api_manager.user_steps.build_create_patient_request()
@@ -189,6 +196,7 @@ class TestCreatePatientWithNewPerson:
             ("identifier", RandomData.get_string(256), ErrorMessages.INVALID_SUBMISSION),
         ],
     )
+    @allure.title("Create Patient With New Person Invalid Identifier")
     def test_create_patient_with_new_person_invalid_identifier(
             self,
             api_manager,
@@ -261,6 +269,7 @@ class TestCreatePatientWithNewPerson:
         ],
     )
 
+    @allure.title("Create Patient With New Person Invalid Nested Person")
     def test_create_patient_with_new_person_invalid_nested_person(
             self,
             api_manager,

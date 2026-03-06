@@ -42,8 +42,6 @@ class ModelComparator:
 
         return ComparisonResult(mismatches)
 
-
-
     @staticmethod
     def _get_field_value(obj: Any, path: str) -> Any:
         """

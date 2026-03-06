@@ -1,3 +1,4 @@
+import allure
 from typing import List, Optional
 
 from src.api.database.dao.patient_dao import PatientDao
@@ -14,9 +15,9 @@ from src.api.database.dao.visit_dao import VisitDao
 from src.api.database.db_client import fetch_one
 from src.api.models.requests.create_visit_request import CreateVisitRequest
 
-
 class DatabaseSteps:
     @staticmethod
+    @allure.step("get_user_by_username")
     def get_user_by_username(username: str) -> UserDao:
         return (
             DBRequest.builder()
@@ -27,6 +28,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_user_by_uuid")
     def get_user_by_uuid(user_uuid: str) -> UserDao:
         return (
             DBRequest.builder()
@@ -37,6 +39,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_patient_by_id")
     def get_patient_by_id(patient_id: int) -> PatientDao:
         return (
             DBRequest.builder()
@@ -47,6 +50,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("find_patient_by_id")
     def find_patient_by_id(patient_id: int) -> Optional[PatientDao]:
         return (
             DBRequest.builder()
@@ -57,6 +61,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_patient_identifier_by_identifier")
     def get_patient_identifier_by_identifier(identifier: str) -> PatientIdentifierDao:
         return (
             DBRequest.builder()
@@ -67,6 +72,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_person_by_address")
     def get_person_by_address(address: str) -> PersonAddressDao:
         return (
             DBRequest.builder()
@@ -77,6 +83,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_person_by_uuid")
     def get_person_by_uuid(uuid: str):
         return (
             DBRequest.builder()
@@ -87,6 +94,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_person_by_id")
     def get_person_by_id(id: int):
         return (
             DBRequest.builder()
@@ -97,6 +105,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("verify_patient_created_with_new_person")
     def verify_patient_created_with_new_person(
             patient_uuid: str,
             identifiers: List[PatientIdentifierRequest]
@@ -146,6 +155,7 @@ class DatabaseSteps:
             ).match()
 
     @staticmethod
+    @allure.step("verify_patient_not_created_by_identifier")
     def verify_patient_not_created_by_identifier(identifier: str):
         patient_identifier = DatabaseSteps.find_patient_identifier_by_identifier(identifier)
 
@@ -154,6 +164,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("find_patient_identifier_by_identifier")
     def find_patient_identifier_by_identifier(identifier: str):
         try:
             return (
@@ -167,6 +178,7 @@ class DatabaseSteps:
             return None
 
     @staticmethod
+    @allure.step("verify_person_not_created_by_identity")
     def verify_person_not_created_by_identity(
             given_name: str,
             family_name: str,
@@ -184,6 +196,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_persons_by_identity")
     def get_persons_by_identity(
             given_name: str,
             family_name: str,
@@ -201,6 +214,7 @@ class DatabaseSteps:
             .extract_all_as(PersonDao)
         )
 
+    @allure.step("find_person_name_by_given_and_last_name")
     def find_person_name_by_given_and_last_name(given_name: str, family_name: str):
         return (
             DBRequest.builder()
@@ -211,6 +225,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("verify_patient_created_from_existing_person")
     def verify_patient_created_from_existing_person(person_uuid: str, identifiers: List[PatientIdentifierRequest]):
         person_dao = DatabaseSteps.get_person_by_uuid(person_uuid)
         assert person_dao.voided == False
@@ -225,6 +240,7 @@ class DatabaseSteps:
             DaoAndModelAssertions.assert_that(identifier, patient_identifier_dao).match()
 
     @staticmethod
+    @allure.step("verify_patient_does_not_exist")
     def verify_patient_does_not_exist(person_uuid: str):
         person_dao = DatabaseSteps.get_person_by_uuid(person_uuid)
         assert person_dao.voided == False
@@ -233,6 +249,7 @@ class DatabaseSteps:
         assert patient_dao is None, f"Patient '{person_dao.person_id}' should NOT exist in DB after invalid create, but was found: {patient_dao}"
 
     @staticmethod
+    @allure.step("get_all_patients")
     def get_all_patients() -> List[PatientDao]:
         return (
             DBRequest.builder()
@@ -242,6 +259,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_person_by_birthdate")
     def get_person_by_birthdate(person_birthdate) -> Optional[PersonDao]:
         try:
             return (
@@ -255,12 +273,14 @@ class DatabaseSteps:
             return None
 
     @staticmethod
+    @allure.step("verify_person_does_not_exist")
     def verify_person_does_not_exist(person_birthdate: str):
         person_dao = DatabaseSteps.get_person_by_birthdate(person_birthdate)
         assert person_dao is None, f"Person '{person_dao.person_id}' should NOT exist in DB after invalid create"
 
     # Visit
     @staticmethod
+    @allure.step("get_visit_by_uuid")
     def get_visit_by_uuid(visit_uuid: str) -> VisitDao:
         return (
             DBRequest.builder()
@@ -287,6 +307,7 @@ class DatabaseSteps:
         return dt
 
     @staticmethod
+    @allure.step("verify_visit_persisted")
     def verify_visit_persisted(visit_uuid: str, req: CreateVisitRequest) -> None:
         visit = DatabaseSteps.get_visit_by_uuid(visit_uuid)
         assert not visit.voided, f"Visit {visit_uuid} is voided in DB (raw={visit.voided})"
@@ -322,6 +343,7 @@ class DatabaseSteps:
             )
 
     @staticmethod
+    @allure.step("count_visits_by_patient_id")
     def count_visits_by_patient_id(patient_id: int) -> int:
         row = fetch_one(
             "SELECT COUNT(*) AS cnt FROM visit WHERE patient_id = %s",
@@ -331,6 +353,7 @@ class DatabaseSteps:
         return int(row["cnt"])
 
     @staticmethod
+    @allure.step("get_visit_row_by_uuid")
     def get_visit_row_by_uuid(visit_uuid: str):
         return fetch_one(
             "SELECT visit_id, uuid, voided, voided_by, date_voided, void_reason FROM visit WHERE uuid = %s LIMIT 1",
@@ -338,6 +361,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("verify_visit_deleted_in_db")
     def verify_visit_deleted_in_db(visit_uuid: str) -> None:
         row = DatabaseSteps.get_visit_row_by_uuid(visit_uuid)
 
@@ -351,6 +375,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("verify_visit_stop_datetime_updated_in_db")
     def verify_visit_stop_datetime_updated_in_db(visit_uuid: str, stop_datetime_iso: str) -> None:
         row = fetch_one(
             "SELECT uuid, voided, date_stopped FROM visit WHERE uuid = %s LIMIT 1",
@@ -373,6 +398,7 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_active_visit_uuid_by_patient_id")
     def get_active_visit_uuid_by_patient_id(patient_id: int) -> Optional[str]:
         row = fetch_one(
             """
@@ -389,6 +415,7 @@ class DatabaseSteps:
         return row["uuid"] if row else None
 
     @staticmethod
+    @allure.step("get_visit_date_stopped_by_uuid")
     def get_visit_date_stopped_by_uuid(visit_uuid: str):
         row = fetch_one(
             "SELECT date_stopped FROM visit WHERE uuid = %s LIMIT 1",
@@ -397,6 +424,7 @@ class DatabaseSteps:
         return row["date_stopped"] if row else None
 
     @staticmethod
+    @allure.step("get_visits_by_patient_id")
     def get_visits_by_patient_id(patient_id: int) -> List[VisitDao]:
         return (
             DBRequest.builder()
@@ -407,10 +435,12 @@ class DatabaseSteps:
         )
 
     @staticmethod
+    @allure.step("get_visit_uuids_by_patient_id")
     def get_visit_uuids_by_patient_id(patient_id: int) -> List[str]:
         return [v.uuid for v in DatabaseSteps.get_visits_by_patient_id(patient_id)]
 
     @staticmethod
+    @allure.step("delete_log_entry_for_user")
     def delete_log_entry_for_user(user_id: int):
         deleted_logs = (
             DBRequest.builder()

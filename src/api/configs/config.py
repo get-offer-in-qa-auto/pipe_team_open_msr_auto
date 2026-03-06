@@ -2,7 +2,6 @@ import configparser
 from pathlib import Path
 from typing import Any
 
-
 class Config:
     config = None
     _instance = None

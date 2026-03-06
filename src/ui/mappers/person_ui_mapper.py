@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from datetime import date
 from src.api.models.requests.create_person_request import CreatePersonRequest
 
-
 @dataclass
 class UiPatientData:
     given: str
     family: str
     gender: str
     age: int
-
 
 class PersonUiMapper:
 

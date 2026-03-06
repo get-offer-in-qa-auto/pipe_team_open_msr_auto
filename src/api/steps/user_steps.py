@@ -1,4 +1,5 @@
 from __future__ import annotations
+import allure
 
 from datetime import datetime, date
 from typing import Optional, List, Any, Callable
@@ -31,24 +32,27 @@ from src.api.models.requests.create_patient_request import CreatePatientRequest
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse
 
-
 class UserSteps(BaseSteps):
 
+    @allure.step("get_person_full")
     def get_person_full(self, person_uuid: str) -> PersonFullResponse:
         return self._vcr(Endpoint.GET_PERSON, ResponseSpecs.request_returns_ok()).get(
             id=person_uuid, params={"v": "full"}
         )
 
+    @allure.step("get_patient_full")
     def get_patient_full(self, patient_uuid: str) -> PatientFullResponse:
         return self._vcr(Endpoint.GET_PATIENT, ResponseSpecs.request_returns_ok()).get(
             id=patient_uuid, params={"v": "full"}
         )
 
+    @allure.step("verify_patient_with_uuid_does_not_exist")
     def verify_patient_with_uuid_does_not_exist(self, patient_uuid: str):
         self._cr(Endpoint.GET_PATIENT, ResponseSpecs.entity_not_found(ErrorMessages.OBJECT_WITH_UUID_DOES_NOT_EXIST)).get(
             id=patient_uuid,
         )
 
+    @allure.step("create_person")
     def create_person(self, create_person_request: CreatePersonRequest) -> CreatePersonResponse:
         person = self._vcr(Endpoint.CREATE_PERSON, ResponseSpecs.entity_was_created()).post(create_person_request)
 
@@ -59,18 +63,21 @@ class UserSteps(BaseSteps):
         self.created_objects.append(person)
         return person
 
+    @allure.step("delete_person")
     def delete_person(self, person_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
         self._cr(Endpoint.DELETE_PERSON, ResponseSpecs.entity_was_deleted()).delete_with_params(
             id=person_uuid, params=params
         )
 
+    @allure.step("create_invalid_person")
     def create_invalid_person(self, create_person_request: CreatePersonInvalidRequest, error_value: str, error_key: str ="error",):
         self._cr(
             Endpoint.CREATE_PERSON,
             ResponseSpecs.request_returns_bad_request(error_key, error_value),
         ).post(create_person_request)
 
+    @allure.step("create_patient_from_person")
     def create_patient_from_person(
         self,
         person: str,
@@ -96,11 +103,10 @@ class UserSteps(BaseSteps):
         assert patient_created.uuid == person, f"Verify returned uuid is: {person}, but got {patient_created.uuid}"
         assert str(patient_created.uuid).lower() != "null", f"uuid returned as 'null': {patient_created}"
 
-
-
         self.created_objects.append(patient_created)
         return patient_created
 
+    @allure.step("create_patient")
     def create_patient(
             self,
             patient_request: CreatePatientRequest,
@@ -123,6 +129,7 @@ class UserSteps(BaseSteps):
         self.created_objects.append(patient_created)
         return patient_created
 
+    @allure.step("build_create_patient_request")
     def build_create_patient_request(self) -> CreatePatientRequest:
         identifier_template = self.build_identifier_request()
 
@@ -144,6 +151,7 @@ class UserSteps(BaseSteps):
             person=person
         )
 
+    @allure.step("create_patient_invalid_request")
     def create_patient_invalid_request(
             self,
             patient_request: CreatePatientRequest,
@@ -159,6 +167,7 @@ class UserSteps(BaseSteps):
             response_spec=response_spec
         ).post(patient_request)
 
+    @allure.step("create_patient_with_new_person_invalid_request")
     def create_patient_with_new_person_invalid_request(
             self,
             patient_request: CreatePatientRequest,
@@ -177,6 +186,7 @@ class UserSteps(BaseSteps):
             response_spec=response_spec
         ).post(patient_request)
 
+    @allure.step("verify_patient_created")
     def verify_patient_created(self,
                                created_patient_response: PatientCreateResponse,
                                identifiers: List[PatientIdentifierRequest]):
@@ -184,6 +194,7 @@ class UserSteps(BaseSteps):
         patient_full = self.get_patient_full(created_patient_response.uuid)
         ModelAssertions(req, patient_full).match()
 
+    @allure.step("verify_person_created")
     def verify_person_created(self, person_uuid, expected_request=None):
         full = self.get_person_full(person_uuid)
 
@@ -195,8 +206,7 @@ class UserSteps(BaseSteps):
             ModelAssertions(expected_request, full).match()
         return full
 
-
-
+    @allure.step("verify_person_updated")
     def verify_person_updated(
         self,
         expected_update: UpdatePersonRequest,
@@ -237,7 +247,7 @@ class UserSteps(BaseSteps):
                 f"Expected: {exp_date}, got: {db_date}"
             )
 
-
+    @allure.step("create_patient_from_person_invalid_data")
     def create_patient_from_person_invalid_data(
         self,
         person: str,
@@ -258,6 +268,7 @@ class UserSteps(BaseSteps):
             response_spec=ResponseSpecs.request_returns_bad_request_with_message(error_message),
         ).post(req)
 
+    @allure.step("create_patient_from_person_invalid_request")
     def create_patient_from_person_invalid_request(
             self,
             person: str,
@@ -273,6 +284,7 @@ class UserSteps(BaseSteps):
             response_spec=response_spec
         ).post(req)
 
+    @allure.step("create_patient_with_person")
     def create_patient_with_person(
         self,
         create_person_request: CreatePersonRequest,
@@ -286,10 +298,12 @@ class UserSteps(BaseSteps):
 
         return created_person, created_patient
 
+    @allure.step("create_patient_from_existing_person")
     def create_patient_from_existing_person(self) -> PatientCreateResponse:
         _, patient = self.create_patient_with_person(RandomModelGenerator.generate(CreatePersonRequest))
         return patient
 
+    @allure.step("delete_patient")
     def delete_patient(self, patient_uuid: str):
         for visit_uuid in self._get_visit_uuids_by_patient(patient_uuid):
             self._purge_visit(visit_uuid)
@@ -303,6 +317,7 @@ class UserSteps(BaseSteps):
         for identifier in patient.identifiers:
             self.delete_patient_identifier(patient_uuid, identifier.uuid)
 
+    @allure.step("create_user_from_existing_person")
     def create_user_from_existing_person(self, create_user_request: CreateUserFromExistingPersonRequest) -> CreateUserResponse:
         user = self._vcr(Endpoint.CREATE_USER_FROM_PERSON, ResponseSpecs.entity_was_created()).post(create_user_request)
         ModelAssertions(create_user_request, user).match()
@@ -310,6 +325,7 @@ class UserSteps(BaseSteps):
         self.created_objects.append(user)
         return user
 
+    @allure.step("delete_user")
     def delete_user(self, user_uuid: str, purge: bool = True):
         user_dao = DatabaseSteps.get_user_by_uuid(user_uuid)
         DatabaseSteps.delete_log_entry_for_user(user_dao.user_id)
@@ -317,26 +333,32 @@ class UserSteps(BaseSteps):
         params = {"purge": "true"} if purge else None
         self._cr(Endpoint.DELETE_USER, ResponseSpecs.entity_was_deleted()).delete_with_params(id=user_uuid, params=params)
 
+    @allure.step("create_provider")
     def create_provider(self, create_provider_request: CreateProviderRequest):
         provider = self._vcr(Endpoint.CREATE_PROVIDER, ResponseSpecs.entity_was_created()).post(create_provider_request)
         self.created_objects.append(provider)
         return provider
 
+    @allure.step("delete_provider")
     def delete_provider(self, provider_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
         self._cr(Endpoint.DELETE_PROVIDER, ResponseSpecs.entity_was_deleted()).delete_with_params(
             id=provider_uuid, params=params
         )
 
+    @allure.step("get_locations")
     def get_locations(self):
         return self._vcr(Endpoint.GET_LOCATIONS, ResponseSpecs.request_returns_ok()).get()
 
+    @allure.step("get_visit_types")
     def get_visit_types(self):
         return self._vcr(Endpoint.GET_VISIT_TYPES, ResponseSpecs.request_returns_ok()).get()
 
+    @allure.step("get_patient_identifier_types")
     def get_patient_identifier_types(self):
         return self._vcr(Endpoint.GET_PATIENT_IDENTIFIER_TYPES, ResponseSpecs.request_returns_ok()).get()
 
+    @allure.step("build_identifier_request")
     def build_identifier_request(self) -> PatientIdentifierRequest:
         identifier_types = self.get_patient_identifier_types()
         locations = self.get_locations()
@@ -351,6 +373,7 @@ class UserSteps(BaseSteps):
             preferred=True,
         )
 
+    @allure.step("delete_patient_identifier")
     def delete_patient_identifier(self, patient_uuid: str, identifier_uuid: str, purge: bool = True):
         params = {"purge": "true"} if purge else None
 
@@ -360,6 +383,7 @@ class UserSteps(BaseSteps):
                                     "target_patient_uuid": patient_uuid
                                 })
 
+    @allure.step("update_person")
     def update_person(self, person_uuid: str, payload: UpdatePersonRequest):
         return self._vcr(
             endpoint=Endpoint.UPDATE_PERSON,
@@ -384,6 +408,7 @@ class UserSteps(BaseSteps):
             id=visit_uuid, params={"purge": "true"}
         )
 
+    @allure.step("update_person_invalid")
     def update_person_invalid(
             self,
             person_uuid: str,
@@ -400,7 +425,7 @@ class UserSteps(BaseSteps):
             model=update_person_request,
         )
 
-
+    @allure.step("verify_person_not_changed")
     def verify_person_not_changed(self, before: PersonFullResponse, after: PersonFullResponse) -> None:
         """
         ModelAssertions-based invariant:

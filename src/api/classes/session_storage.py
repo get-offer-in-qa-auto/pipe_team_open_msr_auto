@@ -2,7 +2,6 @@ from typing import List
 
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 
-
 class SessionStorage:
     _users: List[BaseCreateUserRequest] = []
 
