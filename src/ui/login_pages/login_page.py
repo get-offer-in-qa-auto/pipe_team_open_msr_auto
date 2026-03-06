@@ -5,38 +5,30 @@ from src.api.models.requests.base_create_user_request import BaseCreateUserReque
 from src.ui.base_page import BasePage
 from src.ui.login_pages.login_location_page import LoginLocationPage
 
-
 class LoginPage(BasePage):
 
     @property
-    @allure.step("username_input")
     def username_input(self):
         return self.page.locator("#username")
 
     @property
-    @allure.step("continue_button")
     def continue_button(self):
         return self.page.get_by_role("button", name="Continue")
 
     @property
-    @allure.step("password_input")
     def password_input(self):
         return self.page.locator("#password")
 
     @property
-    @allure.step("login_button")
     def login_button(self):
         return self.page.get_by_role("button", name="Log in")
 
     @property
-    @allure.step("notification_error")
     def notification_error(self):
         return self.page.locator(".cds--inline-notification--error[role='status']")
 
-    @allure.step("url")
     def url(self) -> str:
         return "/login"
-
 
     @allure.step("should_have_error_message")
     def should_have_error_message(self, message: str):

@@ -6,21 +6,17 @@ from playwright.sync_api import expect
 from src.ui.base_page import BasePage
 from src.ui.open_msr_home_page import OpenMsrHomePage
 
-
 class LoginLocationPage(BasePage):
 
     @property
-    @allure.step("welcome_text")
     def welcome_text(self):
         return self.page.get_by_text("Welcome")
 
     @property
-    @allure.step("username_input")
     def username_input(self):
         return self.page.locator("#username")
 
     @property
-    @allure.step("list_of_location_elements")
     def list_of_location_elements(self):
         return self.page.locator('input[type="radio"]')
 
@@ -52,15 +48,11 @@ class LoginLocationPage(BasePage):
         expect(radio).to_be_checked()
 
     @property
-    @allure.step("confirm_button")
     def confirm_button(self):
         return self.page.get_by_role("button", name="Confirm")
 
-
-    @allure.step("url")
     def url(self) -> str:
         return "/login/location"
-
 
     @allure.step("should_see_welcome")
     def should_see_welcome(self):

@@ -1,27 +1,22 @@
 import allure
 from playwright.sync_api import expect
 
-
 class HeaderSearchComponent:
 
-    @allure.step("__init__")
     def __init__(self, page):
         self.page = page
 
     @property
-    @allure.step("search_icon")
     def search_icon(self):
         return self.page.get_by_test_id("searchPatientIcon")
 
     @property
-    @allure.step("search_input")
     def search_input(self):
         return self.page.get_by_placeholder(
             "Search for a patient by name or identifier number"
         )
 
     @property
-    @allure.step("results_container")
     def results_container(self):
         return self.page.get_by_test_id("floatingSearchResultsContainer")
 

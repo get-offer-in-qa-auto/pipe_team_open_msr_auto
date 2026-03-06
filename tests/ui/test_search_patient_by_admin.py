@@ -8,14 +8,12 @@ from src.api.generators.random_model_generator import RandomModelGenerator
 from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
-
 @pytest.mark.ui
 @pytest.mark.usefixtures("admin_session_autologin")
 @pytest.mark.admin_session
 class TestSearchPatientByAdmin:
 
     @allure.title("Search Patient By Fullname By Admin")
-    @allure.step("test_search_patient_by_fullname_by_admin")
     def test_search_patient_by_fullname_by_admin(
         self,
         page: Page,
@@ -45,9 +43,7 @@ class TestSearchPatientByAdmin:
             .should_be_opened() \
             .should_have_patient(given, family)
 
-
     @allure.title("Search Patient By ID By Admin")
-    @allure.step("test_search_patient_by_id_by_admin")
     def test_search_patient_by_id_by_admin(
         self,
         page: Page,
@@ -72,7 +68,6 @@ class TestSearchPatientByAdmin:
             .should_be_opened()
 
     @allure.title("Search Patient By Nonexistent Fullname By Admin")
-    @allure.step("test_search_patient_by_nonexistent_fullname_by_admin")
     def test_search_patient_by_nonexistent_fullname_by_admin(
             self,
             page: Page,

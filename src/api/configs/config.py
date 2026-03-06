@@ -1,13 +1,10 @@
-import allure
 import configparser
 from pathlib import Path
 from typing import Any
 
-
 class Config:
     config = None
     _instance = None
-    @allure.step("__new__")
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(Config, cls).__new__(cls)
@@ -18,8 +15,6 @@ class Config:
         return cls._instance
 
     @staticmethod
-    @allure.step("get")
     def get(key:str, default_value: Any = None):
         return Config().config["DEFAULT"].get(key, fallback=default_value)
-
 

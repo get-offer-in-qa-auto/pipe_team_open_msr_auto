@@ -13,7 +13,6 @@ from src.api.requests.sceleton.endpoint import Endpoint
 from src.api.specs.response_spec import ResponseSpecs
 from src.api.steps.base_steps import BaseSteps
 
-
 class VisitSteps(BaseSteps):
     @allure.step("get_visit_by_uuid")
     def get_visit_by_uuid(self, visit_uuid: str) -> VisitFullResponse:

@@ -6,7 +6,6 @@ from src.api.constants.error_messages import ErrorMessages
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.ui.login_pages.login_page import LoginPage
 
-
 @pytest.mark.ui
 @pytest.mark.browsers("chromium")
 class TestLoginUser:
@@ -15,7 +14,6 @@ class TestLoginUser:
     @allure.title("Admin Can Login With Correct Data")
     @pytest.mark.browsers("chromium")
     @pytest.mark.usefixtures("admin_user_request")
-    @allure.step("test_admin_can_login_with_correct_data")
     def test_admin_can_login_with_correct_data(self, page: Page, admin_user_request: BaseCreateUserRequest):
         LoginPage(page) \
             .open() \
@@ -24,10 +22,8 @@ class TestLoginUser:
             .select_location() \
             .should_have_add_patient_button()
 
-
     @allure.title("Login As Disabled User")
     @pytest.mark.usefixtures('api_manager', 'create_user_with_roles')
-    @allure.step("test_login_as_disabled_user")
     def test_login_as_disabled_user(self, api_manager, page, create_user_with_roles):
         user_request, user_data = create_user_with_roles()
         api_manager.user_steps.delete_user(user_data.uuid, purge=False)

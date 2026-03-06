@@ -1,4 +1,3 @@
-import allure
 from http import HTTPStatus
 from typing import Protocol, Optional, Union, TypeVar, Dict, Any
 
@@ -15,12 +14,10 @@ T = TypeVar('T', bound=BaseModel)
 
 class CrudRequester(HTTPRequest, CrudEndPointInterface):
     #TODO мы же наслодовались тут почему возвращаемы тип другой - не бейс модел
-    @allure.step("post")
     def post(self, model: Optional[T]) -> Response:
         #TODO: optimize
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
-
 
         body = model.model_dump() if model else ''
         response = requests.post(url=f'{server_url}{api_version_url}{self.endpoint.value.url}',
@@ -28,9 +25,6 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
-
-
-    @allure.step("get")
     def get(self, model: Optional[BaseModel] = None, id: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
@@ -43,7 +37,6 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
-    @allure.step("update")
     def update(self, model: Optional[BaseModel] = None) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
@@ -60,7 +53,6 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
-    @allure.step("update_by_post")
     def update_by_post(self, id: str, model: Optional[T] = None) -> Response:
         server_url = Config.get("server")
         api_version_url = Config.get("api_version")
@@ -76,7 +68,6 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
-    @allure.step("delete")
     def delete(self, id: int) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')
@@ -86,7 +77,6 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self.response_spec(response)
         return response
 
-    @allure.step("delete_with_params")
     def delete_with_params(self, id: str, params: Optional[Dict[str, Any]] = None, url_metadata: Optional[Dict[str, Any]] = None) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')

@@ -1,8 +1,6 @@
-import allure
 from dataclasses import dataclass
 from datetime import date
 from src.api.models.requests.create_person_request import CreatePersonRequest
-
 
 @dataclass
 class UiPatientData:
@@ -10,7 +8,6 @@ class UiPatientData:
     family: str
     gender: str
     age: int
-
 
 class PersonUiMapper:
 
@@ -21,7 +18,6 @@ class PersonUiMapper:
     }
 
     @staticmethod
-    @allure.step("from_request")
     def from_request(req: CreatePersonRequest) -> UiPatientData:
         name = req.names[0]
 

@@ -32,7 +32,6 @@ from src.api.models.requests.create_patient_request import CreatePatientRequest
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse
 
-
 class UserSteps(BaseSteps):
 
     @allure.step("get_person_full")
@@ -103,8 +102,6 @@ class UserSteps(BaseSteps):
         assert patient_created.uuid, f"patient_created.uuid is falsy: {patient_created}"
         assert patient_created.uuid == person, f"Verify returned uuid is: {person}, but got {patient_created.uuid}"
         assert str(patient_created.uuid).lower() != "null", f"uuid returned as 'null': {patient_created}"
-
-
 
         self.created_objects.append(patient_created)
         return patient_created
@@ -209,8 +206,6 @@ class UserSteps(BaseSteps):
             ModelAssertions(expected_request, full).match()
         return full
 
-
-
     @allure.step("verify_person_updated")
     def verify_person_updated(
         self,
@@ -251,7 +246,6 @@ class UserSteps(BaseSteps):
                 f"DB person.birthdate mismatch. "
                 f"Expected: {exp_date}, got: {db_date}"
             )
-
 
     @allure.step("create_patient_from_person_invalid_data")
     def create_patient_from_person_invalid_data(
@@ -399,7 +393,6 @@ class UserSteps(BaseSteps):
             model=payload,
         )
 
-    @allure.step("_get_visit_uuids_by_patient")
     def _get_visit_uuids_by_patient(self, patient_uuid: str) -> List[str]:
         resp = self._cr(Endpoint.GET_VISIT, ResponseSpecs.request_returns_ok()).get(params={"patient": patient_uuid})
 
@@ -410,7 +403,6 @@ class UserSteps(BaseSteps):
         except Exception:
             return []
 
-    @allure.step("_purge_visit")
     def _purge_visit(self, visit_uuid: str):
         self._cr(Endpoint.DELETE_VISIT, ResponseSpecs.entity_was_deleted()).delete_with_params(
             id=visit_uuid, params={"purge": "true"}
@@ -432,7 +424,6 @@ class UserSteps(BaseSteps):
             id=person_uuid,
             model=update_person_request,
         )
-
 
     @allure.step("verify_person_not_changed")
     def verify_person_not_changed(self, before: PersonFullResponse, after: PersonFullResponse) -> None:

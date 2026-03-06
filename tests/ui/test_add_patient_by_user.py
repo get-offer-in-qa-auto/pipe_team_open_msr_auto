@@ -1,5 +1,5 @@
-
 import allure
+
 import pytest
 from playwright.sync_api import Page
 
@@ -16,13 +16,11 @@ from src.ui.open_msr_home_page import OpenMsrHomePage
 from src.ui.patient_pages.patient_create_page import PatientCreatePage
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
-
 @pytest.mark.ui
 class TestCreatePatientByUser:
     @allure.title("Create patient with valid data")
     @pytest.mark.usefixtures("user_session_extension")
     @pytest.mark.user_session(1)
-    @allure.step("test_add_patient_with_correct_data")
     def test_add_patient_with_correct_data(
             self,
             page: Page,
@@ -57,7 +55,6 @@ class TestCreatePatientByUser:
         "Privilege Level: High",
         "Organizational: Doctor",
     ])
-    @allure.step("test_add_patient_user_has_allowed_roles_to_create_patient")
     def test_add_patient_user_has_allowed_roles_to_create_patient(
             self,
             page: Page,
@@ -95,7 +92,6 @@ class TestCreatePatientByUser:
 
     @allure.title("User without Add/Edit Patients privilege cannot create patient")
     @pytest.mark.usefixtures('api_manager', 'create_user_with_privileges')
-    @allure.step("test_create_patient_no_create_edit_patient_privilege_user")
     def test_create_patient_no_create_edit_patient_privilege_user(
             self,
             api_manager,

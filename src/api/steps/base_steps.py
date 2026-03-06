@@ -15,17 +15,13 @@ from src.api.requests.sceleton.requesters.validated_crud_requester import Valida
 from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
 
-
 class BaseSteps:
-    @allure.step("__init__")
     def __init__(self, created_objects: List[Any]):
         self.created_objects = created_objects
 
-    @allure.step("_request_spec")
     def _request_spec(self, request_spec=None):
         return request_spec or RequestSpecs.admin_auth_spec()
 
-    @allure.step("_vcr")
     def _vcr(self, endpoint: Endpoint, response_spec, request_spec=None) -> ValidatedCrudRequester:
         return ValidatedCrudRequester(
             request_spec=self._request_spec(request_spec),
@@ -33,7 +29,6 @@ class BaseSteps:
             response_spec=response_spec,
         )
 
-    @allure.step("_cr")
     def _cr(self, endpoint: Endpoint, response_spec, request_spec=None) -> CrudRequester:
         return CrudRequester(
             request_spec=self._request_spec(request_spec),
@@ -144,6 +139,4 @@ class BaseSteps:
             start_index += limit
 
         return GetPrivilegesResponse(results=all_privileges)
-
-
 

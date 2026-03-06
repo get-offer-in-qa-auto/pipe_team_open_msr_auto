@@ -1,6 +1,4 @@
-import allure
 from typing import List
-
 
 class ErrorMessages:
     INT_IDENTIFIER_TYPE = 'Don\'t know how to convert from class java.lang.Integer to class org.openmrs.PatientIdentifierType'
@@ -24,6 +22,5 @@ class ErrorMessages:
     INVALID_USERNAME_OR_PASSWORD = "Invalid username or password"
 
     @staticmethod
-    @allure.step("privileges_required")
     def privileges_required(privileges: List[str]):
         return f'User is logged in but doesn\'t have the relevant privilege [Privileges required: {",".join(privileges)}]'

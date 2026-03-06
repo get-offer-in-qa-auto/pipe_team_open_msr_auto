@@ -13,12 +13,10 @@ from src.ui.api_flow import ApiFlow
 T = TypeVar("T", bound="BasePage")
 
 class BasePage(ABC):
-    @allure.step("__init__")
     def __init__(self, page :Page):
         self.page = page
         self.base_url = str(Config.get('UI_BASE_URL','http://localhost:3000')).strip('/')
 
-    @allure.step("_generate_page_elements")
     def _generate_page_elements(
             self,
             element: Locator,
@@ -103,7 +101,6 @@ class BasePage(ABC):
         return self
 
     @abstractmethod
-    @allure.step("url")
     def url(self) -> str:
         raise NotImplementedError
 
@@ -115,11 +112,9 @@ class BasePage(ABC):
         self.page.goto(taget, wait_until="domcontentloaded")
         return self
 
-    @allure.step("get_page")
     def get_page(self, page_cls: Type[T]) -> T:
         return page_cls(self.page)
 
-    @allure.step("check_alert_message_and_accept")
     def check_alert_message_and_accept(self, expected_text: str):
         def _handler(d: Dialog):
             assert expected_text in d.message, f"Alert text mismatch {d.message} "

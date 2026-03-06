@@ -4,10 +4,8 @@ from playwright.sync_api import Locator, expect
 
 from src.ui.base_page import BasePage
 
-
 class PatientSummaryPage(BasePage):
 
-    @allure.step("__init__")
     def __init__(self, page, patient_uuid: str | None = None):
         super().__init__(page)
         self.patient_uuid = patient_uuid
@@ -19,7 +17,6 @@ class PatientSummaryPage(BasePage):
 
     # ---------- URL ----------
 
-    @allure.step("url")
     def url(self) -> str:
         """
         Формирование URL страницы Patient Summary.
@@ -36,17 +33,14 @@ class PatientSummaryPage(BasePage):
     # ---------- Patient Banner ----------
 
     @property
-    @allure.step("openmrs_id")
     def openmrs_id(self):
         return self.page.locator("text=OpenMRS ID")
 
     @property
-    @allure.step("patient_banner")
     def patient_banner(self):
         return self.page.locator('header[aria-label="patient banner"]')
 
     @property
-    @allure.step("actions_button")
     def actions_button(self):
         return self.page.get_by_role("button", name="Actions")
 
@@ -56,67 +50,55 @@ class PatientSummaryPage(BasePage):
         return self
 
     @property
-    @allure.step("active_visit")
     def active_visit(self):
         return self.patient_banner.get_by_title("Active Visit")
 
-    @allure.step("chosen_punctuality")
     def chosen_punctuality(self, punctuality_type: str):
         return self.patient_banner.get_by_title(punctuality_type)
 
     # ---------- Summary Sections ----------
 
     @property
-    @allure.step("vitals_section")
     def vitals_section(self):
         return self.page.get_by_role("heading", name="Vitals")
 
     @property
-    @allure.step("biometrics_section")
     def biometrics_section(self):
         return self.page.get_by_role("heading", name="Biometrics")
 
     @property
-    @allure.step("conditions_section")
     def conditions_section(self):
         return self.page.get_by_role("heading", name="Conditions")
 
     @property
-    @allure.step("medications_section")
     def medications_section(self):
         return self.page.get_by_role("heading", name="Active Medications")
 
     # ---------- Left Navigation ----------
 
     @property
-    @allure.step("patient_summary_nav")
     def patient_summary_nav(self):
         return self.page.get_by_role("link", name="Patient summary")
 
     @property
-    @allure.step("visits_nav")
     def visits_nav(self):
         return self.page.get_by_role("link", name="Visits")
 
     @property
-    @allure.step("allergies_nav")
     def allergies_nav(self):
         return self.page.get_by_role("link", name="Allergies")
 
     # ------ Actions modal --------
 
     @property
-    @allure.step("add_visit_button")
     def add_visit_button(self):
         return self.page.get_by_role("menuitem", name="Add visit")
 
     @property
-    @allure.step("end_active_visit_button")
     def end_active_visit_button(self):
         return self.page.get_by_role("menuitem", name="End active visit")
 
     @property
-    @allure.step("delete_active_visit_button")
     def delete_active_visit_button(self):
         return self.page.get_by_role("menuitem", name="Delete active visit")
 
@@ -138,16 +120,13 @@ class PatientSummaryPage(BasePage):
     # ---Start visit modal --------
 
     @property
-    @allure.step("start_visit_form")
     def start_visit_form(self):
         return self.page.locator('[data-openmrs-role="Start Visit Form"]')
 
     @property
-    @allure.step("visit_type_group")
     def visit_type_group(self):
         return self.start_visit_form.locator("fieldset.cds--radio-button-group")
 
-    @allure.step("_radio_by_text")
     def _radio_by_text(self, group: Locator, text: str):
         return group.locator("label.cds--radio-button__label", has_text=text)
 
@@ -157,7 +136,6 @@ class PatientSummaryPage(BasePage):
         return self
 
     @property
-    @allure.step("an_option_select")
     def an_option_select(self):
         return self.start_visit_form.locator('select.cds--select-input[title="Select an option"]')
 
@@ -166,7 +144,6 @@ class PatientSummaryPage(BasePage):
         self.an_option_select.select_option(label=option_label)
 
     @property
-    @allure.step("punctuality_select")
     def punctuality_select(self) -> Locator:
         return self.start_visit_form.get_by_label("Punctuality (optional)")
 
@@ -176,7 +153,6 @@ class PatientSummaryPage(BasePage):
         return self
 
     @property
-    @allure.step("start_visit")
     def start_visit(self):
         return self.start_visit_form.get_by_text("Start visit")
 
@@ -203,27 +179,22 @@ class PatientSummaryPage(BasePage):
     # ------End visit modal ------
 
     @property
-    @allure.step("end_visit_modal")
     def end_visit_modal(self) -> Locator:
         return self.page.get_by_role("dialog")
 
     @property
-    @allure.step("end_visit_modal_title")
     def end_visit_modal_title(self) -> Locator:
         return self.end_visit_modal.locator("h2.cds--modal-header__heading")
 
     @property
-    @allure.step("end_visit_cancel_button")
     def end_visit_cancel_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"Cancel", re.I))
 
     @property
-    @allure.step("end_visit_confirm_button")
     def end_visit_confirm_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"End Visit", re.I))
 
     @property
-    @allure.step("delete_visit_confirm_button")
     def delete_visit_confirm_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"Delete Visit", re.I))
 
@@ -256,7 +227,6 @@ class PatientSummaryPage(BasePage):
 
     # ---------- Helpers ----------
 
-    @allure.step("get_patient_uuid_from_summery_page")
     def get_patient_uuid_from_summery_page(self) -> str:
         return self.page.url.split("/patient/")[1].split("/")[0]
 
@@ -267,7 +237,6 @@ class PatientSummaryPage(BasePage):
 
         return self
 
-    @allure.step("get_patient_name_locator")
     def get_patient_name_locator(self, name: str) -> Locator:
         return self.patient_banner.get_by_text(name)
 

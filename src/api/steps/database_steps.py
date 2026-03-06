@@ -15,7 +15,6 @@ from src.api.database.dao.visit_dao import VisitDao
 from src.api.database.db_client import fetch_one
 from src.api.models.requests.create_visit_request import CreateVisitRequest
 
-
 class DatabaseSteps:
     @staticmethod
     @allure.step("get_user_by_username")
@@ -292,7 +291,6 @@ class DatabaseSteps:
         )
 
     @staticmethod
-    @allure.step("_id_by_uuid")
     def _id_by_uuid(table: str, id_col: str, uuid: str) -> int:
         row = fetch_one(
             f"SELECT {id_col} AS id FROM {table} WHERE uuid = %s LIMIT 1",
@@ -302,7 +300,6 @@ class DatabaseSteps:
         return int(row["id"])
 
     @staticmethod
-    @allure.step("_parse_iso_utc")
     def _parse_iso_utc(dt_str: str) -> datetime:
         # "2026-02-14T12:34:56.789Z" -> naive datetime (UTC)
         dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
