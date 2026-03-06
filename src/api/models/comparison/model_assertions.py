@@ -1,3 +1,4 @@
+import allure
 from typing import Any
 
 from src.api.models.comparison.model_comparator import ModelComparator
@@ -5,10 +6,12 @@ from src.api.models.comparison.model_comparison_configuration import ModelCompar
 
 
 class ModelAssertions:
+    @allure.step("__init__")
     def __init__(self, request: Any, response: Any):
         self.request = request
         self.response = response
 
+    @allure.step("match")
     def match(self) -> 'ModelAssertions':
         config_loader = ModelComparisonConfigLoader('model-comparison.properties')
         rule = config_loader.get_rule_for(self.request)

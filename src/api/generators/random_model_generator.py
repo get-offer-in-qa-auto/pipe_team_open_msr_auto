@@ -1,3 +1,4 @@
+import allure
 import random
 import uuid
 from datetime import datetime
@@ -16,6 +17,7 @@ from src.api.models.requests.create_patient_from_person_request import PatientId
 class RandomModelGenerator:
 
     @staticmethod
+    @allure.step("generate")
     def generate(cls: type) -> Any:
         type_hints = get_type_hints(cls, include_extras=True)
         init_data = {}
@@ -54,6 +56,7 @@ class RandomModelGenerator:
 
 
     @staticmethod
+    @allure.step("_generate_from_regex")
     def _generate_from_regex(regex: str, field_type: type) -> Any:
         generated = rstr.xeger(regex)
 
@@ -66,6 +69,7 @@ class RandomModelGenerator:
         return generated
 
     @staticmethod
+    @allure.step("_generate_value")
     def _generate_value(field_type: Any) -> Any:
         origin = get_origin(field_type)
 

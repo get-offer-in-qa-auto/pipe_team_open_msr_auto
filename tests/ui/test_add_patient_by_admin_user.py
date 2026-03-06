@@ -18,6 +18,7 @@ from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 class TestCreatePatientByAdminUser:
     @allure.title("Add Patient With Correct Data")
     @pytest.mark.admin_session
+    @allure.step("test_add_patient_with_correct_data")
     def test_add_patient_with_correct_data(
             self,
             page: Page,

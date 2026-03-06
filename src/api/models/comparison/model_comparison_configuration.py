@@ -1,3 +1,4 @@
+import allure
 import os
 from pathlib import Path
 import configparser
@@ -7,6 +8,7 @@ from typing import Dict, Type, Optional
 from typing import Dict
 
 class ComparisonRule:
+    @allure.step("__init__")
     def __init__(self, response_class_name: str, field_pairs: list[str]):
         self._response_class_name = response_class_name
         self._field_mapping: Dict[str, str] = {}
@@ -20,22 +22,27 @@ class ComparisonRule:
                 self._field_mapping[key] = key
 
     @property
+    @allure.step("response_class_name")
     def response_class_name(self) -> str:
         return self._response_class_name
 
     @property
+    @allure.step("field_mapping")
     def field_mapping(self) -> Dict[str, str]:
         return self._field_mapping
 
 
 class ModelComparisonConfigLoader:
+    @allure.step("__init__")
     def __init__(self, config_file: str):
         self.rules : Dict[str, ComparisonRule]= {}
         self._load_config(config_file=config_file)
 
+    @allure.step("get_rule_for")
     def get_rule_for(self, request_class: Type) -> Optional[ComparisonRule]:
         return self.rules.get(type(request_class).__name__)
 
+    @allure.step("_load_config")
     def _load_config(self, config_file: str):
         config_path = Path(__file__).parents[4]/"resources" / f'{config_file}'
         if not os.path.exists(config_path):

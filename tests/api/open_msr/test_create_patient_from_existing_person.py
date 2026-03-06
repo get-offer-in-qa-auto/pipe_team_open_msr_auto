@@ -12,6 +12,7 @@ from src.api.specs.response_spec import ResponseSpecs
 class TestCreatePatientFromExistingPerson:
     @allure.title("Create Patient From Existing Person Admin User")
     @pytest.mark.check_all_patients_change(delta=1, person_uuid_source="created_person.uuid", should_exist=True)
+    @allure.step("test_create_patient_from_existing_person_admin_user")
     def test_create_patient_from_existing_person_admin_user(self, api_manager: ApiManager, created_person: CreatePersonResponse):
         identifiers = [api_manager.user_steps.build_identifier_request()]
         create_patient_response = api_manager.user_steps.create_patient_from_person(person=created_person.uuid,
@@ -28,6 +29,7 @@ class TestCreatePatientFromExistingPerson:
         "Organizational: Doctor",
     ])
     @allure.title("Create Patient From Existing Person With Role")
+    @allure.step("test_create_patient_from_existing_person_with_role")
     def test_create_patient_from_existing_person_with_role(self, api_manager, create_user_with_roles, created_person, role):
         user_request, _ = create_user_with_roles([role])
 
@@ -41,6 +43,7 @@ class TestCreatePatientFromExistingPerson:
     @allure.title("Create Patient From Existing Person No Create Edit Patient Privilege User")
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_privileges')
     @pytest.mark.check_all_patients_change(delta=0, person_uuid_source="created_person.uuid", should_exist=False)
+    @allure.step("test_create_patient_from_existing_person_no_create_edit_patient_privilege_user")
     def test_create_patient_from_existing_person_no_create_edit_patient_privilege_user(self, api_manager, create_user_with_privileges, created_person):
         exclude_privilege_names=['Add Patients', 'Edit Patients']
         user_request, _ = create_user_with_privileges(exclude_privilege_names=exclude_privilege_names)
@@ -59,6 +62,7 @@ class TestCreatePatientFromExistingPerson:
     @allure.title("Create Patient From Existing Person With Disabled User")
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
     @pytest.mark.check_all_patients_change(delta=0, person_uuid_source="created_person.uuid", should_exist=False)
+    @allure.step("test_create_patient_from_existing_person_with_disabled_user")
     def test_create_patient_from_existing_person_with_disabled_user(self, api_manager, create_user_with_roles,
                                                                     created_person):
         user_request, user_data = create_user_with_roles()
@@ -101,6 +105,7 @@ class TestCreatePatientFromExistingPerson:
         ('identifier', RandomData.get_string(256), ErrorMessages.INVALID_SUBMISSION),
     ])
     @allure.title("Create Patient From Existing Person Invalid Identifier Data")
+    @allure.step("test_create_patient_from_existing_person_invalid_identifier_data")
     def test_create_patient_from_existing_person_invalid_identifier_data(self, api_manager, create_user_with_roles,
                                                                          created_person, field, value,
                                                                          error_message):

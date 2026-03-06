@@ -11,6 +11,7 @@ from src.api.models.requests.update_person_request import UpdatePersonRequest
 class TestUpdatePerson:
     @allure.title("Update Person Gender")
     @pytest.mark.usefixtures('api_manager', 'created_person')
+    @allure.step("test_update_person_gender")
     def test_update_person_gender(self, api_manager, created_person):
         new_user_data = RandomModelGenerator.generate(CreatePersonRequest)
         update_req = UpdatePersonRequest(gender=new_user_data.gender)
@@ -28,6 +29,7 @@ class TestUpdatePerson:
 
     @allure.title("Update Person Birthdate")
     @pytest.mark.usefixtures("api_manager", "created_person")
+    @allure.step("test_update_person_birthdate")
     def test_update_person_birthdate(self, api_manager, created_person):
         new_data = RandomModelGenerator.generate(CreatePersonRequest)
         update_req = UpdatePersonRequest(birthdate=new_data.birthdate)
@@ -52,6 +54,7 @@ class TestUpdatePerson:
         ],
     )
     @allure.title("Update Person Invalid")
+    @allure.step("test_update_person_invalid")
     def test_update_person_invalid(self, api_manager, created_person, field, value, error_value):
         before = api_manager.user_steps.get_person_full(created_person.uuid)
 

@@ -1,3 +1,4 @@
+import allure
 import re
 from playwright.sync_api import Locator, expect
 
@@ -6,16 +7,19 @@ from src.ui.base_page import BasePage
 
 class PatientSummaryPage(BasePage):
 
+    @allure.step("__init__")
     def __init__(self, page, patient_uuid: str | None = None):
         super().__init__(page)
         self.patient_uuid = patient_uuid
 
+    @allure.step("remember_patient_uuid")
     def remember_patient_uuid(self) -> "PatientSummaryPage":
         self.patient_uuid = self.get_patient_uuid_from_summery_page()
         return self
 
     # ---------- URL ----------
 
+    @allure.step("url")
     def url(self) -> str:
         """
         Формирование URL страницы Patient Summary.
@@ -32,82 +36,101 @@ class PatientSummaryPage(BasePage):
     # ---------- Patient Banner ----------
 
     @property
+    @allure.step("openmrs_id")
     def openmrs_id(self):
         return self.page.locator("text=OpenMRS ID")
 
     @property
+    @allure.step("patient_banner")
     def patient_banner(self):
         return self.page.locator('header[aria-label="patient banner"]')
 
     @property
+    @allure.step("actions_button")
     def actions_button(self):
         return self.page.get_by_role("button", name="Actions")
 
+    @allure.step("open_actions")
     def open_actions(self):
         self.actions_button.click()
         return self
 
     @property
+    @allure.step("active_visit")
     def active_visit(self):
         return self.patient_banner.get_by_title("Active Visit")
 
+    @allure.step("chosen_punctuality")
     def chosen_punctuality(self, punctuality_type: str):
         return self.patient_banner.get_by_title(punctuality_type)
 
     # ---------- Summary Sections ----------
 
     @property
+    @allure.step("vitals_section")
     def vitals_section(self):
         return self.page.get_by_role("heading", name="Vitals")
 
     @property
+    @allure.step("biometrics_section")
     def biometrics_section(self):
         return self.page.get_by_role("heading", name="Biometrics")
 
     @property
+    @allure.step("conditions_section")
     def conditions_section(self):
         return self.page.get_by_role("heading", name="Conditions")
 
     @property
+    @allure.step("medications_section")
     def medications_section(self):
         return self.page.get_by_role("heading", name="Active Medications")
 
     # ---------- Left Navigation ----------
 
     @property
+    @allure.step("patient_summary_nav")
     def patient_summary_nav(self):
         return self.page.get_by_role("link", name="Patient summary")
 
     @property
+    @allure.step("visits_nav")
     def visits_nav(self):
         return self.page.get_by_role("link", name="Visits")
 
     @property
+    @allure.step("allergies_nav")
     def allergies_nav(self):
         return self.page.get_by_role("link", name="Allergies")
 
     # ------ Actions modal --------
 
     @property
+    @allure.step("add_visit_button")
     def add_visit_button(self):
         return self.page.get_by_role("menuitem", name="Add visit")
 
     @property
+    @allure.step("end_active_visit_button")
     def end_active_visit_button(self):
         return self.page.get_by_role("menuitem", name="End active visit")
 
     @property
+    @allure.step("delete_active_visit_button")
     def delete_active_visit_button(self):
         return self.page.get_by_role("menuitem", name="Delete active visit")
 
+    @allure.step("click_add_visit")
     def click_add_visit(self):
         self.add_visit_button.click()
         return self
 
+    @allure.step("click_end_active_visit")
     def click_end_active_visit(self):
         self.end_active_visit_button.click()
         return self
 
+    @allure.step("click_delete_active_visit")
     def click_delete_active_visit(self):
         self.delete_active_visit_button.click()
         return self
@@ -115,51 +138,64 @@ class PatientSummaryPage(BasePage):
     # ---Start visit modal --------
 
     @property
+    @allure.step("start_visit_form")
     def start_visit_form(self):
         return self.page.locator('[data-openmrs-role="Start Visit Form"]')
 
     @property
+    @allure.step("visit_type_group")
     def visit_type_group(self):
         return self.start_visit_form.locator("fieldset.cds--radio-button-group")
 
+    @allure.step("_radio_by_text")
     def _radio_by_text(self, group: Locator, text: str):
         return group.locator("label.cds--radio-button__label", has_text=text)
 
+    @allure.step("select_visit_type")
     def select_visit_type(self, name: str):
         self._radio_by_text(self.visit_type_group, name).click()
         return self
 
     @property
+    @allure.step("an_option_select")
     def an_option_select(self):
         return self.start_visit_form.locator('select.cds--select-input[title="Select an option"]')
 
+    @allure.step("select_an_option")
     def select_an_option(self, option_label: str):
         self.an_option_select.select_option(label=option_label)
 
     @property
+    @allure.step("punctuality_select")
     def punctuality_select(self) -> Locator:
         return self.start_visit_form.get_by_label("Punctuality (optional)")
 
+    @allure.step("set_punctuality")
     def set_punctuality(self, punctuality_type: str):
         self.punctuality_select.select_option(label=punctuality_type)
         return self
 
     @property
+    @allure.step("start_visit")
     def start_visit(self):
         return self.start_visit_form.get_by_text("Start visit")
 
+    @allure.step("click_start_visit")
     def click_start_visit(self):
         self.start_visit.click()
         return self
 
+    @allure.step("should_have_active_visit")
     def should_have_active_visit(self):
         expect(self.active_visit).to_be_visible()
         return self
 
+    @allure.step("should_not_have_active_visit")
     def should_not_have_active_visit(self):
         expect(self.active_visit).to_be_hidden()
         return self
 
+    @allure.step("should_have_punctuality")
     def should_have_punctuality(self, punctuality: str):
         expect(self.chosen_punctuality(punctuality)).to_be_visible()
         return self
@@ -167,42 +203,51 @@ class PatientSummaryPage(BasePage):
     # ------End visit modal ------
 
     @property
+    @allure.step("end_visit_modal")
     def end_visit_modal(self) -> Locator:
         return self.page.get_by_role("dialog")
 
     @property
+    @allure.step("end_visit_modal_title")
     def end_visit_modal_title(self) -> Locator:
         return self.end_visit_modal.locator("h2.cds--modal-header__heading")
 
     @property
+    @allure.step("end_visit_cancel_button")
     def end_visit_cancel_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"Cancel", re.I))
 
     @property
+    @allure.step("end_visit_confirm_button")
     def end_visit_confirm_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"End Visit", re.I))
 
     @property
+    @allure.step("delete_visit_confirm_button")
     def delete_visit_confirm_button(self) -> Locator:
         return self.end_visit_modal.get_by_role("button", name=re.compile(r"Delete Visit", re.I))
 
+    @allure.step("should_see_end_visit_modal")
     def should_see_end_visit_modal(self):
         expect(self.end_visit_modal).to_be_visible()
         expect(self.end_visit_modal_title).to_contain_text("end this active visit")
         return self
 
+    @allure.step("confirm_end_visit")
     def confirm_end_visit(self):
         expect(self.end_visit_modal).to_be_visible()
         self.end_visit_confirm_button.click()
         expect(self.end_visit_modal).to_be_hidden()
         return self
 
+    @allure.step("cancel_end_visit")
     def cancel_end_visit(self):
         expect(self.end_visit_modal).to_be_visible()
         self.end_visit_cancel_button.click()
         expect(self.end_visit_modal).to_be_hidden()
         return self
 
+    @allure.step("confirm_delete_visit")
     def confirm_delete_visit(self):
         expect(self.end_visit_modal).to_be_visible()
         self.delete_visit_confirm_button.click()
@@ -211,23 +256,28 @@ class PatientSummaryPage(BasePage):
 
     # ---------- Helpers ----------
 
+    @allure.step("get_patient_uuid_from_summery_page")
     def get_patient_uuid_from_summery_page(self) -> str:
         return self.page.url.split("/patient/")[1].split("/")[0]
 
+    @allure.step("should_be_opened")
     def should_be_opened(self):
         url = self.page.url
         assert "/patient/" in url
 
         return self
 
+    @allure.step("get_patient_name_locator")
     def get_patient_name_locator(self, name: str) -> Locator:
         return self.patient_banner.get_by_text(name)
 
+    @allure.step("should_have_patient")
     def should_have_patient(self, given_name: str, family_name: str):
         expect(self.get_patient_name_locator(f"{given_name} {family_name}")).to_be_visible()
 
         return self
 
+    @allure.step("switch_to_api")
     def switch_to_api(self, api_manager):
         patient_uuid = self.get_patient_uuid_from_summery_page()
         return super().switch_to_api(api_manager).with_patient(patient_uuid)

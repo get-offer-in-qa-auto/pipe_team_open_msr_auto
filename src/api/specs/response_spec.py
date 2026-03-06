@@ -1,3 +1,4 @@
+import allure
 from collections.abc import Callable
 from http import HTTPStatus
 from json import JSONDecodeError
@@ -9,30 +10,35 @@ from requests import Response
 class ResponseSpecs:
 
     @staticmethod
+    @allure.step("request_returns_ok")
     def request_returns_ok() -> Callable:
         def check(response: Response):
             assert response.status_code == HTTPStatus.OK, response.text
         return check
 
     @staticmethod
+    @allure.step("entity_was_created")
     def entity_was_created() -> Callable:
         def check(response: Response):
             assert response.status_code == HTTPStatus.CREATED, response.text
         return check
 
     @staticmethod
+    @allure.step("entity_was_deleted")
     def entity_was_deleted() -> Callable:
         def check(response: Response):
             assert response.status_code in (HTTPStatus.CREATED, HTTPStatus.OK, HTTPStatus.NO_CONTENT), response.text
         return check
 
     @staticmethod
+    @allure.step("entity_not_found")
     def entity_not_found(error_msg: str) -> Callable:
         return lambda res: ResponseSpecs._base_error_check(
             res, HTTPStatus.NOT_FOUND, ResponseSpecs._standard_error_extractor, error_msg
         )
 
     @staticmethod
+    @allure.step("request_returns_bad_request")
     def request_returns_bad_request(error_key: str, error_value: str) -> Callable:
         def check(response: Response):
             assert response.status_code == HTTPStatus.BAD_REQUEST, response.text
@@ -50,24 +56,28 @@ class ResponseSpecs:
         return check
 
     @staticmethod
+    @allure.step("request_returns_bad_request_with_message")
     def request_returns_bad_request_with_message(error_msg: str) -> Callable:
         return lambda res: ResponseSpecs._base_error_check(
             res, HTTPStatus.BAD_REQUEST, ResponseSpecs._standard_error_extractor, error_msg
         )
 
     @staticmethod
+    @allure.step("request_returns_unauthorized_with_message")
     def request_returns_unauthorized_with_message(error_msg: str) -> Callable:
         return lambda res: ResponseSpecs._base_error_check(
             res, HTTPStatus.UNAUTHORIZED, ResponseSpecs._standard_error_extractor, error_msg
         )
 
     @staticmethod
+    @allure.step("request_returns_forbidden_with_message")
     def request_returns_forbidden_with_message(error_msg: str) -> Callable:
         return lambda res: ResponseSpecs._base_error_check(
             res, HTTPStatus.FORBIDDEN, ResponseSpecs._standard_error_extractor, error_msg
         )
 
     @staticmethod
+    @allure.step("_base_error_check")
     def _base_error_check(response: Response, status_code: HTTPStatus, extract_fn: Callable[[dict], Any],
                           expected_msg: str):
         """Базовый метод для проверки статус-кода и наличия сообщения в JSON."""
@@ -85,6 +95,7 @@ class ResponseSpecs:
         )
 
     @staticmethod
+    @allure.step("_standard_error_extractor")
     def _standard_error_extractor(data: dict) -> Any:
         """Стандартный путь для большинства ошибок: error -> message"""
         return data.get("error", {}).get("message")

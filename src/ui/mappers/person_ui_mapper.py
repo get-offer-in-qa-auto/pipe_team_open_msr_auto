@@ -1,3 +1,4 @@
+import allure
 from dataclasses import dataclass
 from datetime import date
 from src.api.models.requests.create_person_request import CreatePersonRequest
@@ -20,6 +21,7 @@ class PersonUiMapper:
     }
 
     @staticmethod
+    @allure.step("from_request")
     def from_request(req: CreatePersonRequest) -> UiPatientData:
         name = req.names[0]
 

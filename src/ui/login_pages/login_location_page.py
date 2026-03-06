@@ -1,3 +1,4 @@
+import allure
 import random
 
 from playwright.sync_api import expect
@@ -9,17 +10,21 @@ from src.ui.open_msr_home_page import OpenMsrHomePage
 class LoginLocationPage(BasePage):
 
     @property
+    @allure.step("welcome_text")
     def welcome_text(self):
         return self.page.get_by_text("Welcome")
 
     @property
+    @allure.step("username_input")
     def username_input(self):
         return self.page.locator("#username")
 
     @property
+    @allure.step("list_of_location_elements")
     def list_of_location_elements(self):
         return self.page.locator('input[type="radio"]')
 
+    @allure.step("select_random_location")
     def select_random_location(self):
         radios = self.list_of_location_elements
 
@@ -47,18 +52,22 @@ class LoginLocationPage(BasePage):
         expect(radio).to_be_checked()
 
     @property
+    @allure.step("confirm_button")
     def confirm_button(self):
         return self.page.get_by_role("button", name="Confirm")
 
 
+    @allure.step("url")
     def url(self) -> str:
         return "/login/location"
 
 
+    @allure.step("should_see_welcome")
     def should_see_welcome(self):
         expect(self.welcome_text).to_be_visible()
         return self
 
+    @allure.step("select_location")
     def select_location(self) -> OpenMsrHomePage:
         self.select_random_location()
         self.confirm_button.click()

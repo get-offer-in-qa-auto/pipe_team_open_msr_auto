@@ -1,3 +1,4 @@
+import allure
 from typing import Any, Dict, List
 from dataclasses import dataclass
 import re
@@ -9,18 +10,22 @@ class Mismatch:
     actual: Any
 
 class ComparisonResult:
+    @allure.step("__init__")
     def __init__(self, mismatches: List [Mismatch]):
         self._mismatches =  mismatches
 
+    @allure.step("is_success")
     def is_success(self) -> bool:
         return not self.mismatches
 
     @property
+    @allure.step("mismatches")
     def mismatches(self)->List [Mismatch]:
         return self._mismatches
 
 class ModelComparator:
     @staticmethod
+    @allure.step("compare_fields")
     def compare_fields(request: Any, response: Any, field_mapping: Dict[str, str]):
         mismatches = []
         for request_field, response_field in field_mapping.items():
@@ -45,6 +50,7 @@ class ModelComparator:
 
 
     @staticmethod
+    @allure.step("_get_field_value")
     def _get_field_value(obj: Any, path: str) -> Any:
         """
         Поддерживает пути вида:
@@ -79,6 +85,7 @@ class ModelComparator:
         return current
 
     @staticmethod
+    @allure.step("_normalize_value")
     def _normalize_value(value: Any) -> str:
         if value is None:
             return ""

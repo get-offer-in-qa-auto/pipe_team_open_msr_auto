@@ -16,6 +16,7 @@ class TestVisitActions:
 
     @allure.title("Create Visit For Patient")
     @pytest.mark.check_visit_created_in_db
+    @allure.step("test_create_visit_for_patient")
     def test_create_visit_for_patient(self, page: Page, api_manager: ApiManager, created_patient):
         PatientSummaryPage(page, patient_uuid=created_patient.uuid).open()\
             .open_actions() \
@@ -28,6 +29,7 @@ class TestVisitActions:
 
     @allure.title("End Visit")
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=True)
+    @allure.step("test_end_visit")
     def test_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
             .should_be_opened() \
@@ -39,6 +41,7 @@ class TestVisitActions:
 
     @allure.title("Delete Visit")
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", voided=True)
+    @allure.step("test_delete_visit")
     def test_delete_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
             .should_be_opened() \
@@ -50,6 +53,7 @@ class TestVisitActions:
 
     @allure.title("Cancel End Visit")
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=False)
+    @allure.step("test_cancel_end_visit")
     def test_cancel_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open() \
             .should_be_opened() \

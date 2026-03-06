@@ -1,4 +1,5 @@
 from __future__ import annotations
+import allure
 
 from typing import Any
 
@@ -12,14 +13,17 @@ class DaoAndModelAssertions:
     from resources/dao-comparison.properties.
     """
 
+    @allure.step("__init__")
     def __init__(self, left: Any, right: Any):
         self.left = left
         self.right = right
 
     @staticmethod
+    @allure.step("assert_that")
     def assert_that(left: Any, right: Any) -> "DaoAndModelAssertions":
         return DaoAndModelAssertions(left, right)
 
+    @allure.step("match")
     def match(self) -> "DaoAndModelAssertions":
         config_loader = ModelComparisonConfigLoader("dao-comparison.properties")
         rule = config_loader.get_rule_for(self.left)

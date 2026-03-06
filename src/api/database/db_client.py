@@ -1,4 +1,5 @@
 from __future__ import annotations
+import allure
 
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
@@ -69,10 +70,12 @@ class Condition:
     params: Tuple[Any, ...]
 
     @staticmethod
+    @allure.step("equal_to")
     def equal_to(column: str, value: Any) -> "Condition":
         return Condition(sql=f"{column} = %s", params=(value,))
 
     @staticmethod
+    @allure.step("raw")
     def raw(sql: str, *params: Any) -> "Condition":
         """
         Allows passing custom SQL condition with parameters.
@@ -82,6 +85,7 @@ class Condition:
         return Condition(sql=sql, params=tuple(params))
 
     @staticmethod
+    @allure.step("and_")
     def and_(*conditions: "Condition") -> "Condition":
         conds = [c for c in conditions if c is not None]
         if not conds:
@@ -93,29 +97,35 @@ class Condition:
 
 class DBRequest:
     @staticmethod
+    @allure.step("builder")
     def builder() -> "DBRequestBuilder":
         return DBRequestBuilder()
 
 
 class DBRequestBuilder:
+    @allure.step("__init__")
     def __init__(self):
         self._request_type: Optional[RequestType] = None
         self._table: Optional[str] = None
         self._where: Optional[Condition] = None
         self._joins: list[str] = []
 
+    @allure.step("request_type")
     def request_type(self, request_type: RequestType) -> "DBRequestBuilder":
         self._request_type = request_type
         return self
 
+    @allure.step("table")
     def table(self, table: str) -> "DBRequestBuilder":
         self._table = table
         return self
 
+    @allure.step("where")
     def where(self, condition: Condition) -> "DBRequestBuilder":
         self._where = condition
         return self
 
+    @allure.step("join")
     def join(self, table: str, condition: str) -> "DBRequestBuilder":
         """
         Adds INNER JOIN to the query.
@@ -125,6 +135,7 @@ class DBRequestBuilder:
         self._joins.append(f"JOIN {table} ON {condition}")
         return self
 
+    @allure.step("extract_as")
     def extract_as(self, dao_cls: Type[T]) -> T:
         if self._request_type != RequestType.SELECT:
             raise NotImplementedError(f"Request type not supported: {self._request_type}")
@@ -148,6 +159,7 @@ class DBRequestBuilder:
 
         return dao_cls(**row)  # type: ignore[arg-type]
 
+    @allure.step("extract_optional_as")
     def extract_optional_as(self, dao_cls: Type[T]) -> Optional[T]:
         if self._request_type != RequestType.SELECT:
             raise NotImplementedError(f"Request type not supported: {self._request_type}")
@@ -170,6 +182,7 @@ class DBRequestBuilder:
             return None
         return dao_cls(**row)  # type: ignore[arg-type]
 
+    @allure.step("extract_all_as")
     def extract_all_as(self, dao_cls: Type[T]) -> list[T]:
         if self._request_type != RequestType.SELECT:
             raise NotImplementedError(f"Request type not supported: {self._request_type}")
@@ -190,6 +203,7 @@ class DBRequestBuilder:
         rows = fetch_all(sql, params)
         return [dao_cls(**row) for row in rows]
 
+    @allure.step("execute")
     def execute(self) -> int:
         """Метод для выполнения DELETE запросов."""
         if self._request_type != RequestType.DELETE:

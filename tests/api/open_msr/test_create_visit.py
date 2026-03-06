@@ -15,6 +15,7 @@ class TestCreateVisit:
 
     @allure.title("Create Visit")
     @pytest.mark.check_visit_persisted(expected_count=1)
+    @allure.step("test_create_visit")
     def test_create_visit(self, api_manager: ApiManager, create_visit_request: CreateVisitRequest):
         api_manager.visit_steps.create_visit(create_visit_request)
 
@@ -38,6 +39,7 @@ class TestCreateVisit:
         ]
     )
     @allure.title("Create Visit Invalid Required Fields")
+    @allure.step("test_create_visit_invalid_required_fields")
     def test_create_visit_invalid_required_fields(self, api_manager, patient_context, visit_type_uuid: str,
                                                   field_name: str, incorrect_value, expected_error: str):
         payload = CreateVisitInvalidRequest(
@@ -57,6 +59,7 @@ class TestCreateVisit:
 
     @allure.title("Create Visit With Another Active Visit")
     @pytest.mark.check_visit_persisted(expected_count=1)
+    @allure.step("test_create_visit_with_another_active_visit")
     def test_create_visit_with_another_active_visit(self, api_manager: ApiManager,
                                                     create_visit_request: CreateVisitRequest):
         api_manager.visit_steps.create_visit(create_visit_request)
@@ -67,6 +70,7 @@ class TestCreateVisit:
         expected_count=2,
         request_source=("create_visit_request_with_stop_time", "create_visit_request"))
     @allure.title("Create Visit With Another Ended Visit")
+    @allure.step("test_create_visit_with_another_ended_visit")
     def test_create_visit_with_another_ended_visit(self, api_manager: ApiManager,
                                                    create_visit_request: CreateVisitRequest,
                                                    create_visit_request_with_stop_time: CreateVisitRequest):
@@ -75,12 +79,14 @@ class TestCreateVisit:
 
     @allure.title("Delete Active Visit")
     @pytest.mark.check_visit_deleted
+    @allure.step("test_delete_active_visit")
     def test_delete_active_visit(self, api_manager: ApiManager, create_visit_request: CreateVisitRequest):
         created = api_manager.visit_steps.create_visit(create_visit_request)
         api_manager.visit_steps.delete_visit(created.uuid)
 
     @allure.title("Update Active Visit")
     @pytest.mark.check_visit_updated
+    @allure.step("test_update_active_visit")
     def test_update_active_visit(self, api_manager: ApiManager, create_visit_request: CreateVisitRequest,
                                  update_visit_request: UpdateVisitRequest):
         created = api_manager.visit_steps.create_visit(create_visit_request)
@@ -96,6 +102,7 @@ class TestCreateVisit:
             RandomData.get_impossible_iso_utc()
         ])
     @allure.title("Update Visit Invalid Stop Datetime")
+    @allure.step("test_update_visit_invalid_stop_datetime")
     def test_update_visit_invalid_stop_datetime(self, api_manager, create_visit_request, bad_stop_datetime):
         created = api_manager.visit_steps.create_visit(create_visit_request)
 
