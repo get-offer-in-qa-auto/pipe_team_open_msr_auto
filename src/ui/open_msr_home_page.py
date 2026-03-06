@@ -8,7 +8,7 @@ class OpenMsrHomePage(BasePage):
 
     @property
     def add_patient_button(self):
-        return self.page.locator('button[name="AddPatientIcon"]')
+        return self.page.locator('button[aria-label="Add patient"]')
 
     @property
     def header_search(self):
@@ -21,11 +21,8 @@ class OpenMsrHomePage(BasePage):
         self.add_patient_button.click()
         return self
 
-
     def wait_until_loaded(self):
-        expect(
-            self.page.get_by_role("button", name="Add Patient")
-        ).to_be_visible(timeout=15_000)
+        expect(self.add_patient_button).to_be_visible(timeout=15_000)
         return self
 
     def should_have_add_patient_button(self):

@@ -38,16 +38,11 @@ class PatientCreatePage(BasePage):
 
     @property
     def birth_section(self):
-        # Finds the section that contains the "Birth" heading (stable vs locator(".."))
-        return self.page.locator("section").filter(
-            has=self.page.get_by_role("heading", name="Birth")
-        )
+        return self.page.locator("//h4[text()='Birth']/parent::div")
 
     @property
     def dob_known_no_tab(self):
-        return self.birth_section.locator(
-            'button[role="tab"][aria-selected="false"]:has(span[title="No"])'
-        ).nth(1)
+        return self.birth_section.locator('button[role="tab"]', has_text="No")
 
     @property
     def age_input(self):

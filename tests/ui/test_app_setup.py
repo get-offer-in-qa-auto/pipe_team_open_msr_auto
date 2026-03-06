@@ -5,8 +5,6 @@ from src.ui.initial_setup_page import InitialSetupPage
 from src.ui.login_pages.login_page import LoginPage
 
 
-@pytest.mark.ui
-@pytest.mark.browsers("chromium")
 class TestAppSetup:
     @pytest.mark.browsers("chromium")
     @pytest.mark.usefixtures("admin_user_request")

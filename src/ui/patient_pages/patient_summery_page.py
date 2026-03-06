@@ -215,9 +215,7 @@ class PatientSummaryPage(BasePage):
         return self.page.url.split("/patient/")[1].split("/")[0]
 
     def should_be_opened(self):
-        url = self.page.url
-        assert "/patient/" in url
-
+        expect(self.page).to_have_url(re.compile(r".*/patient/"), timeout=5000)
         return self
 
     def get_patient_name_locator(self, name: str) -> Locator:
