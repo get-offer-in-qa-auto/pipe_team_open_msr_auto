@@ -28,6 +28,17 @@ services:
     depends_on:
       - db
     environment:
+      # Отключаем модуль OpenConceptLab (он виновник текущей ошибки)
+#      OMRS_CONFIG_OPENCONCEPTLAB_AUTO_UPDATE_ENABLED: "false"
+#      OMRS_CONFIG_OPENCONCEPTLAB_IMPORT_URL: ""
+
+      # Дополнительно убеждаемся, что инициализатор не тормозит процесс
+#      OMRS_CONFIG_INITIALIZER_DIRECTORY: "/dev/null"
+#      OMRS_CONFIG_INITIALIZER_HALT_ON_ERROR: "false"
+
+      # Отключаем переиндексацию поиска (частая причина "зависания" на старте)
+#      OMRS_CONFIG_SEARCH_INDEX_UPDATE_ON_STARTUP: "false"
+
       OMRS_CONFIG_MODULE_WEB_ADMIN: "true"
       OMRS_CONFIG_AUTO_UPDATE_DATABASE: "true"
       OMRS_CONFIG_CREATE_TABLES: "true"

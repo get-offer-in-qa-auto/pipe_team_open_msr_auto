@@ -131,6 +131,16 @@ def browser_name(request):
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type: BrowserType):
     return {
-        "headless": False,   # 👈 ВАЖНО
+        "headless": Config.get_bool("HEADLESS"),
         "slow_mo": 300,      # 👈 необязательно, но очень помогает
+    }
+
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args):
+    return {
+        **browser_context_args,
+        "viewport": {
+            "width": Config.get_int("BROWSER_WIDTH", 1920),
+            "height": Config.get_int("BROWSER_HEIGHT", 1080)
+        }
     }

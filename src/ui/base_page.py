@@ -15,7 +15,7 @@ T = TypeVar("T", bound="BasePage")
 class BasePage(ABC):
     def __init__(self, page :Page):
         self.page = page
-        self.base_url = str(Config.get('UI_BASE_URL','http://localhost:3000')).strip('/')
+        self.base_spa_url = str(Config.get('UI_BASE_SPA_URL', 'http://localhost:3000')).strip('/')
 
     def _generate_page_elements(
             self,
@@ -106,10 +106,10 @@ class BasePage(ABC):
 
     @allure.step("open")
     def open(self: T) -> T:
-        taget = self.url()
-        if self.base_url and taget.startswith('/'):
-            taget = f'{self.base_url}{taget}'
-        self.page.goto(taget, wait_until="domcontentloaded")
+        target = self.url()
+        if self.base_spa_url and target.startswith('/'):
+            target = f'{self.base_spa_url}{target}'
+        self.page.goto(target, wait_until="domcontentloaded")
         return self
 
     def get_page(self, page_cls: Type[T]) -> T:

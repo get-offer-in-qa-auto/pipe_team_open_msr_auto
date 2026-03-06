@@ -18,3 +18,15 @@ class Config:
     def get(key:str, default_value: Any = None):
         return Config().config["DEFAULT"].get(key, fallback=default_value)
 
+    @staticmethod
+    def get_bool(key: str, default_value: bool = True):
+        try:
+            return Config().config["DEFAULT"].getboolean(key, fallback=default_value)
+        except ValueError:
+            return default_value
+
+    @staticmethod
+    def get_int(key: str, default_value: int = 0):
+        return Config().config["DEFAULT"].getint(key, fallback=default_value)
+
+

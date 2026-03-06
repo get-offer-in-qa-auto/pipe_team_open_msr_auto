@@ -12,3 +12,15 @@ runs:
       run: |
         docker compose up -d --wait
         curl -I http://localhost/openmrs/spa
+
+    - name: Run API tests
+      shell: bash
+      run: pytest -m app_setup --video retain-on-failure
+
+    - name: Upload Test Results
+      if: always()  # Выполнять даже если тесты упали
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-artifacts
+        path: test-results/
+        retention-days: 1
