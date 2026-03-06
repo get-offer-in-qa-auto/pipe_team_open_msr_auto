@@ -1,17 +1,18 @@
-from typing import Optional, List
+from typing import List, Optional
 
 import pytest
 
-from src.api.generators.random_data import RandomData
 from src.api.classes.api_manager import ApiManager
 from src.api.classes.session_storage import SessionStorage
 from src.api.configs.config import Config
+from src.api.generators.random_data import RandomData
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
 from src.api.models.responses.create_person_response import CreatePersonResponse
 from src.api.models.responses.create_user_response import CreateUserResponse
+
 
 @pytest.fixture
 def user_factory(api_manager: ApiManager):
@@ -22,7 +23,9 @@ def user_factory(api_manager: ApiManager):
         if roles is None:
             roles = ["Privilege Level: Full"]
 
-        roles_uuids = [role_info.uuid for role_info in api_manager.user_steps.get_roles().results if role_info.display in roles]
+        roles_uuids = [
+            role_info.uuid for role_info in api_manager.user_steps.get_roles().results if role_info.display in roles
+        ]
 
         return _create_user_with_roles(api_manager, person_data.uuid, roles_uuids)
 
@@ -33,7 +36,7 @@ def user_factory(api_manager: ApiManager):
 def user_request(user_factory):
     try:
         return SessionStorage.get_user(-1)
-    except:
+    except IndexError:
         user = user_factory()
         return user
 
@@ -41,8 +44,8 @@ def user_request(user_factory):
 @pytest.fixture
 def admin_user_request():
     return BaseCreateUserRequest(
-        username =  Config.get('ADMIN_USERNAME'),
-        password = Config.get('ADMIN_PASSWORD'),
+        username=Config.get('ADMIN_USERNAME'),
+        password=Config.get('ADMIN_PASSWORD'),
     )
 
 
@@ -52,7 +55,6 @@ def create_user_with_roles(api_manager: ApiManager):
         Фикстура для создания пользователя с заданными правами.
         По умолчанию создает пользователя с ролью ["Privilege Level: Full"]
     """
-
     def _create_user(roles: Optional[List[str]] = None):
         create_person_request: CreatePersonRequest = RandomModelGenerator.generate(CreatePersonRequest)
         person_data: CreatePersonResponse = api_manager.user_steps.create_person(create_person_request)
@@ -60,11 +62,14 @@ def create_user_with_roles(api_manager: ApiManager):
         if roles is None:
             roles = ["Privilege Level: Full"]
 
-        roles_uuids = [role_info.uuid for role_info in api_manager.user_steps.get_roles().results if role_info.display in roles]
+        roles_uuids = [
+            role_info.uuid for role_info in api_manager.user_steps.get_roles().results if role_info.display in roles
+        ]
 
         return _create_user_with_roles(api_manager, person_data.uuid, roles_uuids)
 
     return _create_user
+
 
 @pytest.fixture
 def create_user_with_privileges(api_manager: ApiManager):
@@ -72,7 +77,6 @@ def create_user_with_privileges(api_manager: ApiManager):
         Фикстура для создания пользователя с заданными привилегиями.
         По умолчанию создает пользователя со всеми привилегиями
     """
-
     def _create_user(exclude_privilege_names: Optional[List[str]] = None):
         create_person_request: CreatePersonRequest = RandomModelGenerator.generate(CreatePersonRequest)
         person_data: CreatePersonResponse = api_manager.user_steps.create_person(create_person_request)
@@ -82,8 +86,8 @@ def create_user_with_privileges(api_manager: ApiManager):
 
         return _create_user_with_roles(api_manager, person_data.uuid, roles_uuids)
 
-
     return _create_user
+
 
 @pytest.fixture
 def created_person(api_manager: ApiManager):

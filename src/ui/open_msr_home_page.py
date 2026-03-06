@@ -4,8 +4,8 @@ from playwright.sync_api import expect
 from src.ui.base_page import BasePage
 from src.ui.components.header_search_component import HeaderSearchComponent
 
-class OpenMsrHomePage(BasePage):
 
+class OpenMsrHomePage(BasePage):
     @property
     def add_patient_button(self):
         return self.page.locator('button[aria-label="Add patient"]')
@@ -13,6 +13,7 @@ class OpenMsrHomePage(BasePage):
     @property
     def header_search(self):
         return HeaderSearchComponent(self.page)
+
     #TODO:
     def url(self) -> str:
         return "/home/service-queues"
@@ -31,4 +32,3 @@ class OpenMsrHomePage(BasePage):
     def should_have_add_patient_button(self):
         expect(self.add_patient_button).to_be_visible()
         return self
-

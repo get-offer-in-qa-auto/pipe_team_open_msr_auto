@@ -1,9 +1,9 @@
-import allure
 import json
 from abc import ABC, abstractmethod
-from typing import TypeVar, Type, Callable, List
+from typing import Callable, List, Type, TypeVar
 
-from playwright.sync_api import Page, Dialog, Locator
+import allure
+from playwright.sync_api import Dialog, Locator, Page
 
 from src.api.configs.config import Config
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
@@ -12,29 +12,23 @@ from src.ui.api_flow import ApiFlow
 
 T = TypeVar("T", bound="BasePage")
 
+
 class BasePage(ABC):
-    def __init__(self, page :Page):
+    def __init__(self, page: Page):
         self.page = page
         self.base_spa_url = str(Config.get('UI_BASE_SPA_URL', 'http://localhost:3000')).strip('/')
 
-    def _generate_page_elements(
-            self,
-            element: Locator,
-            constructor: Callable
-    ) -> List:
+    def _generate_page_elements(self, element: Locator, constructor: Callable) -> List:
         element.first.wait_for(state="attached", timeout=10_000)
-        return [
-            constructor(element.nth(index))
-            for index in range(element.count())
-        ]
+        return [constructor(element.nth(index)) for index in range(element.count())]
 
     @allure.step("auth_as_user")
     def auth_as_user(
-            self,
-            user_request: BaseCreateUserRequest,
-            *,
-            location_uuid: str | None = None,
-            location_display: str | None = None,
+        self,
+        user_request: BaseCreateUserRequest,
+        *,
+        location_uuid: str | None = None,
+        location_display: str | None = None,
     ):
         page = self.page
         ui_base = str(Config.get("UI_BASE_URL")).rstrip("/")
@@ -62,7 +56,10 @@ class BasePage(ABC):
             rloc = page.request.get(
                 f"{api_base}/location",
                 headers={"Authorization": auth},
-                params={"v": "default", "limit": "50"},
+                params={
+                    "v": "default",
+                    "limit": "50"
+                },
             )
             assert rloc.ok, f"GET /location failed: {rloc.status} {rloc.text()}"
             data = rloc.json()
@@ -85,7 +82,8 @@ class BasePage(ABC):
         )
         assert r2.ok, f"POST /session (set sessionLocation) failed: {r2.status} {r2.text()}"
 
-        page.add_init_script(f"""
+        page.add_init_script(
+            f"""
             (() => {{
                 const loc = {{ uuid: "{location_uuid}", display: "{location_display}" }};
                 localStorage.setItem("openmrs:sessionLocation", JSON.stringify(loc));
@@ -93,7 +91,8 @@ class BasePage(ABC):
                 localStorage.setItem("queueLocationName", loc.display);
                 localStorage.setItem("queueServiceDisplay", "All");
             }})();
-        """)
+        """
+        )
 
         # 5) сразу открываем home
         page.goto(ui_base + "/home/service-queues", wait_until="domcontentloaded")
@@ -119,6 +118,7 @@ class BasePage(ABC):
         def _handler(d: Dialog):
             assert expected_text in d.message, f"Alert text mismatch {d.message} "
             d.accept()
+
         self.page.once("dialog", _handler)
         return self
 

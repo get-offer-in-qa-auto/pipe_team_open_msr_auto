@@ -1,19 +1,16 @@
+import random
+import time
 from typing import List
 
 from playwright.sync_api import BrowserType
 
-from src.fixtures.objects_fixture import *
-from src.fixtures.user_fixtures import *
-from src.fixtures.api_fixtures import *
-from src.fixtures.visit_fixtures import *
-from src.fixtures.setup_hook import *
-from src.fixtures.assertion_fixtures.visit_assertion_fixtures import *
-from src.fixtures.assertion_fixtures.patient_assertion_fixtures import *
-
-
-import time
-import random
-
+from src.fixtures.api_fixtures import *  # noqa: F403
+from src.fixtures.assertion_fixtures.patient_assertion_fixtures import *  # noqa: F403
+from src.fixtures.assertion_fixtures.visit_assertion_fixtures import *  # noqa: F403
+from src.fixtures.objects_fixture import *  # noqa: F403
+from src.fixtures.setup_hook import *  # noqa: F403
+from src.fixtures.user_fixtures import *  # noqa: F403
+from src.fixtures.visit_fixtures import *  # noqa: F403
 from src.utils.browsers import norm_browser_name
 
 
@@ -39,16 +36,18 @@ def _apply_global_seed(seed: int) -> None:
     except Exception:
         pass
 
-def pytest_addoption(parser: pytest.Parser) -> None:
+
+def pytest_addoption(parser: pytest.Parser) -> None:  # noqa: F405
     parser.addoption(
         "--seed",
         action="store",
-        default=Config.get("default_seed", 100), # move to env files later
-        help="Seed for random generators. If not set, a new seed is generated per run (and shared across xdist workers).",
+        default=Config.get("default_seed", 100),  # noqa: F405  # move to env files later
+        help=
+        "Seed for random generators. If not set, a new seed is generated per run (and shared across xdist workers).",
     )
 
 
-def pytest_configure(config: pytest.Config) -> None:
+def pytest_configure(config: pytest.Config) -> None:  # noqa: F405
     # In xdist workers, the master passes seed via workerinput.
     seed = None
     if hasattr(config, "workerinput"):
@@ -69,7 +68,8 @@ def pytest_configure_node(node) -> None:
     if seed is not None:
         node.workerinput["seed"] = int(seed)
 
-def pytest_collection_finish(session: pytest.Session) -> None:
+
+def pytest_collection_finish(session: pytest.Session) -> None:  # noqa: F405
     """
     IMPORTANT: avoid cross-worker data collisions in xdist.
 
@@ -100,12 +100,12 @@ def pytest_collection_finish(session: pytest.Session) -> None:
 
 
 def pytest_collection_modifyitems(
-    config: pytest.Config,
-    items: List[pytest.Item],
+    config: pytest.Config,  # noqa: F405
+    items: List[pytest.Item],  # noqa: F405
 ):
     preferred = "chromium"
 
-    filtered: List[pytest.Item] = []
+    filtered: List[pytest.Item] = []  # noqa: F405
 
     for item in items:
         is_ui = bool(item.get_closest_marker("ui"))
@@ -114,9 +114,7 @@ def pytest_collection_modifyitems(
         if (not is_ui) and ("browser_name" in fixts):
             callspec = getattr(item, "callspec", None)
             if callspec is not None and "browser_name" in callspec.params:
-                bn = norm_browser_name(
-                    callspec.params.get("browser_name")
-                )
+                bn = norm_browser_name(callspec.params.get("browser_name"))
                 if bn != preferred:
                     continue
 
@@ -124,23 +122,28 @@ def pytest_collection_modifyitems(
 
     items[:] = filtered
 
-@pytest.fixture(scope="session")
+
+@pytest.fixture(scope="session")  # noqa: F405
 def browser_name(request):
     return request.config.getoption("--browser")
 
-@pytest.fixture(scope="session")
+
+@pytest.fixture(scope="session")  # noqa: F405
 def browser_type_launch_args(browser_type: BrowserType):
     return {
-        "headless": Config.get_bool("HEADLESS"),
-        "slow_mo": 300,      # 👈 необязательно, но очень помогает
+        "headless": Config.get_bool("HEADLESS"),  # noqa: F405
+        "slow_mo": 300,  # 👈 необязательно, но очень помогает
     }
 
-@pytest.fixture(scope="session")
+
+@pytest.fixture(scope="session")  # noqa: F405
 def browser_context_args(browser_context_args):
     return {
         **browser_context_args,
-        "viewport": {
-            "width": Config.get_int("BROWSER_WIDTH", 1920),
-            "height": Config.get_int("BROWSER_HEIGHT", 1080)
-        }
+        "viewport":
+            {
+                "width": Config.get_int("BROWSER_WIDTH", 1920),  # noqa: F405
+                "height":
+                    Config.get_int("BROWSER_HEIGHT", 1080)  # noqa: F405
+            }
     }

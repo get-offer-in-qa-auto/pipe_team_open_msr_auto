@@ -5,6 +5,7 @@ from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.update_person_request import UpdatePersonRequest
 
+
 @pytest.mark.api
 class TestUpdatePerson:
     @allure.title("Update Person Gender")
@@ -19,8 +20,7 @@ class TestUpdatePerson:
         )
 
         api_manager.user_steps.verify_person_updated(
-            expected_update=update_req,
-            actual_person_update = updated_person_response
+            expected_update=update_req, actual_person_update=updated_person_response
         )
 
     @allure.title("Update Person Birthdate")
@@ -42,10 +42,10 @@ class TestUpdatePerson:
     @pytest.mark.parametrize(
         "field, value, error_value",
         [
-            ("birthdate", "1997-99-99", "birth"),   # invalid date
-            ("birthdate", "1997-02-30", "birth"),   # non-existing date
-            ("birthdate", "abcd-ef-gh", "birth"),   # not a date
-            ("birthdate", "", "birth"),             # empty
+            ("birthdate", "1997-99-99", "birth"),  # invalid date
+            ("birthdate", "1997-02-30", "birth"),  # non-existing date
+            ("birthdate", "abcd-ef-gh", "birth"),  # not a date
+            ("birthdate", "", "birth"),  # empty
         ],
     )
     @allure.title("Update Person Invalid")
@@ -63,4 +63,3 @@ class TestUpdatePerson:
 
         after = api_manager.user_steps.get_person_full(created_person.uuid)
         api_manager.user_steps.verify_person_not_changed(before, after)
-

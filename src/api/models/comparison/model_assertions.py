@@ -3,6 +3,7 @@ from typing import Any
 from src.api.models.comparison.model_comparator import ModelComparator
 from src.api.models.comparison.model_comparison_configuration import ModelComparisonConfigLoader
 
+
 class ModelAssertions:
     def __init__(self, request: Any, response: Any):
         self.request = request
@@ -12,8 +13,7 @@ class ModelAssertions:
         config_loader = ModelComparisonConfigLoader('model-comparison.properties')
         rule = config_loader.get_rule_for(self.request)
         if rule:
-            result = ModelComparator.compare_fields(self.request, self.response, rule.field_mapping
-                                                    )
+            result = ModelComparator.compare_fields(self.request, self.response, rule.field_mapping)
             if not result.is_success():
                 raise AssertionError(f'Model comparison failed with mismatches fields \n {result.mismatches}')
         else:

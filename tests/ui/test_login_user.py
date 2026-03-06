@@ -6,6 +6,7 @@ from src.api.constants.error_messages import ErrorMessages
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.ui.login_pages.login_page import LoginPage
 
+
 @pytest.mark.ui
 @pytest.mark.browsers("chromium")
 class TestLoginUser:

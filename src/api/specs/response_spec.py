@@ -5,24 +5,27 @@ from typing import Any
 
 from requests import Response
 
-class ResponseSpecs:
 
+class ResponseSpecs:
     @staticmethod
     def request_returns_ok() -> Callable:
         def check(response: Response):
             assert response.status_code == HTTPStatus.OK, response.text
+
         return check
 
     @staticmethod
     def entity_was_created() -> Callable:
         def check(response: Response):
             assert response.status_code == HTTPStatus.CREATED, response.text
+
         return check
 
     @staticmethod
     def entity_was_deleted() -> Callable:
         def check(response: Response):
             assert response.status_code in (HTTPStatus.CREATED, HTTPStatus.OK, HTTPStatus.NO_CONTENT), response.text
+
         return check
 
     @staticmethod
@@ -42,9 +45,8 @@ class ResponseSpecs:
                 error_content = response.content
             error_text = str(error_content)
 
-            assert error_value in error_text, (
-                    f"\nExpected {error_text}\n, "
-                    f"Got {error_content}")
+            assert error_value in error_text, (f"\nExpected {error_text}\n, "
+                                               f"Got {error_content}")
 
         return check
 
@@ -67,8 +69,9 @@ class ResponseSpecs:
         )
 
     @staticmethod
-    def _base_error_check(response: Response, status_code: HTTPStatus, extract_fn: Callable[[dict], Any],
-                          expected_msg: str):
+    def _base_error_check(
+        response: Response, status_code: HTTPStatus, extract_fn: Callable[[dict], Any], expected_msg: str
+    ):
         """Базовый метод для проверки статус-кода и наличия сообщения в JSON."""
         assert response.status_code == status_code, response.text
 
@@ -79,9 +82,7 @@ class ResponseSpecs:
             error_content = response.content
 
         error_text = str(error_content)
-        assert expected_msg in error_text, (
-            f"Expected error message '{expected_msg}',\nbut got '{error_text}'."
-        )
+        assert expected_msg in error_text, (f"Expected error message '{expected_msg}',\nbut got '{error_text}'.")
 
     @staticmethod
     def _standard_error_extractor(data: dict) -> Any:

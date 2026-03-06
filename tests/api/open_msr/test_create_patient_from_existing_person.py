@@ -7,41 +7,52 @@ from src.api.generators.random_data import RandomData
 from src.api.models.responses.create_person_response import CreatePersonResponse
 from src.api.specs.response_spec import ResponseSpecs
 
+
 @pytest.mark.api
 class TestCreatePatientFromExistingPerson:
     @allure.title("Create Patient From Existing Person Admin User")
     @pytest.mark.check_all_patients_change(delta=1, person_uuid_source="created_person.uuid", should_exist=True)
-    def test_create_patient_from_existing_person_admin_user(self, api_manager: ApiManager, created_person: CreatePersonResponse):
+    def test_create_patient_from_existing_person_admin_user(
+        self, api_manager: ApiManager, created_person: CreatePersonResponse
+    ):
         identifiers = [api_manager.user_steps.build_identifier_request()]
-        create_patient_response = api_manager.user_steps.create_patient_from_person(person=created_person.uuid,
-                                                                                    identifiers=identifiers)
+        create_patient_response = api_manager.user_steps.create_patient_from_person(
+            person=created_person.uuid, identifiers=identifiers
+        )
         api_manager.user_steps.verify_patient_created(create_patient_response, identifiers)
-        api_manager.database_steps.verify_patient_created_from_existing_person(create_patient_response.uuid,
-                                                                               identifiers)
+        api_manager.database_steps.verify_patient_created_from_existing_person(
+            create_patient_response.uuid, identifiers
+        )
 
     @pytest.mark.check_all_patients_change(delta=1, person_uuid_source="created_person.uuid", should_exist=True)
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
-    @pytest.mark.parametrize('role',[
+    @pytest.mark.parametrize('role', [
         "Privilege Level: Full",
         "Privilege Level: High",
         "Organizational: Doctor",
     ])
     @allure.title("Create Patient From Existing Person With Role")
-    def test_create_patient_from_existing_person_with_role(self, api_manager, create_user_with_roles, created_person, role):
+    def test_create_patient_from_existing_person_with_role(
+        self, api_manager, create_user_with_roles, created_person, role
+    ):
         user_request, _ = create_user_with_roles([role])
 
         identifiers = [api_manager.user_steps.build_identifier_request()]
-        create_patient_response  = api_manager.user_steps.create_patient_from_person(person=created_person.uuid,
-                                                                                     identifiers=identifiers,
-                                                                                     user_request=user_request)
+        create_patient_response = api_manager.user_steps.create_patient_from_person(
+            person=created_person.uuid, identifiers=identifiers, user_request=user_request
+        )
         api_manager.user_steps.verify_patient_created(create_patient_response, identifiers)
-        api_manager.database_steps.verify_patient_created_from_existing_person(create_patient_response.uuid, identifiers)
+        api_manager.database_steps.verify_patient_created_from_existing_person(
+            create_patient_response.uuid, identifiers
+        )
 
     @allure.title("Create Patient From Existing Person No Create Edit Patient Privilege User")
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_privileges')
     @pytest.mark.check_all_patients_change(delta=0, person_uuid_source="created_person.uuid", should_exist=False)
-    def test_create_patient_from_existing_person_no_create_edit_patient_privilege_user(self, api_manager, create_user_with_privileges, created_person):
-        exclude_privilege_names=['Add Patients', 'Edit Patients']
+    def test_create_patient_from_existing_person_no_create_edit_patient_privilege_user(
+        self, api_manager, create_user_with_privileges, created_person
+    ):
+        exclude_privilege_names = ['Add Patients', 'Edit Patients']
         user_request, _ = create_user_with_privileges(exclude_privilege_names=exclude_privilege_names)
 
         error_message = ErrorMessages.privileges_required(exclude_privilege_names)
@@ -49,7 +60,7 @@ class TestCreatePatientFromExistingPerson:
             person=created_person.uuid,
             user_request=user_request,
             identifiers=[api_manager.user_steps.get_identifier_request()],
-            response_spec = ResponseSpecs.request_returns_forbidden_with_message(error_message)
+            response_spec=ResponseSpecs.request_returns_forbidden_with_message(error_message)
         )
 
         api_manager.user_steps.verify_patient_with_uuid_does_not_exist(created_person.uuid)
@@ -58,8 +69,9 @@ class TestCreatePatientFromExistingPerson:
     @allure.title("Create Patient From Existing Person With Disabled User")
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
     @pytest.mark.check_all_patients_change(delta=0, person_uuid_source="created_person.uuid", should_exist=False)
-    def test_create_patient_from_existing_person_with_disabled_user(self, api_manager, create_user_with_roles,
-                                                                    created_person):
+    def test_create_patient_from_existing_person_with_disabled_user(
+        self, api_manager, create_user_with_roles, created_person
+    ):
         user_request, user_data = create_user_with_roles()
 
         api_manager.user_steps.delete_user(user_data.uuid, purge=False)
@@ -75,43 +87,48 @@ class TestCreatePatientFromExistingPerson:
 
     @pytest.mark.check_all_patients_change(delta=0, person_uuid_source="created_person.uuid", should_exist=False)
     @pytest.mark.usefixtures('api_manager', 'created_person', 'create_user_with_roles')
-    @pytest.mark.parametrize('field, value, error_message', [
-        # Тесты для поля identifierType
-        ("identifierType", "", ErrorMessages.EMPTY_IDENTIFIER_TYPE),
-        ("identifierType", None, ErrorMessages.EMPTY_IDENTIFIER_TYPE),
-        ("identifierType", RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER_TYPE),
-        ("identifierType", RandomData.get_word(), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
-        ("identifierType", str(RandomData.get_uuid()), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+    @pytest.mark.parametrize(
+        'field, value, error_message',
+        [
+            # Тесты для поля identifierType
+            ("identifierType", "", ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+            ("identifierType", None, ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+            ("identifierType", RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER_TYPE),
+            ("identifierType", RandomData.get_word(), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
+            ("identifierType", str(RandomData.get_uuid()), ErrorMessages.EMPTY_IDENTIFIER_TYPE),
 
-        # Тесты для поля location
-        ("location", "", ErrorMessages.EMPTY_LOCATION),
-        ("location", None, ErrorMessages.EMPTY_LOCATION),
-        ("location", RandomData.get_int(1, 1000), ErrorMessages.INT_LOCATION),
-        ("location", RandomData.get_word(), ErrorMessages.EMPTY_LOCATION),
-        ("location", str(RandomData.get_uuid()), ErrorMessages.EMPTY_LOCATION),
+            # Тесты для поля location
+            ("location", "", ErrorMessages.EMPTY_LOCATION),
+            ("location", None, ErrorMessages.EMPTY_LOCATION),
+            ("location", RandomData.get_int(1, 1000), ErrorMessages.INT_LOCATION),
+            ("location", RandomData.get_word(), ErrorMessages.EMPTY_LOCATION),
+            ("location", str(RandomData.get_uuid()), ErrorMessages.EMPTY_LOCATION),
 
-        # Тесты для поля identifier
-        ('identifier', "", ErrorMessages.INVALID_SUBMISSION),
-        ('identifier', None, ErrorMessages.INVALID_SUBMISSION),
-        ('identifier', RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER),
-        ('identifier', RandomData.get_word(), ErrorMessages.INVALID_SUBMISSION),
-        ('identifier', 'a', ErrorMessages.INVALID_SUBMISSION),
-        ('identifier', 'MRN#123', ErrorMessages.INVALID_SUBMISSION),
-        ('identifier', RandomData.get_string(256), ErrorMessages.INVALID_SUBMISSION),
-    ])
+            # Тесты для поля identifier
+            ('identifier', "", ErrorMessages.INVALID_SUBMISSION),
+            ('identifier', None, ErrorMessages.INVALID_SUBMISSION),
+            ('identifier', RandomData.get_int(1, 1000), ErrorMessages.INT_IDENTIFIER),
+            ('identifier', RandomData.get_word(), ErrorMessages.INVALID_SUBMISSION),
+            ('identifier', 'a', ErrorMessages.INVALID_SUBMISSION),
+            ('identifier', 'MRN#123', ErrorMessages.INVALID_SUBMISSION),
+            ('identifier', RandomData.get_string(256), ErrorMessages.INVALID_SUBMISSION),
+        ]
+    )
     @allure.title("Create Patient From Existing Person Invalid Identifier Data")
-    def test_create_patient_from_existing_person_invalid_identifier_data(self, api_manager, create_user_with_roles,
-                                                                         created_person, field, value,
-                                                                         error_message):
+    def test_create_patient_from_existing_person_invalid_identifier_data(
+        self, api_manager, create_user_with_roles, created_person, field, value, error_message
+    ):
         user_request, _ = create_user_with_roles()
 
         identifier = api_manager.user_steps.get_identifier_request()
         setattr(identifier, field, value)
 
-        api_manager.user_steps.create_patient_from_person_invalid_data(person=created_person.uuid,
-                                                                       error_message=error_message,
-                                                                       identifiers=[identifier],
-                                                                       user_request=user_request)
+        api_manager.user_steps.create_patient_from_person_invalid_data(
+            person=created_person.uuid,
+            error_message=error_message,
+            identifiers=[identifier],
+            user_request=user_request
+        )
 
         api_manager.user_steps.verify_patient_with_uuid_does_not_exist(created_person.uuid)
         api_manager.database_steps.verify_patient_does_not_exist(created_person.uuid)

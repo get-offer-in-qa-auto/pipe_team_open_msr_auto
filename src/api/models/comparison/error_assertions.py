@@ -1,4 +1,3 @@
-
 class ErrorAssertions:
     @staticmethod
     def status_is(resp, expected: int) -> None:

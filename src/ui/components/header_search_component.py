@@ -1,8 +1,8 @@
 import allure
 from playwright.sync_api import expect
 
-class HeaderSearchComponent:
 
+class HeaderSearchComponent:
     def __init__(self, page):
         self.page = page
 
@@ -12,9 +12,7 @@ class HeaderSearchComponent:
 
     @property
     def search_input(self):
-        return self.page.get_by_placeholder(
-            "Search for a patient by name or identifier number"
-        )
+        return self.page.get_by_placeholder("Search for a patient by name or identifier number")
 
     @property
     def results_container(self):
@@ -51,8 +49,6 @@ class HeaderSearchComponent:
         expect(self.results_container).to_be_visible()
 
         # убеждаемся, что ссылок с пациентами нет
-        expect(
-            self.results_container.locator("a")
-        ).to_have_count(0)
+        expect(self.results_container.locator("a")).to_have_count(0)
 
         return self

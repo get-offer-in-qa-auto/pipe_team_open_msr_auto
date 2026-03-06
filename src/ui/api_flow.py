@@ -1,9 +1,11 @@
-import allure
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Callable, Optional
+
+import allure
 
 from src.api.classes.api_manager import ApiManager
 from src.api.models.responses.create_patient_response import PatientCreateResponse
+
 
 @dataclass
 class ApiFlow:

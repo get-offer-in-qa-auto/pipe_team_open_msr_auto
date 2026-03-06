@@ -1,5 +1,7 @@
-from typing import List, Optional, Any
+from typing import Any, List, Optional
+
 from src.api.models.base_model import BaseModel
+
 
 class Link(BaseModel):
     rel: str
@@ -13,7 +15,6 @@ class PatientCreateResponse(BaseModel):
     links: Optional[List[Link]] = None
 
 
-
 class PatientIdentifierResponse(BaseModel):
     uuid: str
     display: Optional[str] = None
@@ -21,6 +22,7 @@ class PatientIdentifierResponse(BaseModel):
     preferred: Optional[bool] = None
     identifierType: Optional[Any] = None
     location: Optional[Any] = None
+
 
 class PatientFullResponse(BaseModel):
     uuid: str

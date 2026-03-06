@@ -6,6 +6,7 @@ from src.api.classes.api_manager import ApiManager
 from src.api.models.responses.create_visit_response import CreateVisitResponse
 from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 
+
 @pytest.mark.usefixtures("admin_session_autologin")
 @pytest.mark.admin_session
 class TestVisitActions:

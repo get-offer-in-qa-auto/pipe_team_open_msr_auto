@@ -1,8 +1,7 @@
 import random
 import uuid
-from datetime import datetime
-from typing import get_type_hints, Any, get_origin, Annotated, get_args, Union, Dict, Callable, Type
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from typing import Annotated, Any, Union, get_args, get_origin, get_type_hints
 
 import rstr
 
@@ -10,8 +9,8 @@ from src.api.generators.generating_rule import GeneratingRule
 from src.api.generators.mod30 import generate_mod30_identifier, luhn_mod_n_is_valid
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
 
-class RandomModelGenerator:
 
+class RandomModelGenerator:
     @staticmethod
     def generate(cls: type) -> Any:
         type_hints = get_type_hints(cls, include_extras=True)
@@ -40,10 +39,7 @@ class RandomModelGenerator:
                 continue
 
             if rule:
-                value = RandomModelGenerator._generate_from_regex(
-                    rule.regex,
-                    actual_type
-                )
+                value = RandomModelGenerator._generate_from_regex(rule.regex, actual_type)
             else:
                 value = RandomModelGenerator._generate_value(actual_type)
             init_data[field_name] = value
@@ -72,8 +68,8 @@ class RandomModelGenerator:
                 return None
             return RandomModelGenerator._generate_value(non_none[0])
 
-        if origin in (list,):
-            (item_type,) = get_args(field_type) or (str,)
+        if origin in (list, ):
+            (item_type, ) = get_args(field_type) or (str, )
             return [RandomModelGenerator._generate_value(item_type)]
 
         if field_type is str:
@@ -91,4 +87,3 @@ class RandomModelGenerator:
             return RandomModelGenerator.generate(field_type)
 
         return None
-

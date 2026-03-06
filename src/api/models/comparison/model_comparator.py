@@ -1,6 +1,7 @@
-from typing import Any, Dict, List
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
 
 @dataclass
 class Mismatch:
@@ -8,16 +9,18 @@ class Mismatch:
     expected: Any
     actual: Any
 
+
 class ComparisonResult:
-    def __init__(self, mismatches: List [Mismatch]):
-        self._mismatches =  mismatches
+    def __init__(self, mismatches: List[Mismatch]):
+        self._mismatches = mismatches
 
     def is_success(self) -> bool:
         return not self.mismatches
 
     @property
-    def mismatches(self)->List [Mismatch]:
+    def mismatches(self) -> List[Mismatch]:
         return self._mismatches
+
 
 class ModelComparator:
     @staticmethod
@@ -36,9 +39,7 @@ class ModelComparator:
             act = ModelComparator._normalize_value(response_value)
 
             if exp != act:
-                mismatches.append(
-                    Mismatch(f"{request_field} -> {response_field}", request_value, response_value)
-                )
+                mismatches.append(Mismatch(f"{request_field} -> {response_field}", request_value, response_value))
 
         return ComparisonResult(mismatches)
 

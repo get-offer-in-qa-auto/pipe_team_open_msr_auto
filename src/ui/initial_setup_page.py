@@ -1,5 +1,3 @@
-from playwright.sync_api import expect
-
 from src.api.configs.config import Config
 from src.ui.base_page import BasePage
 
@@ -18,8 +16,9 @@ class InitialSetupPage(BasePage):
         def is_finished(response):
             if "openmrs/initialsetup" in response.url and response.status == 200:
                 try:
-                    return response.json().get("initializationComplete") is True
-                except:
+                    payload = response.json()
+                    return isinstance(payload, dict) and payload.get("initializationComplete") is True
+                except ValueError:
                     return False
             return False
 

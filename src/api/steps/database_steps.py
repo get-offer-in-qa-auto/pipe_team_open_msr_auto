@@ -1,241 +1,190 @@
-import allure
+from datetime import datetime, timezone
 from typing import List, Optional
+
+import allure
 
 from src.api.database.dao.patient_dao import PatientDao
 from src.api.database.dao.patient_identifier_dao import PatientIdentifierDao
-from src.api.database.dao.person_dao import PersonDao, PersonAddressDao
+from src.api.database.dao.person_dao import PersonAddressDao, PersonDao
 from src.api.database.dao.person_name_dao import PersonNameDao
 from src.api.database.dao.user_dao import UserDao
-from src.api.database.db_client import DBRequest, RequestType, Condition
+from src.api.database.dao.visit_dao import VisitDao
+from src.api.database.db_client import Condition, DBRequest, RequestType, fetch_one
 from src.api.models.comparison.dao_and_model_assertions import DaoAndModelAssertions
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
-from datetime import datetime, timezone
-
-from src.api.database.dao.visit_dao import VisitDao
-from src.api.database.db_client import fetch_one
 from src.api.models.requests.create_visit_request import CreateVisitRequest
+
 
 class DatabaseSteps:
     @staticmethod
     @allure.step("get_user_by_username")
     def get_user_by_username(username: str) -> UserDao:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("users")
-            .where(Condition.equal_to("username", username))
-            .extract_as(UserDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("users").where(
+                Condition.equal_to("username", username)
+            ).extract_as(UserDao)
         )
 
     @staticmethod
     @allure.step("get_user_by_uuid")
     def get_user_by_uuid(user_uuid: str) -> UserDao:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("users")
-            .where(Condition.equal_to("uuid", user_uuid))
-            .extract_as(UserDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("users").where(
+                Condition.equal_to("uuid", user_uuid)
+            ).extract_as(UserDao)
         )
 
     @staticmethod
     @allure.step("get_patient_by_id")
     def get_patient_by_id(patient_id: int) -> PatientDao:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("patient")
-            .where(Condition.equal_to("patient_id", patient_id))
-            .extract_as(PatientDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("patient").where(
+                Condition.equal_to("patient_id", patient_id)
+            ).extract_as(PatientDao)
         )
 
     @staticmethod
     @allure.step("find_patient_by_id")
     def find_patient_by_id(patient_id: int) -> Optional[PatientDao]:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("patient")
-            .where(Condition.equal_to("patient_id", patient_id))
-            .extract_optional_as(PatientDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("patient").where(
+                Condition.equal_to("patient_id", patient_id)
+            ).extract_optional_as(PatientDao)
         )
 
     @staticmethod
     @allure.step("get_patient_identifier_by_identifier")
     def get_patient_identifier_by_identifier(identifier: str) -> PatientIdentifierDao:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("patient_identifier")
-            .where(Condition.equal_to("identifier", identifier))
-            .extract_as(PatientIdentifierDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("patient_identifier").where(
+                Condition.equal_to("identifier", identifier)
+            ).extract_as(PatientIdentifierDao)
         )
 
     @staticmethod
     @allure.step("get_person_by_address")
     def get_person_by_address(address: str) -> PersonAddressDao:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("person_address")
-            .where(Condition.equal_to("address1", address))
-            .extract_as(PersonAddressDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("person_address").where(
+                Condition.equal_to("address1", address)
+            ).extract_as(PersonAddressDao)
         )
 
     @staticmethod
     @allure.step("get_person_by_uuid")
     def get_person_by_uuid(uuid: str):
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("person")
-            .where(Condition.equal_to("uuid", uuid))
-            .extract_as(PersonDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("person").where(
+                Condition.equal_to("uuid", uuid)
+            ).extract_as(PersonDao)
         )
 
     @staticmethod
     @allure.step("get_person_by_id")
     def get_person_by_id(id: int):
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("person")
-            .where(Condition.equal_to("person_id", id))
-            .extract_as(PersonDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("person").where(
+                Condition.equal_to("person_id", id)
+            ).extract_as(PersonDao)
         )
 
     @staticmethod
     @allure.step("verify_patient_created_with_new_person")
-    def verify_patient_created_with_new_person(
-            patient_uuid: str,
-            identifiers: List[PatientIdentifierRequest]
-    ):
+    def verify_patient_created_with_new_person(patient_uuid: str, identifiers: List[PatientIdentifierRequest]):
         # 1️⃣ Получаем Person по UUID (именно здесь uuid существует)
         person_dao = (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("person")
-            .where(Condition.equal_to("uuid", patient_uuid))
-            .extract_as(PersonDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("person").where(
+                Condition.equal_to("uuid", patient_uuid)
+            ).extract_as(PersonDao)
         )
 
-        assert person_dao.voided == False, (
-            f"Person {patient_uuid} is voided in DB"
-        )
+        assert not person_dao.voided, (f"Person {patient_uuid} is voided in DB")
 
         # 2️⃣ Получаем Patient по person_id
         patient_dao = (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("patient")
-            .where(Condition.equal_to("patient_id", person_dao.person_id))
-            .extract_as(PatientDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("patient").where(
+                Condition.equal_to("patient_id", person_dao.person_id)
+            ).extract_as(PatientDao)
         )
 
-        assert patient_dao.voided == False, (
-            f"Patient linked to person_id={person_dao.person_id} is voided in DB"
-        )
+        assert not patient_dao.voided, (f"Patient linked to person_id={person_dao.person_id} is voided in DB")
 
         # 3️⃣ Проверяем identifiers
         for identifier in identifiers:
             patient_identifier_dao = (
-                DBRequest.builder()
-                .request_type(RequestType.SELECT)
-                .table("patient_identifier")
-                .where(Condition.equal_to("identifier", identifier.identifier))
-                .extract_as(PatientIdentifierDao)
+                DBRequest.builder().request_type(RequestType.SELECT).table("patient_identifier").where(
+                    Condition.equal_to("identifier", identifier.identifier)
+                ).extract_as(PatientIdentifierDao)
             )
 
-            assert patient_identifier_dao.voided == False
+            assert not patient_identifier_dao.voided
             assert patient_identifier_dao.patient_id == person_dao.person_id
 
-            DaoAndModelAssertions.assert_that(
-                identifier,
-                patient_identifier_dao
-            ).match()
+            DaoAndModelAssertions.assert_that(identifier, patient_identifier_dao).match()
 
     @staticmethod
     @allure.step("verify_patient_not_created_by_identifier")
     def verify_patient_not_created_by_identifier(identifier: str):
         patient_identifier = DatabaseSteps.find_patient_identifier_by_identifier(identifier)
 
-        assert patient_identifier is None, (
-            f"Patient with identifier '{identifier}' was unexpectedly created"
-        )
+        assert patient_identifier is None, (f"Patient with identifier '{identifier}' was unexpectedly created")
 
     @staticmethod
     @allure.step("find_patient_identifier_by_identifier")
     def find_patient_identifier_by_identifier(identifier: str):
         try:
             return (
-                DBRequest.builder()
-                .request_type(RequestType.SELECT)
-                .table("patient_identifier")
-                .where(Condition.equal_to("identifier", identifier))
-                .extract_optional_as(PatientIdentifierDao)
+                DBRequest.builder().request_type(RequestType.SELECT).table("patient_identifier").where(
+                    Condition.equal_to("identifier", identifier)
+                ).extract_optional_as(PatientIdentifierDao)
             )
         except AssertionError:
             return None
 
     @staticmethod
     @allure.step("verify_person_not_created_by_identity")
-    def verify_person_not_created_by_identity(
-            given_name: str,
-            family_name: str,
-            birthdate: str
-    ):
+    def verify_person_not_created_by_identity(given_name: str, family_name: str, birthdate: str):
         persons = DatabaseSteps.get_persons_by_identity(
-            given_name=given_name,
-            family_name=family_name,
-            birthdate=birthdate
+            given_name=given_name, family_name=family_name, birthdate=birthdate
         )
 
-        assert not persons, (
-            f"Person was created but should not exist. "
-            f"Found: {persons}"
-        )
+        assert not persons, (f"Person was created but should not exist. "
+                             f"Found: {persons}")
 
     @staticmethod
     @allure.step("get_persons_by_identity")
-    def get_persons_by_identity(
-            given_name: str,
-            family_name: str,
-            birthdate: str
-    ):
+    def get_persons_by_identity(given_name: str, family_name: str, birthdate: str):
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("person p")
-            .join("person_name pn", "pn.person_id = p.person_id")
-            .where(Condition.raw(
-                "pn.given_name = %s AND pn.family_name = %s AND DATE(p.birthdate) = DATE(%s)",
-                given_name, family_name, birthdate
-            ))
-            .extract_all_as(PersonDao)
+            DBRequest.builder().request_type(
+                RequestType.SELECT
+            ).table("person p").join("person_name pn", "pn.person_id = p.person_id").where(
+                Condition.raw(
+                    "pn.given_name = %s AND pn.family_name = %s AND DATE(p.birthdate) = DATE(%s)", given_name,
+                    family_name, birthdate
+                )
+            ).extract_all_as(PersonDao)
         )
 
     @allure.step("find_person_name_by_given_and_last_name")
     def find_person_name_by_given_and_last_name(given_name: str, family_name: str):
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("person_name")
-            .where(Condition.equal_to("given_name", given_name).and_(Condition.equal_to("family_name", family_name)))
-            .extract_optional_as(PersonNameDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("person_name").where(
+                Condition.equal_to("given_name", given_name).and_(Condition.equal_to("family_name", family_name))
+            ).extract_optional_as(PersonNameDao)
         )
 
     @staticmethod
     @allure.step("verify_patient_created_from_existing_person")
     def verify_patient_created_from_existing_person(person_uuid: str, identifiers: List[PatientIdentifierRequest]):
         person_dao = DatabaseSteps.get_person_by_uuid(person_uuid)
-        assert person_dao.voided == False
+        assert not person_dao.voided
 
         patient_dao = DatabaseSteps.get_patient_by_id(person_dao.person_id)
-        assert patient_dao.voided == False
+        assert not patient_dao.voided
 
         for identifier in identifiers:
             patient_identifier_dao = DatabaseSteps.get_patient_identifier_by_identifier(identifier.identifier)
-            assert patient_identifier_dao.voided == False
+            assert not patient_identifier_dao.voided
             assert patient_identifier_dao.patient_id == person_dao.person_id
             DaoAndModelAssertions.assert_that(identifier, patient_identifier_dao).match()
 
@@ -243,7 +192,7 @@ class DatabaseSteps:
     @allure.step("verify_patient_does_not_exist")
     def verify_patient_does_not_exist(person_uuid: str):
         person_dao = DatabaseSteps.get_person_by_uuid(person_uuid)
-        assert person_dao.voided == False
+        assert not person_dao.voided
 
         patient_dao = DatabaseSteps.find_patient_by_id(person_dao.person_id)
         assert patient_dao is None, f"Patient '{person_dao.person_id}' should NOT exist in DB after invalid create, but was found: {patient_dao}"
@@ -251,23 +200,16 @@ class DatabaseSteps:
     @staticmethod
     @allure.step("get_all_patients")
     def get_all_patients() -> List[PatientDao]:
-        return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("patient")
-            .extract_all_as(PatientDao)
-        )
+        return (DBRequest.builder().request_type(RequestType.SELECT).table("patient").extract_all_as(PatientDao))
 
     @staticmethod
     @allure.step("get_person_by_birthdate")
     def get_person_by_birthdate(person_birthdate) -> Optional[PersonDao]:
         try:
             return (
-                DBRequest.builder()
-                .request_type(RequestType.SELECT)
-                .table("person")
-                .where(Condition.equal_to("birthdate", person_birthdate))
-                .extract_as(PersonDao)
+                DBRequest.builder().request_type(RequestType.SELECT).table("person").where(
+                    Condition.equal_to("birthdate", person_birthdate)
+                ).extract_as(PersonDao)
             )
         except AssertionError:
             return None
@@ -283,19 +225,14 @@ class DatabaseSteps:
     @allure.step("get_visit_by_uuid")
     def get_visit_by_uuid(visit_uuid: str) -> VisitDao:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("visit")
-            .where(Condition.equal_to("uuid", visit_uuid))
-            .extract_as(VisitDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("visit").where(
+                Condition.equal_to("uuid", visit_uuid)
+            ).extract_as(VisitDao)
         )
 
     @staticmethod
     def _id_by_uuid(table: str, id_col: str, uuid: str) -> int:
-        row = fetch_one(
-            f"SELECT {id_col} AS id FROM {table} WHERE uuid = %s LIMIT 1",
-            (uuid,)
-        )
+        row = fetch_one(f"SELECT {id_col} AS id FROM {table} WHERE uuid = %s LIMIT 1", (uuid, ))
         assert row is not None, f"Row not found in `{table}` by uuid={uuid}"
         return int(row["id"])
 
@@ -345,10 +282,7 @@ class DatabaseSteps:
     @staticmethod
     @allure.step("count_visits_by_patient_id")
     def count_visits_by_patient_id(patient_id: int) -> int:
-        row = fetch_one(
-            "SELECT COUNT(*) AS cnt FROM visit WHERE patient_id = %s",
-            (patient_id,)
-        )
+        row = fetch_one("SELECT COUNT(*) AS cnt FROM visit WHERE patient_id = %s", (patient_id, ))
         assert row is not None and "cnt" in row, f"Failed to count visits for patient_id={patient_id}"
         return int(row["cnt"])
 
@@ -357,7 +291,7 @@ class DatabaseSteps:
     def get_visit_row_by_uuid(visit_uuid: str):
         return fetch_one(
             "SELECT visit_id, uuid, voided, voided_by, date_voided, void_reason FROM visit WHERE uuid = %s LIMIT 1",
-            (visit_uuid,)
+            (visit_uuid, )
         )
 
     @staticmethod
@@ -377,10 +311,7 @@ class DatabaseSteps:
     @staticmethod
     @allure.step("verify_visit_stop_datetime_updated_in_db")
     def verify_visit_stop_datetime_updated_in_db(visit_uuid: str, stop_datetime_iso: str) -> None:
-        row = fetch_one(
-            "SELECT uuid, voided, date_stopped FROM visit WHERE uuid = %s LIMIT 1",
-            (visit_uuid,)
-        )
+        row = fetch_one("SELECT uuid, voided, date_stopped FROM visit WHERE uuid = %s LIMIT 1", (visit_uuid, ))
         assert row is not None, f"Visit not found in DB by uuid={visit_uuid}"
 
         assert not bool(row["voided"]), f"Visit is voided in DB, uuid={visit_uuid}, voided={row['voided']}"
@@ -409,29 +340,23 @@ class DatabaseSteps:
               AND date_stopped IS NULL
             ORDER BY date_started DESC
             LIMIT 1
-            """,
-            (patient_id,)
+            """, (patient_id, )
         )
         return row["uuid"] if row else None
 
     @staticmethod
     @allure.step("get_visit_date_stopped_by_uuid")
     def get_visit_date_stopped_by_uuid(visit_uuid: str):
-        row = fetch_one(
-            "SELECT date_stopped FROM visit WHERE uuid = %s LIMIT 1",
-            (visit_uuid,)
-        )
+        row = fetch_one("SELECT date_stopped FROM visit WHERE uuid = %s LIMIT 1", (visit_uuid, ))
         return row["date_stopped"] if row else None
 
     @staticmethod
     @allure.step("get_visits_by_patient_id")
     def get_visits_by_patient_id(patient_id: int) -> List[VisitDao]:
         return (
-            DBRequest.builder()
-            .request_type(RequestType.SELECT)
-            .table("visit")
-            .where(Condition.equal_to("patient_id", patient_id))
-            .extract_all_as(VisitDao)
+            DBRequest.builder().request_type(RequestType.SELECT).table("visit").where(
+                Condition.equal_to("patient_id", patient_id)
+            ).extract_all_as(VisitDao)
         )
 
     @staticmethod
@@ -443,10 +368,8 @@ class DatabaseSteps:
     @allure.step("delete_log_entry_for_user")
     def delete_log_entry_for_user(user_id: int):
         deleted_logs = (
-            DBRequest.builder()
-            .request_type(RequestType.DELETE)
-            .table("idgen_log_entry")
-            .where(Condition.equal_to("generated_by", user_id))
-            .execute()
+            DBRequest.builder().request_type(RequestType.DELETE).table("idgen_log_entry").where(
+                Condition.equal_to("generated_by", user_id)
+            ).execute()
         )
         return deleted_logs

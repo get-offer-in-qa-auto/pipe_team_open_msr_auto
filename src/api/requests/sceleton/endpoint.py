@@ -2,16 +2,16 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from src.api.models.requests.create_patient_request import CreatePatientRequest
 from src.api.models.base_model import BaseModel
 from src.api.models.requests.create_patient_from_person_request import CreatePatientFromPersonRequest
+from src.api.models.requests.create_patient_request import CreatePatientRequest
 from src.api.models.requests.create_person_request import CreatePersonRequest
 from src.api.models.requests.create_provider_request import CreateProviderRequest
 from src.api.models.requests.create_role_request import CreateRoleRequest
 from src.api.models.requests.create_user_from_existing_person_request import CreateUserFromExistingPersonRequest
 from src.api.models.requests.create_visit_request import CreateVisitRequest
 from src.api.models.requests.update_person_request import UpdatePersonRequest
-from src.api.models.responses.create_patient_response import PatientFullResponse, PatientCreateResponse
+from src.api.models.responses.create_patient_response import PatientCreateResponse, PatientFullResponse
 from src.api.models.responses.create_person_response import CreatePersonResponse, PersonFullResponse
 from src.api.models.responses.create_provider_response import CreateProviderResponse
 from src.api.models.responses.create_role_response import CreateRoleResponse
@@ -20,9 +20,9 @@ from src.api.models.responses.create_visit_response import CreateVisitResponse
 from src.api.models.responses.get_location_response import LocationListResponse
 from src.api.models.responses.get_privileges_response import GetPrivilegesResponse
 from src.api.models.responses.get_roles_response import RoleListResponse
-from src.api.models.responses.patient_identifier_type_response import PatientIdentifierTypeListResponse
-from src.api.models.responses.get_visit_type_response import VisitTypeListResponse
 from src.api.models.responses.get_visit_response import VisitFullResponse
+from src.api.models.responses.get_visit_type_response import VisitTypeListResponse
+from src.api.models.responses.patient_identifier_type_response import PatientIdentifierTypeListResponse
 
 
 @dataclass(frozen=True)
@@ -33,89 +33,43 @@ class EndpointConfig:
 
 
 class Endpoint(Enum):
-    GET_ROLES = EndpointConfig(
-        url="/role",
-        request_model=None,
-        response_model=RoleListResponse
-    )
+    GET_ROLES = EndpointConfig(url="/role", request_model=None, response_model=RoleListResponse)
 
-    CREATE_ROLE = EndpointConfig(
-        url="/role",
-        request_model=CreateRoleRequest,
-        response_model=CreateRoleResponse
-    )
+    CREATE_ROLE = EndpointConfig(url="/role", request_model=CreateRoleRequest, response_model=CreateRoleResponse)
 
-    DELETE_ROLE = EndpointConfig(
-        url="/role",
-        request_model=None,
-        response_model=None
-    )
+    DELETE_ROLE = EndpointConfig(url="/role", request_model=None, response_model=None)
 
-    GET_PRIVILEGES = EndpointConfig(
-        url="/privilege",
-        request_model=None,
-        response_model=GetPrivilegesResponse
-    )
+    GET_PRIVILEGES = EndpointConfig(url="/privilege", request_model=None, response_model=GetPrivilegesResponse)
 
-    GET_LOCATIONS = EndpointConfig(
-        url="/location",
-        request_model=None,
-        response_model=LocationListResponse
-    )
+    GET_LOCATIONS = EndpointConfig(url="/location", request_model=None, response_model=LocationListResponse)
 
     DELETE_PATIENT_IDENTIFIER = EndpointConfig(
-        url="/patient/:target_patient_uuid/identifier",
-        request_model=None,
-        response_model=None
+        url="/patient/:target_patient_uuid/identifier", request_model=None, response_model=None
     )
 
     GET_PATIENT_IDENTIFIER_TYPES = EndpointConfig(
-        url="/patientidentifiertype",
-        request_model=None,
-        response_model=PatientIdentifierTypeListResponse
+        url="/patientidentifiertype", request_model=None, response_model=PatientIdentifierTypeListResponse
     )
 
     CREATE_PERSON = EndpointConfig(
-        url="/person",
-        request_model=CreatePersonRequest,
-        response_model=CreatePersonResponse
+        url="/person", request_model=CreatePersonRequest, response_model=CreatePersonResponse
     )
 
-    GET_PERSON = EndpointConfig(
-        url="/person",
-        request_model=None,
-        response_model=PersonFullResponse
-    )
+    GET_PERSON = EndpointConfig(url="/person", request_model=None, response_model=PersonFullResponse)
 
-    DELETE_PERSON = EndpointConfig(
-        url="/person",
-        request_model=None,
-        response_model=None
-    )
+    DELETE_PERSON = EndpointConfig(url="/person", request_model=None, response_model=None)
 
     CREATE_PATIENT_FROM_PERSON = EndpointConfig(
-        url="/patient",
-        request_model=CreatePatientFromPersonRequest,
-        response_model=PatientCreateResponse
+        url="/patient", request_model=CreatePatientFromPersonRequest, response_model=PatientCreateResponse
     )
 
     CREATE_PATIENT = EndpointConfig(
-        url="/patient",
-        request_model=CreatePatientRequest,
-        response_model=PatientCreateResponse
+        url="/patient", request_model=CreatePatientRequest, response_model=PatientCreateResponse
     )
 
-    DELETE_PATIENT = EndpointConfig(
-        url="/patient",
-        request_model=None,
-        response_model=None
-    )
+    DELETE_PATIENT = EndpointConfig(url="/patient", request_model=None, response_model=None)
 
-    GET_PATIENT = EndpointConfig(
-        url="/patient",
-        request_model=None,
-        response_model=PatientFullResponse
-    )
+    GET_PATIENT = EndpointConfig(url="/patient", request_model=None, response_model=PatientFullResponse)
 
     CREATE_VISIT = EndpointConfig(
         url="/visit",
@@ -148,28 +102,16 @@ class Endpoint(Enum):
     )
 
     CREATE_USER_FROM_PERSON = EndpointConfig(
-        url="/user",
-        request_model=CreateUserFromExistingPersonRequest,
-        response_model=CreateUserResponse
+        url="/user", request_model=CreateUserFromExistingPersonRequest, response_model=CreateUserResponse
     )
 
-    DELETE_USER = EndpointConfig(
-        url="/user",
-        request_model=None,
-        response_model=None
-    )
+    DELETE_USER = EndpointConfig(url="/user", request_model=None, response_model=None)
 
     CREATE_PROVIDER = EndpointConfig(
-        url="/provider",
-        request_model=CreateProviderRequest,
-        response_model=CreateProviderResponse
+        url="/provider", request_model=CreateProviderRequest, response_model=CreateProviderResponse
     )
 
-    DELETE_PROVIDER = EndpointConfig(
-        url="/provider",
-        request_model=None,
-        response_model=None
-    )
+    DELETE_PROVIDER = EndpointConfig(url="/provider", request_model=None, response_model=None)
 
     UPDATE_PERSON = EndpointConfig(
         url="/person",
