@@ -1,3 +1,4 @@
+import allure
 import pytest
 from playwright.sync_api import Page
 
@@ -11,6 +12,7 @@ from src.ui.login_pages.login_page import LoginPage
 class TestLoginUser:
 
     #test with some browser
+    @allure.title("Admin Can Login With Correct Data")
     @pytest.mark.browsers("chromium")
     @pytest.mark.usefixtures("admin_user_request")
     def test_admin_can_login_with_correct_data(self, page: Page, admin_user_request: BaseCreateUserRequest):
@@ -22,6 +24,7 @@ class TestLoginUser:
             .should_have_add_patient_button()
 
 
+    @allure.title("Login As Disabled User")
     @pytest.mark.usefixtures('api_manager', 'create_user_with_roles')
     def test_login_as_disabled_user(self, api_manager, page, create_user_with_roles):
         user_request, user_data = create_user_with_roles()

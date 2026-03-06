@@ -1,3 +1,4 @@
+import allure
 import re
 
 import pytest
@@ -13,6 +14,7 @@ from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 @pytest.mark.admin_session
 class TestSearchPatientByAdmin:
 
+    @allure.title("Search Patient By Fullname By Admin")
     def test_search_patient_by_fullname_by_admin(
         self,
         page: Page,
@@ -43,6 +45,7 @@ class TestSearchPatientByAdmin:
             .should_have_patient(given, family)
 
 
+    @allure.title("Search Patient By ID By Admin")
     def test_search_patient_by_id_by_admin(
         self,
         page: Page,
@@ -66,6 +69,7 @@ class TestSearchPatientByAdmin:
         PatientSummaryPage(page, patient_uuid=response.uuid) \
             .should_be_opened()
 
+    @allure.title("Search Patient By Nonexistent Fullname By Admin")
     def test_search_patient_by_nonexistent_fullname_by_admin(
             self,
             page: Page,
