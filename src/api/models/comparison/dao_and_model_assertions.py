@@ -5,12 +5,12 @@ from typing import Any
 from src.api.models.comparison.model_comparator import ModelComparator
 from src.api.models.comparison.model_comparison_configuration import ModelComparisonConfigLoader
 
+
 class DaoAndModelAssertions:
     """
     Compare DTO (API response) with DAO (DB row representation) using mapping rules
     from resources/dao-comparison.properties.
     """
-
     def __init__(self, left: Any, right: Any):
         self.left = left
         self.right = right

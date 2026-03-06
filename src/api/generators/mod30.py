@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import random
-from typing import Final
 import secrets
+from typing import Final
 
 # charset из практики OpenMRS Mod-30 (без B I O Q S Z)
 MOD30_ALPHABET: Final[str] = "0123456789ACDEFGHJKLMNPRTUVWXY"
+
 
 def luhn_mod_n_check_char(body: str, alphabet: str = MOD30_ALPHABET) -> str:
     """

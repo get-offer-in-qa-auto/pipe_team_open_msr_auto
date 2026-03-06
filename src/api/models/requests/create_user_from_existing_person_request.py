@@ -4,5 +4,5 @@ from src.api.models.requests.base_create_user_request import BaseCreateUserReque
 
 
 class CreateUserFromExistingPersonRequest(BaseCreateUserRequest):
-    person: str # uuid существующей Person
+    person: str  # uuid существующей Person
     roles: List[str]

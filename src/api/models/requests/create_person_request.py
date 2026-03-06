@@ -1,7 +1,8 @@
-from typing import List, Optional, Annotated, Any
+from typing import Annotated, Any, List
 
 from src.api.generators.generating_rule import GeneratingRule
 from src.api.models.base_model import BaseModel
+
 
 #TODO: Тут генерировать данные
 class PersonNameRequest(BaseModel):
@@ -30,6 +31,7 @@ class CreatePersonRequest(BaseModel):
 
     # по доке: addresses[] :contentReference[oaicite:6]{index=6}
     addresses: List[PersonAddressRequest]
+
 
 class CreatePersonInvalidRequest(BaseModel):
     # Любые значения, чтобы можно было отправлять "плохие" payload'ы

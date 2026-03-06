@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 import pytest
 
@@ -29,6 +29,7 @@ def _resolve_source(request: pytest.FixtureRequest, source: str) -> Any:
     for attr in parts[1:]:
         value = getattr(value, attr)
     return value
+
 
 @pytest.fixture(autouse=True, scope="function")
 def check_all_patients_change(request: pytest.FixtureRequest, api_manager: ApiManager):

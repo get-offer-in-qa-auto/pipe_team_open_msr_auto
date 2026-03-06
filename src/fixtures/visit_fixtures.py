@@ -1,16 +1,15 @@
 import random
 
-from src.api.generators.random_data import RandomData
-from src.api.models.contexts.patient_context import PatientContext
-from src.api.models.requests.update_visit_request import UpdateVisitRequest
-from src.api.models.responses.create_visit_response import CreateVisitResponse
-from src.api.utils.datetime_utils import now_iso_utc, future_iso_utc, past_iso_utc
-
 import pytest
 
 from src.api.classes.api_manager import ApiManager
+from src.api.generators.random_data import RandomData
+from src.api.models.contexts.patient_context import PatientContext
 from src.api.models.requests.create_visit_request import CreateVisitRequest
+from src.api.models.requests.update_visit_request import UpdateVisitRequest
 from src.api.models.responses.create_patient_response import PatientCreateResponse
+from src.api.models.responses.create_visit_response import CreateVisitResponse
+from src.api.utils.datetime_utils import future_iso_utc, now_iso_utc, past_iso_utc
 
 
 @pytest.fixture
@@ -53,7 +52,9 @@ def create_visit_request(api_manager: ApiManager, created_patient: PatientCreate
 
 
 @pytest.fixture
-def create_visit_request_with_stop_time(api_manager: ApiManager, created_patient: PatientCreateResponse) -> CreateVisitRequest:
+def create_visit_request_with_stop_time(
+    api_manager: ApiManager, created_patient: PatientCreateResponse
+) -> CreateVisitRequest:
     visit_types = api_manager.user_steps.get_visit_types()
     visit_type_uuid = random.choice(visit_types.results).uuid
 
@@ -76,10 +77,7 @@ def create_visit_request_with_stop_time(api_manager: ApiManager, created_patient
 
 @pytest.fixture
 def update_visit_request() -> UpdateVisitRequest:
-    return UpdateVisitRequest(
-        stopDatetime=future_iso_utc(),
-        indication=RandomData.get_word()
-    )
+    return UpdateVisitRequest(stopDatetime=future_iso_utc(), indication=RandomData.get_word())
 
 
 @pytest.fixture

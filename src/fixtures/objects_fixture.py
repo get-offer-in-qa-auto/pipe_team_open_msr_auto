@@ -40,6 +40,7 @@ def created_objects():
     yield objects
     cleanup_object(objects)
 
+
 def delete_objects_by_uuid(api_manager: ApiManager, objects: list, response_type: type, delete_method_name: str):
     """
         Универсальный метод удаления cущностей

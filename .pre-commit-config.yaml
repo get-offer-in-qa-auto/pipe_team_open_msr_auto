@@ -3,21 +3,28 @@ repos:
     hooks:
       - id: ruff-unused-imports
         name: ruff-unused-imports
-        entry: ruff check --fix --select F401
-        language: system
+        entry: ruff
+        args: [check, --fix, --select, F401]
+        language: python
+        additional_dependencies: [ruff]
         types: [python]
       - id: ruff
         name: ruff
-        entry: ruff check
-        language: system
+        entry: ruff
+        args: [check]
+        language: python
+        additional_dependencies: [ruff]
         types: [python]
       - id: isort
         name: isort
         entry: isort
-        language: system
+        language: python
+        additional_dependencies: [isort]
         types: [python]
       - id: yapf
         name: yapf
-        entry: yapf --style .style.yapf --in-place
-        language: system
+        entry: yapf
+        args: [--style, .style.yapf, --in-place]
+        language: python
+        additional_dependencies: [yapf]
         types: [python]

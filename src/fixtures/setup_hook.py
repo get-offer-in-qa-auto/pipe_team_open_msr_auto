@@ -24,9 +24,7 @@ def user_session_extension(
     count = max(1, int(mark.args[0]))
     auth_index = int(mark.kwargs.get("auth", 0))
 
-    users: List[BaseCreateUserRequest] = [
-        req for req, _ in (user_factory() for _ in range(count))
-    ]
+    users: List[BaseCreateUserRequest] = [req for req, _ in (user_factory() for _ in range(count))]
     SessionStorage.add_users(users)
     LoginPage(page).auth_as_user(users[auth_index])
 
@@ -36,12 +34,7 @@ def user_session_extension(
 
 
 @pytest.fixture()
-def admin_session_autologin(
-    request: pytest.FixtureRequest,
-    page: Page,
-    admin_user_request,
-    api_manager
-):
+def admin_session_autologin(request: pytest.FixtureRequest, page: Page, admin_user_request, api_manager):
     mark = request.node.get_closest_marker("admin_session")
     if not mark:
         yield
@@ -56,7 +49,6 @@ def admin_session_autologin(
         location_display=target.display,
     )
 
-
     OpenMsrHomePage(page).open().wait_until_loaded()
     yield
 
@@ -67,10 +59,7 @@ def browser_match_guard(request):
     if not mark:
         return
 
-    allowed = {
-        norm_browser_name(browser_name)
-        for browser_name in mark.args
-    }
+    allowed = {norm_browser_name(browser_name) for browser_name in mark.args}
     if not allowed:
         return
 
@@ -80,6 +69,4 @@ def browser_match_guard(request):
         return
 
     if norm_browser_name(current) not in allowed:
-        pytest.skip(
-            f"Пропущен: текущий браузер {current} не в {sorted(allowed)}"
-        )
+        pytest.skip(f"Пропущен: текущий браузер {current} не в {sorted(allowed)}")

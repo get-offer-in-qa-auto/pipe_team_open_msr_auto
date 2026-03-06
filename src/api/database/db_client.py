@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar, List, cast
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar, cast
 
 import mysql.connector
 
@@ -11,9 +11,11 @@ from src.api.configs.config import Config
 
 T = TypeVar("T")
 
+
 class RequestType(str, Enum):
     SELECT = "SELECT"
     DELETE = "DELETE"
+
 
 def _db_config() -> dict:
     """
@@ -21,11 +23,12 @@ def _db_config() -> dict:
     """
     return {
         "host": str(Config.get("DB_HOST", "localhost")),
-        "port": int(Config.get("DB_PORT", 3306)), # Порт MariaDB по умолчанию
+        "port": int(Config.get("DB_PORT", 3306)),  # Порт MariaDB по умолчанию
         "database": str(Config.get("DB_NAME", "openmrs")),
         "user": str(Config.get("DB_USERNAME", "openmrs")),
         "password": str(Config.get("DB_PASSWORD", "openmrs"))
     }
+
 
 @contextmanager
 def db_conn() -> Generator[mysql.connector.MySQLConnection, None, None]:
@@ -36,6 +39,7 @@ def db_conn() -> Generator[mysql.connector.MySQLConnection, None, None]:
         if conn.is_connected():
             conn.close()
 
+
 def fetch_one(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[Dict[str, Any]]:
     with db_conn() as conn:
         with conn.cursor(dictionary=True) as cur:
@@ -43,11 +47,13 @@ def fetch_one(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[Di
             row = cur.fetchone()
             return row
 
+
 def fetch_all(sql: str, params: Optional[tuple[Any, ...]] = None) -> Optional[List[Dict[str, Any]]]:
     with db_conn() as conn:
         with conn.cursor(dictionary=True) as cur:
             cur.execute(sql, params or ())
             return cast(List[Dict[str, Any]], cur.fetchall())
+
 
 def execute_non_query(sql: str, params: Optional[tuple[Any, ...]] = None) -> int:
     """Выполняет UPDATE/DELETE/INSERT и возвращает количество измененных строк."""
@@ -56,6 +62,7 @@ def execute_non_query(sql: str, params: Optional[tuple[Any, ...]] = None) -> int
             cur.execute(sql, params or ())
             conn.commit()  # Важно для MariaDB/MySQL
             return cur.rowcount
+
 
 @dataclass(frozen=True)
 class Condition:
@@ -69,7 +76,7 @@ class Condition:
 
     @staticmethod
     def equal_to(column: str, value: Any) -> "Condition":
-        return Condition(sql=f"{column} = %s", params=(value,))
+        return Condition(sql=f"{column} = %s", params=(value, ))
 
     @staticmethod
     def raw(sql: str, *params: Any) -> "Condition":
@@ -85,14 +92,16 @@ class Condition:
         conds = [c for c in conditions if c is not None]
         if not conds:
             raise ValueError("At least one condition is required")
-        sql = " AND ".join(f"({c.sql})" for c in conds) # (a = %s) AND (b = %s)
-        params: Tuple[Any, ...] = tuple(p for c in conds for p in c.params) # ("alex") (1, ) -> ("alex", 1)
+        sql = " AND ".join(f"({c.sql})" for c in conds)  # (a = %s) AND (b = %s)
+        params: Tuple[Any, ...] = tuple(p for c in conds for p in c.params)  # ("alex") (1, ) -> ("alex", 1)
         return Condition(sql=sql, params=params)
+
 
 class DBRequest:
     @staticmethod
     def builder() -> "DBRequestBuilder":
         return DBRequestBuilder()
+
 
 class DBRequestBuilder:
     def __init__(self):

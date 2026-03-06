@@ -3,7 +3,7 @@ import pytest
 
 from src.api.generators.random_data import RandomData
 from src.api.generators.random_model_generator import RandomModelGenerator
-from src.api.models.requests.create_person_request import CreatePersonRequest, CreatePersonInvalidRequest
+from src.api.models.requests.create_person_request import CreatePersonRequest
 
 
 @allure.title("Create Person")
@@ -16,6 +16,7 @@ def test_create_person(api_manager):
         expected_request=create_person_request,
     )
 
+
 @pytest.mark.api
 @pytest.mark.parametrize(
     "field, value, error_value",
@@ -24,20 +25,30 @@ def test_create_person(api_manager):
         ("birthdate", "1997-99-99", "birth"),  # invalid date
         ("birthdate", "1997-02-30", "birth"),  # non-existing date
         ("birthdate", "abcd-ef-gh", "birth"),  # not a date
-        ("birthdate", "", "birth"),            # empty
+        ("birthdate", "", "birth"),  # empty
         ("birthdate", "3000-01-01", "birth"),  # future date
         ("birthdate", RandomData.get_int(1, 1000), "birth"),
         #
         # ---------- addresses ---------  -
         ("addresses", RandomData.get_word(), "address"),  # wrong type
         ("addresses", None, "address"),  # null instead of array
-        ("addresses", [{"address1": RandomData.get_int(1, 1000)}], "address"),
-        ("addresses", [{"postalCode": RandomData.get_int(1, 1000)}], "address"),
-        ("addresses", [{"cityVillage": RandomData.get_int(1, 1000)}], "address"),
-        ("addresses", [{"country": RandomData.get_int(1, 1000)}], "address"),
+        ("addresses", [{
+            "address1": RandomData.get_int(1, 1000)
+        }], "address"),
+        ("addresses", [{
+            "postalCode": RandomData.get_int(1, 1000)
+        }], "address"),
+        ("addresses", [{
+            "cityVillage": RandomData.get_int(1, 1000)
+        }], "address"),
+        ("addresses", [{
+            "country": RandomData.get_int(1, 1000)
+        }], "address"),
         (
             "addresses",
-            [{"address1": RandomData.get_word()}, RandomData.get_word()],
+            [{
+                "address1": RandomData.get_word()
+            }, RandomData.get_word()],
             "address",
         ),  # garbage in array
 
@@ -46,23 +57,40 @@ def test_create_person(api_manager):
         ("names", None, "name"),  # null instead of array
         ("names", RandomData.get_word(), "name"),  # wrong type
         ("names", [{}], "name"),  # missing givenName/familyName
-        ("names", [{"familyName": RandomData.get_word()}], "name"),  # missing givenName
-        ("names", [{"givenName": "", "familyName": RandomData.get_word()}], "name"),
-        ("names", [{"givenName": None, "familyName": RandomData.get_word()}], "name"),
+        ("names", [{
+            "familyName": RandomData.get_word()
+        }], "name"),  # missing givenName
+        ("names", [{
+            "givenName": "",
+            "familyName": RandomData.get_word()
+        }], "name"),
+        ("names", [{
+            "givenName": None,
+            "familyName": RandomData.get_word()
+        }], "name"),
         (
             "names",
-            [{"givenName": RandomData.get_int(1, 1000), "familyName": RandomData.get_word()}],
+            [{
+                "givenName": RandomData.get_int(1, 1000),
+                "familyName": RandomData.get_word()
+            }],
             "name",
         ),
         (
             "names",
-            [{"givenName": RandomData.get_word(), "familyName": RandomData.get_int(1, 1000)}],
+            [{
+                "givenName": RandomData.get_word(),
+                "familyName": RandomData.get_int(1, 1000)
+            }],
             "name",
         ),
         (
             "names",
             [
-                {"givenName": RandomData.get_word(), "familyName": RandomData.get_word()},
+                {
+                    "givenName": RandomData.get_word(),
+                    "familyName": RandomData.get_word()
+                },
                 RandomData.get_word(),
             ],
             "name",
@@ -81,6 +109,3 @@ def test_create_person_invalid(api_manager, field, value, error_value):
     )
 
     api_manager.database_steps.verify_person_does_not_exist(create_person_request.birthdate)
-
-
-

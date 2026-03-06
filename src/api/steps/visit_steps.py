@@ -1,17 +1,17 @@
 from __future__ import annotations
-import allure
 
+import allure
 from requests import Response
 
 from src.api.models.comparison.entity_assertions import EntityAssertions
-from src.api.models.comparison.model_assertions import ModelAssertions
-from src.api.models.requests.create_visit_request import CreateVisitRequest, CreateVisitInvalidRequest
+from src.api.models.requests.create_visit_request import CreateVisitInvalidRequest, CreateVisitRequest
 from src.api.models.requests.update_visit_request import UpdateVisitRequest
 from src.api.models.responses.create_visit_response import CreateVisitResponse
 from src.api.models.responses.get_visit_response import VisitFullResponse
 from src.api.requests.sceleton.endpoint import Endpoint
 from src.api.specs.response_spec import ResponseSpecs
 from src.api.steps.base_steps import BaseSteps
+
 
 class VisitSteps(BaseSteps):
     @allure.step("get_visit_by_uuid")
@@ -43,8 +43,9 @@ class VisitSteps(BaseSteps):
         return created
 
     @allure.step("create_raw_visit")
-    def create_raw_visit(self, payload: CreateVisitInvalidRequest, error_key: str | None = None,
-                         error_value: str | None = None):
+    def create_raw_visit(
+        self, payload: CreateVisitInvalidRequest, error_key: str | None = None, error_value: str | None = None
+    ):
         return self._cr(
             endpoint=Endpoint.CREATE_VISIT,
             response_spec=ResponseSpecs.request_returns_bad_request(error_key, error_value),

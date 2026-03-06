@@ -2,6 +2,7 @@ from faker import Faker
 
 faker = Faker()
 
+
 class RandomData:
     @staticmethod
     def get_int(min_val, max_val) -> int:

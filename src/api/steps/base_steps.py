@@ -1,19 +1,20 @@
-import allure
 import random
-from typing import Any
-from typing import Optional, List
+from typing import Any, List, Optional
+
+import allure
 
 from src.api.generators.random_model_generator import RandomModelGenerator
 from src.api.models.requests.create_patient_from_person_request import PatientIdentifierRequest
-from src.api.models.requests.create_role_request import CreateRoleRequest, CreateRolePrivilegeModel
+from src.api.models.requests.create_role_request import CreateRolePrivilegeModel, CreateRoleRequest
 from src.api.models.responses.create_role_response import CreateRoleResponse
-from src.api.models.responses.get_privileges_response import GetPrivilegesResponse, GetPrivilegesModel
+from src.api.models.responses.get_privileges_response import GetPrivilegesModel, GetPrivilegesResponse
 from src.api.models.responses.get_roles_response import RoleListResponse
 from src.api.requests.sceleton.endpoint import Endpoint
 from src.api.requests.sceleton.requesters.crud_requester import CrudRequester
 from src.api.requests.sceleton.requesters.validated_crud_requester import ValidatedCrudRequester
 from src.api.specs.request_spec import RequestSpecs
 from src.api.specs.response_spec import ResponseSpecs
+
 
 class BaseSteps:
     def __init__(self, created_objects: List[Any]):
@@ -62,9 +63,10 @@ class BaseSteps:
         :return: CreateRoleResponse
         """
         privileges = self.get_all_privileges()
-        privileges_to_include = [CreateRolePrivilegeModel(name=privilege.name, description=privilege.description)
-                                 for privilege in privileges.results
-                                 if privilege.display not in excluded_privileges]
+        privileges_to_include = [
+            CreateRolePrivilegeModel(name=privilege.name, description=privilege.description)
+            for privilege in privileges.results if privilege.display not in excluded_privileges
+        ]
         role_request: CreateRoleRequest = RandomModelGenerator.generate(CreateRoleRequest)
         role_request.privileges = privileges_to_include
         return self.create_role(role_request)
@@ -97,8 +99,9 @@ class BaseSteps:
 
     @allure.step("get_identifier_request")
     def get_identifier_request(
-            self,
-            identifier_request: Optional[PatientIdentifierRequest] = RandomModelGenerator.generate(PatientIdentifierRequest)
+        self,
+        identifier_request: Optional[PatientIdentifierRequest] = RandomModelGenerator.
+        generate(PatientIdentifierRequest)
     ) -> PatientIdentifierRequest:
         types = self.get_patient_identifier_types()
         identifier_type_uuid = types.results[0].uuid
@@ -118,9 +121,11 @@ class BaseSteps:
             request_spec=RequestSpecs.admin_auth_spec(),
             endpoint=Endpoint.GET_PRIVILEGES,
             response_spec=ResponseSpecs.request_returns_ok()
-        ).get(params={"v": "full",
-                      "limit": "100",
-                      "startIndex": start_index})
+        ).get(params={
+            "v": "full",
+            "limit": "100",
+            "startIndex": start_index
+        })
 
     @allure.step("get_all_privileges")
     def get_all_privileges(self) -> GetPrivilegesResponse:
@@ -139,4 +144,3 @@ class BaseSteps:
             start_index += limit
 
         return GetPrivilegesResponse(results=all_privileges)
-

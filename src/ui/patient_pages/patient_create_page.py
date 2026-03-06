@@ -1,8 +1,9 @@
 import allure
+
 from src.ui.base_page import BasePage
 
-class PatientCreatePage(BasePage):
 
+class PatientCreatePage(BasePage):
     def url(self) -> str:
         return "/patient-registration"
 

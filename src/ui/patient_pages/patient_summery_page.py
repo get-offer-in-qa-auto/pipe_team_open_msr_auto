@@ -1,11 +1,12 @@
-import allure
 import re
+
+import allure
 from playwright.sync_api import Locator, expect
 
 from src.ui.base_page import BasePage
 
-class PatientSummaryPage(BasePage):
 
+class PatientSummaryPage(BasePage):
     def __init__(self, page, patient_uuid: str | None = None):
         super().__init__(page)
         self.patient_uuid = patient_uuid
@@ -24,9 +25,7 @@ class PatientSummaryPage(BasePage):
         /spa/patient/<uuid>/chart/Patient%20Summary
         """
         if not self.patient_uuid:
-            raise ValueError(
-                "patient_uuid must be provided to open PatientSummaryPage"
-            )
+            raise ValueError("patient_uuid must be provided to open PatientSummaryPage")
 
         return f"/patient/{self.patient_uuid}/chart/Patient%20Summary"
 

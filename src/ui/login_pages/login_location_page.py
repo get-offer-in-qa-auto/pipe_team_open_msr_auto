@@ -1,13 +1,13 @@
-import allure
 import random
 
+import allure
 from playwright.sync_api import expect
 
 from src.ui.base_page import BasePage
 from src.ui.open_msr_home_page import OpenMsrHomePage
 
-class LoginLocationPage(BasePage):
 
+class LoginLocationPage(BasePage):
     @property
     def welcome_text(self):
         return self.page.get_by_text("Welcome")

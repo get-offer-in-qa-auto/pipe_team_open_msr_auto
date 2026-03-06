@@ -5,8 +5,8 @@ from src.api.models.requests.base_create_user_request import BaseCreateUserReque
 from src.ui.base_page import BasePage
 from src.ui.login_pages.login_location_page import LoginLocationPage
 
-class LoginPage(BasePage):
 
+class LoginPage(BasePage):
     @property
     def username_input(self):
         return self.page.locator("#username")

@@ -21,4 +21,3 @@ class PatientIdentifierDao:
     void_reason: Optional[str]
     uuid: str
     patient_program_id: Optional[int]
-

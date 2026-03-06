@@ -3,11 +3,6 @@ from datetime import datetime
 from typing import Optional
 
 
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
-
-
 @dataclass(frozen=True)
 class PersonAddressDao:
     person_address_id: int
@@ -58,6 +53,7 @@ class PersonAddressDao:
 
     uuid: str
 
+
 @dataclass
 class PersonDao:
     person_id: int
@@ -79,5 +75,3 @@ class PersonDao:
     deathdate_estimated: bool
     birthtime: Optional[datetime]
     cause_of_death_non_coded: Optional[str]
-
-

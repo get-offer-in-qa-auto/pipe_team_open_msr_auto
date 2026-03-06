@@ -1,5 +1,6 @@
 import pytest
 from playwright.sync_api import Page
+
 from src.api.models.requests.base_create_user_request import BaseCreateUserRequest
 from src.ui.initial_setup_page import InitialSetupPage
 from src.ui.login_pages.login_page import LoginPage

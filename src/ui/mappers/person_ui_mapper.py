@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import date
+
 from src.api.models.requests.create_person_request import CreatePersonRequest
+
 
 @dataclass
 class UiPatientData:
@@ -8,6 +10,7 @@ class UiPatientData:
     family: str
     gender: str
     age: int
+
 
 class PersonUiMapper:
 
@@ -24,9 +27,7 @@ class PersonUiMapper:
         birthdate = date.fromisoformat(req.birthdate)
         today = date.today()
 
-        age = today.year - birthdate.year - (
-            (today.month, today.day) < (birthdate.month, birthdate.day)
-        )
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
 
         return UiPatientData(
             given=name.givenName,

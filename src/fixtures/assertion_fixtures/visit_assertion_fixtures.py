@@ -1,4 +1,5 @@
 import pytest
+
 from src.api.models.comparison.model_assertions import ModelAssertions
 from src.api.models.responses.create_patient_response import PatientCreateResponse
 from src.api.models.responses.create_visit_response import CreateVisitResponse
@@ -70,7 +71,6 @@ def check_visit_created_in_db(request, api_manager):
         f"check_visit_created_in_db expects delta={expected_delta}, got {after - before}. "
         f"(before={before}, after={after}, patient_id={patient_id}, patient_uuid={patient.uuid})"
     )
-
 
 
 @pytest.fixture(autouse=True)
@@ -145,9 +145,8 @@ def check_visit_updated(request):
     yield
 
     created_visits = [o for o in created_objects if isinstance(o, CreateVisitResponse)]
-    assert len(created_visits) == 1, (
-        f"Check_visit_updated expects exactly 1 created visit,\n Got {len(created_visits)}."
-    )
+    assert len(created_visits
+              ) == 1, (f"Check_visit_updated expects exactly 1 created visit,\n Got {len(created_visits)}.")
 
     visit_uuid = created_visits[0].uuid
     visit_full = api_manager.visit_steps.get_visit_by_uuid(visit_uuid)
@@ -177,8 +176,8 @@ def check_visit_db_state(request, api_manager):
     request.getfixturevalue("created_objects")
 
     visit_fixture = mark.kwargs.get("visit_fixture", "created_visit")
-    expected_ended = mark.kwargs.get("ended", None)     # True/False/None
-    expected_voided = mark.kwargs.get("voided", None)   # True/False/None
+    expected_ended = mark.kwargs.get("ended", None)  # True/False/None
+    expected_voided = mark.kwargs.get("voided", None)  # True/False/None
 
     visit = request.getfixturevalue(visit_fixture)
     visit_uuid = visit.uuid

@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from src.api.models.base_model import BaseModel
 
