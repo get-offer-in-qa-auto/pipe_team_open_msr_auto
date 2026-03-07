@@ -105,8 +105,17 @@ jobs:
         path: allure-history
         if-no-files-found: error
 
+    - name: Deploy Allure report to GitHub Pages
+      if: always()
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: allure-history
+        force_orphan: true
+
     - name: Report location
       run: |
         echo "Allure HTML saved as artifact: allure-html-report"
         echo "Test logs saved as artifact: test-logs"
-        echo "Download artifact from this workflow run and open index.html locally."
+        echo "Allure GitHub Pages URL: https://get-offer-in-qa-auto.github.io/pipe_team_open_msr_auto/"
