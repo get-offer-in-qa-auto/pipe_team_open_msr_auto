@@ -37,10 +37,18 @@ jobs:
     - name: OpenMRS Setup
       uses: ./.github/actions/openmrs-setup
 
-    - name: Run API tests
+    - name: Run API and UI tests (combined Allure results)
       run: |
         mkdir -p artifacts/logs
-        pytest -n 2 -m api --alluredir=allure-results --log-file=artifacts/logs/pytest.log --log-file-level=INFO
+        api_exit=0
+        ui_exit=0
+
+        pytest -n 2 -m api --alluredir=allure-results --log-file=artifacts/logs/pytest-api.log --log-file-level=INFO || api_exit=$?
+        pytest -n 2 -m ui  --alluredir=allure-results --log-file=artifacts/logs/pytest-ui.log --log-file-level=INFO || ui_exit=$?
+
+        if [ "$api_exit" -ne 0 ] || [ "$ui_exit" -ne 0 ]; then
+          exit 1
+        fi
 
     - name: Collect OpenMRS Docker logs
       if: always()
@@ -71,6 +79,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Checkout gh-pages branch (history source)
+      uses: actions/checkout@v4
+      continue-on-error: true
+      with:
+        ref: gh-pages
+        path: gh-pages
+
     - name: Download Allure results artifact
       uses: actions/download-artifact@v4
       continue-on-error: true
@@ -82,13 +97,13 @@ jobs:
       run: mkdir -p allure-results
 
     - name: Prepare report directories
-      run: mkdir -p .allure-history-cache
+      run: mkdir -p gh-pages
 
     - name: Generate Allure report with history
       uses: simple-elf/allure-report-action@v1.13
       with:
         allure_results: allure-results
-        gh_pages: .allure-history-cache
+        gh_pages: gh-pages
         allure_history: allure-history
         keep_reports: 20
 
