@@ -208,6 +208,13 @@ jobs:
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
 
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            LINT_LINE=""
+          else
+            LINT_LINE="          • Lint: ${{ needs.lint.result }}
+"
+          fi
+
           MESSAGE="${{ steps.status.outputs.emoji }} <b>${REPO}</b> — tests <b>${{ steps.status.outputs.text }}</b>
 
           🌿 <b>Branch:</b> ${BRANCH}
@@ -215,8 +222,7 @@ jobs:
           🔁 <b>Event:</b> ${EVENT}
     
           📋 <b>Results:</b>
-          • Lint: ${{ needs.lint.result }}
-          • Run tests: ${{ needs.run-tests.result }}
+${LINT_LINE}          • Run tests: ${{ needs.run-tests.result }}
           • Allure report: ${{ needs.publish-allure-report.result }}
     
           🔗 <b>Pipeline:</b>
