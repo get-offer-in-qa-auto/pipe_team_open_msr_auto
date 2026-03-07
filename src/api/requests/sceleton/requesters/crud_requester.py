@@ -27,9 +27,7 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self._record_coverage("POST", self.endpoint.value.url)
 
         response = requests.post(
-            url=f'{server_url}{api_version_url}{self.endpoint.value.url}',
-            headers=self.request_spec,
-            json=body
+            url=f'{server_url}{api_version_url}{self.endpoint.value.url}', headers=self.request_spec, json=body
         )
         self.response_spec(response)
         return response
@@ -94,17 +92,16 @@ class CrudRequester(HTTPRequest, CrudEndPointInterface):
         self._record_coverage("DELETE", f"{self.endpoint.value.url}/{{uuid}}")
 
         response = requests.delete(
-            url=f'{server_url}{api_version_url}{self.endpoint.value.url}/{id}',
-            headers=self.request_spec
+            url=f'{server_url}{api_version_url}{self.endpoint.value.url}/{id}', headers=self.request_spec
         )
         self.response_spec(response)
         return response
 
     def delete_with_params(
-            self,
-            id: str,
-            params: Optional[Dict[str, Any]] = None,
-            url_metadata: Optional[Dict[str, Any]] = None
+        self,
+        id: str,
+        params: Optional[Dict[str, Any]] = None,
+        url_metadata: Optional[Dict[str, Any]] = None
     ) -> Response:
         server_url = Config.get('server')
         api_version_url = Config.get('api_version')

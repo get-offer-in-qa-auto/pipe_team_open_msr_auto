@@ -8,7 +8,9 @@ from typing import List
 
 from playwright.sync_api import BrowserType
 
+from src.api.coverage.api_coverage_collector import ApiCoverageCollector
 from src.api.coverage.calculate_api_coverage import calculate_and_save_summary
+from src.api.coverage.swagger_operations import generate_swagger_operations
 from src.fixtures.api_fixtures import *  # noqa: F403
 from src.fixtures.assertion_fixtures.patient_assertion_fixtures import *  # noqa: F403
 from src.fixtures.assertion_fixtures.visit_assertion_fixtures import *  # noqa: F403
@@ -17,9 +19,6 @@ from src.fixtures.setup_hook import *  # noqa: F403
 from src.fixtures.user_fixtures import *  # noqa: F403
 from src.fixtures.visit_fixtures import *  # noqa: F403
 from src.utils.browsers import norm_browser_name
-from pathlib import Path
-from src.api.coverage.api_coverage_collector import ApiCoverageCollector
-from src.api.coverage.swagger_operations import generate_swagger_operations
 
 
 def _apply_global_seed(seed: int) -> None:
@@ -76,7 +75,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:  # noqa: F405
         "--seed",
         action="store",
         default=Config.get("default_seed", 100),  # noqa: F405
-        help="Seed for random generators. If not set, a new seed is generated per run (and shared across xdist workers).",
+        help=
+        "Seed for random generators. If not set, a new seed is generated per run (and shared across xdist workers).",
     )
     parser.addoption(
         "--api-coverage",
