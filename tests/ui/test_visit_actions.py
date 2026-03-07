@@ -10,6 +10,7 @@ from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 @pytest.mark.ui
 @pytest.mark.usefixtures("admin_session_autologin")
 @pytest.mark.admin_session
+@pytest.mark.browsers("chrome")
 class TestVisitActions:
 
     PUNCTUALITY_ON_TIME = "On time"
