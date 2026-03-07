@@ -1,4 +1,5 @@
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Callable, List, Type, TypeVar
 
@@ -17,6 +18,23 @@ class BasePage(ABC):
     def __init__(self, page: Page):
         self.page = page
         self.base_spa_url = str(Config.get('UI_BASE_SPA_URL', 'http://localhost:3000')).strip('/')
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
+
+    def _goto(self, target: str):
+        self.logger.info("UI goto: %s", target)
+        self.page.goto(target, wait_until="domcontentloaded")
+
+    def _click(self, locator: Locator, element_name: str):
+        self.logger.info("UI click: %s", element_name)
+        locator.click()
+
+    def _fill(self, locator: Locator, value: str, field_name: str):
+        self.logger.info("UI fill: %s=%s", field_name, value)
+        locator.fill(value)
+
+    def _select_option(self, locator: Locator, label: str, field_name: str):
+        self.logger.info("UI select option: %s=%s", field_name, label)
+        locator.select_option(label=label)
 
     def _generate_page_elements(self, element: Locator, constructor: Callable) -> List:
         element.first.wait_for(state="attached", timeout=10_000)
@@ -38,7 +56,7 @@ class BasePage(ABC):
         api_base = f"{server}/{api_ver}"
 
         page.set_viewport_size({"width": 1920, "height": 1080})
-        page.goto(ui_base + "/login", wait_until="domcontentloaded")
+        self._goto(ui_base + "/login")
 
         auth = RequestSpecs.auth_as_user(user_request.username, user_request.password)["Authorization"]
 
@@ -95,7 +113,8 @@ class BasePage(ABC):
         )
 
         # 5) сразу открываем home
-        page.goto(ui_base + "/home/service-queues", wait_until="domcontentloaded")
+        self._goto(ui_base + "/home/service-queues")
+        self.logger.info("UI reload: /home/service-queues")
         page.reload(wait_until="domcontentloaded")
         return self
 
@@ -108,7 +127,7 @@ class BasePage(ABC):
         target = self.url()
         if self.base_spa_url and target.startswith('/'):
             target = f'{self.base_spa_url}{target}'
-        self.page.goto(target, wait_until="domcontentloaded")
+        self._goto(target)
         return self
 
     def get_page(self, page_cls: Type[T]) -> T:

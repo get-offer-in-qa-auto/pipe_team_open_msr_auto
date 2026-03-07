@@ -53,6 +53,8 @@ jobs:
     needs: run-tests
     if: always()
     steps:
+    - uses: actions/checkout@v4
+
     - name: Download Allure results artifact
       uses: actions/download-artifact@v4
       continue-on-error: true
@@ -63,41 +65,46 @@ jobs:
     - name: Ensure Allure results directory exists
       run: mkdir -p allure-results
 
-    - name: Check if gh-pages branch exists
-      id: gh_pages_check
-      run: |
-        if git ls-remote --exit-code --heads "https://github.com/${{ github.repository }}.git" gh-pages; then
-          echo "exists=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "exists=false" >> "$GITHUB_OUTPUT"
-        fi
-
-    - name: Checkout gh-pages branch for report history
-      if: steps.gh_pages_check.outputs.exists == 'true'
-      uses: actions/checkout@v4
-      with:
-        ref: gh-pages
-        path: gh-pages
-
-    - name: Ensure history directory exists
-      run: mkdir -p gh-pages
+    - name: Prepare report directories
+      run: mkdir -p .allure-history-cache
 
     - name: Generate Allure report with history
       uses: simple-elf/allure-report-action@v1.13
       with:
         allure_results: allure-results
-        gh_pages: gh-pages
+        gh_pages: .allure-history-cache
         allure_history: allure-history
         keep_reports: 20
 
-    - name: Publish report to gh-pages
-      uses: peaceiris/actions-gh-pages@v4
+    - name: Verify generated report files
+      run: |
+        ls -la allure-history
+        test -f allure-history/index.html
+
+    - name: Upload generated Allure HTML artifact
+      if: always()
+      uses: actions/upload-artifact@v4
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_branch: gh-pages
-        publish_dir: allure-history
-        force_orphan: true
+        name: allure-html-report
+        path: allure-history
+        if-no-files-found: error
+
+    - name: Validate Cloudflare secrets
+      run: |
+        test -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" || (echo "CLOUDFLARE_API_TOKEN is not set" && exit 1)
+        test -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" || (echo "CLOUDFLARE_ACCOUNT_ID is not set" && exit 1)
+        test -n "${{ secrets.CLOUDFLARE_PROJECT_NAME }}" || (echo "CLOUDFLARE_PROJECT_NAME is not set" && exit 1)
+
+    - name: Deploy Allure report to Cloudflare Pages
+      id: deploy
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        command: pages deploy allure-history --project-name ${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch main
 
     - name: Report URL
       run: |
-        echo "Allure report URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+        echo "Allure report URL: https://${{ secrets.CLOUDFLARE_PROJECT_NAME }}.pages.dev"
+        echo "Deploy output:"
+        echo "${{ steps.deploy.outputs.command-output }}"
