@@ -104,10 +104,4 @@ allure open allure-report
 
 ## 6. CI report artifact (no external hosting)
 
-GitHub Actions saves generated HTML report as artifact `allure-html-report`.
-
-How to open:
-
-1. Open workflow run in GitHub Actions.
-2. Download artifact `allure-html-report`.
-3. Unzip and open `index.html` in browser.
+GitHub Actions saves generated HTML report on page https://get-offer-in-qa-auto.github.io/pipe_team_open_msr_auto
