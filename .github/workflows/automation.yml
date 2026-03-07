@@ -89,22 +89,7 @@ jobs:
         path: allure-history
         if-no-files-found: error
 
-    - name: Validate Cloudflare secrets
+    - name: Report location
       run: |
-        test -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" || (echo "CLOUDFLARE_API_TOKEN is not set" && exit 1)
-        test -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" || (echo "CLOUDFLARE_ACCOUNT_ID is not set" && exit 1)
-        test -n "${{ secrets.CLOUDFLARE_PROJECT_NAME }}" || (echo "CLOUDFLARE_PROJECT_NAME is not set" && exit 1)
-
-    - name: Deploy Allure report to Cloudflare Pages
-      id: deploy
-      uses: cloudflare/wrangler-action@v3
-      with:
-        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy allure-history --project-name ${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch main
-
-    - name: Report URL
-      run: |
-        echo "Allure report URL: https://${{ secrets.CLOUDFLARE_PROJECT_NAME }}.pages.dev"
-        echo "Deploy output:"
-        echo "${{ steps.deploy.outputs.command-output }}"
+        echo "Allure HTML saved as artifact: allure-html-report"
+        echo "Download artifact from this workflow run and open index.html locally."
