@@ -3,22 +3,18 @@ description: 'OpenMRS Setup'
 runs:
   using: composite
   steps:
-    - name: Install ifconfig
-      shell: bash
-      run: sudo apt-get update && sudo apt-get install -y net-tools
-
     - name: Run OpenMRS
       shell: bash
       run: |
         docker compose up -d --wait
         curl -I http://localhost/openmrs/spa
 
-    - name: Run API tests
+    - name: Run App Setup test
       shell: bash
       run: pytest -m app_setup --video retain-on-failure
 
     - name: Upload Test Results
-      if: always()  # Выполнять даже если тесты упали
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: playwright-artifacts
