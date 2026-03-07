@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-
 HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
 
 
