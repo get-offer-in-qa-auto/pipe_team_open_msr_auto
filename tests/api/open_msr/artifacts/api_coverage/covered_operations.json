@@ -1,0 +1,15 @@
+[
+  "DELETE /patient/{uuid}",
+  "DELETE /patient/{uuid}/identifier/{uuid}",
+  "DELETE /person/{uuid}",
+  "DELETE /visit/{uuid}",
+  "GET /location",
+  "GET /patient/{uuid}",
+  "GET /patientidentifiertype",
+  "GET /visit",
+  "GET /visit/{uuid}",
+  "GET /visittype",
+  "POST /patient",
+  "POST /person",
+  "POST /visit"
+]
