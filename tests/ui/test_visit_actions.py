@@ -10,6 +10,7 @@ from src.ui.patient_pages.patient_summery_page import PatientSummaryPage
 @pytest.mark.ui
 @pytest.mark.usefixtures("admin_session_autologin")
 @pytest.mark.admin_session
+@pytest.mark.browsers('chrome')
 class TestVisitActions:
 
     PUNCTUALITY_ON_TIME = "On time"
@@ -39,6 +40,7 @@ class TestVisitActions:
             .should_not_have_active_visit()
 
     @allure.title("Delete Visit")
+    @pytest.mark.browsers('chrome')
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", voided=True)
     def test_delete_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open()\
@@ -50,6 +52,7 @@ class TestVisitActions:
             .should_not_have_active_visit()
 
     @allure.title("Cancel End Visit")
+    @pytest.mark.browsers('chrome')
     @pytest.mark.check_visit_db_state(visit_fixture="created_visit", ended=False)
     def test_cancel_end_visit(self, page, created_visit: CreateVisitResponse):
         PatientSummaryPage(page, patient_uuid=created_visit.patient.uuid).open() \
