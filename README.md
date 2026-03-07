@@ -101,3 +101,7 @@ Generate static report:
 allure generate allure-results -o allure-report --clean
 allure open allure-report
 ```
+
+## 6. CI report artifact (no external hosting)
+
+GitHub Actions saves generated HTML report on page https://get-offer-in-qa-auto.github.io/pipe_team_open_msr_auto

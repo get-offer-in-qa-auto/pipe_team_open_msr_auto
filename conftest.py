@@ -1,5 +1,9 @@
+import hashlib
+import logging
 import random
+import re
 import time
+from pathlib import Path
 from typing import List
 
 from playwright.sync_api import BrowserType
@@ -35,6 +39,32 @@ def _apply_global_seed(seed: int) -> None:
             random_data.faker.seed_instance(seed)
     except Exception:
         pass
+
+
+def _safe_nodeid(nodeid: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", nodeid)
+
+
+def _safe_log_filename(nodeid: str, max_stem_len: int = 180) -> str:
+    safe_nodeid = _safe_nodeid(nodeid)
+    if len(safe_nodeid) <= max_stem_len:
+        return safe_nodeid
+
+    digest = hashlib.sha1(safe_nodeid.encode("utf-8")).hexdigest()[:12]
+    keep_len = max_stem_len - len(digest) - 2
+    return f"{safe_nodeid[:keep_len]}__{digest}"
+
+
+def _test_log_path(item: pytest.Item) -> Path:  # noqa: F405
+    workerid = "master"
+    if hasattr(item.config, "workerinput"):
+        workerid = str(item.config.workerinput.get("workerid", "master"))
+
+    base_dir = Path("artifacts/logs/tests") / workerid
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{_safe_log_filename(item.nodeid)}__{time.time_ns()}.log"
+    return base_dir / filename
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:  # noqa: F405
@@ -121,6 +151,55 @@ def pytest_collection_modifyitems(
         filtered.append(item)
 
     items[:] = filtered
+
+
+@pytest.hookimpl(tryfirst=True)  # noqa: F405
+def pytest_runtest_setup(item: pytest.Item) -> None:  # noqa: F405
+    log_path = _test_log_path(item)
+
+    handler = logging.FileHandler(log_path, encoding="utf-8")
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+
+    item._test_log_path = log_path
+    item._test_log_handler = handler
+
+    logging.getLogger(__name__).info("Started test: %s", item.nodeid)
+
+
+@pytest.hookimpl(hookwrapper=True)  # noqa: F405
+def pytest_runtest_makereport(item: pytest.Item, call):  # noqa: F405
+    outcome = yield
+    report = outcome.get_result()
+
+    if report.when != "teardown":
+        return
+
+    log_path = getattr(item, "_test_log_path", None)
+    if log_path is None or not Path(log_path).exists():
+        return
+
+    try:
+        import allure
+        allure.attach.file(str(log_path), name="test.log", attachment_type=allure.attachment_type.TEXT)
+    except Exception:
+        pass
+
+
+@pytest.hookimpl(trylast=True)  # noqa: F405
+def pytest_runtest_teardown(item: pytest.Item) -> None:  # noqa: F405
+    handler = getattr(item, "_test_log_handler", None)
+    if handler is None:
+        return
+
+    logging.getLogger(__name__).info("Finished test: %s", item.nodeid)
+
+    root_logger = logging.getLogger()
+    root_logger.removeHandler(handler)
+    handler.close()
 
 
 @pytest.fixture(scope="session")  # noqa: F405
