@@ -7,7 +7,7 @@ from src.ui.login_pages.login_page import LoginPage
 
 
 class TestAppSetup:
-    @pytest.mark.browsers("chromium")
+    @pytest.mark.browsers('chrome')
     @pytest.mark.usefixtures("admin_user_request")
     @pytest.mark.app_setup
     def test_app_setup(self, page: Page, admin_user_request: BaseCreateUserRequest):
