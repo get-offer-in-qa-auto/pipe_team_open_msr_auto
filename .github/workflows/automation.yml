@@ -208,28 +208,25 @@ jobs:
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
 
-          if [[ "$EVENT" == "workflow_dispatch" ]]; then
-            LINT_LINE=""
-          else
-            LINT_LINE="          • Lint: ${{ needs.lint.result }}
-"
-          fi
-
-          MESSAGE="${{ steps.status.outputs.emoji }} <b>${REPO}</b> — tests <b>${{ steps.status.outputs.text }}</b>
+          MESSAGE="$(cat <<EOF
+          ${{ steps.status.outputs.emoji }} <b>${REPO}</b> - tests <b>${{ steps.status.outputs.text }}</b>
 
           🌿 <b>Branch:</b> ${BRANCH}
           👤 <b>Triggered by:</b> ${ACTOR}
           🔁 <b>Event:</b> ${EVENT}
-    
+
           📋 <b>Results:</b>
-${LINT_LINE}          • Run tests: ${{ needs.run-tests.result }}
+          $(if [[ "$EVENT" != "workflow_dispatch" ]]; then echo "          • Lint: ${{ needs.lint.result }}"; fi)
+          • Run tests: ${{ needs.run-tests.result }}
           • Allure report: ${{ needs.publish-allure-report.result }}
-    
+
           🔗 <b>Pipeline:</b>
           ${RUN_URL}
-    
+
           📊 <b>Allure report:</b>
-          ${REPORT_URL}"
+          ${REPORT_URL}
+EOF
+          )"
           
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
