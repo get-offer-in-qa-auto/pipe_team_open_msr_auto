@@ -91,3 +91,50 @@ jobs:
     - name: Report URL
       run: |
         echo "Allure report URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+        
+
+  notify:
+    name: Telegram Notification
+    runs-on: ubuntu-latest
+    needs: [ run-tests, publish-allure-report ]
+    if: always()
+
+    steps:
+      - name: Resolve status
+        id: status
+        run: |
+          TESTS="${{ needs.run-tests.result }}"
+          REPORT="${{ needs.publish-allure-report.result }}"
+
+          if [[ "$TESTS" == "failure" || "$REPORT" == "failure" ]]; then
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "text=FAILED" >> $GITHUB_OUTPUT
+          elif [[ "$TESTS" == "cancelled" || "$REPORT" == "cancelled" ]]; then
+            echo "emoji=⚪" >> $GITHUB_OUTPUT
+            echo "text=CANCELLED" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "text=PASSED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Telegram notification
+        run: |
+          MESSAGE="${{ steps.status.outputs.emoji }} *${{ github.repository }}* — tests *${{ steps.status.outputs.text }}*
+
+          🌿 *Branch:* \`${{ github.ref_name }}\`
+          👤 *Triggered by:* ${{ github.actor }}
+          🔁 *Event:* ${{ github.event_name }}
+
+          📋 *Results:*
+          • Run tests: ${{ needs.run-tests.result }}
+          • Allure report: ${{ needs.publish-allure-report.result }}
+
+          🔗 *Pipeline:* [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          📊 *Allure report:* https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "parse_mode=Markdown" \
+            --data-urlencode "disable_web_page_preview=true"
