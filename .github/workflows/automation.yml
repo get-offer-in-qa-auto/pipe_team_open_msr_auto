@@ -208,25 +208,21 @@ jobs:
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
 
-          MESSAGE="$(cat <<EOF
-          ${{ steps.status.outputs.emoji }} <b>${REPO}</b> - tests <b>${{ steps.status.outputs.text }}</b>
+          LINT_LINE=""
+          if [[ "$EVENT" != "workflow_dispatch" ]]; then
+            LINT_LINE="$(printf '• Lint: %s\n' '${{ needs.lint.result }}')"
+          fi
 
-          🌿 <b>Branch:</b> ${BRANCH}
-          👤 <b>Triggered by:</b> ${ACTOR}
-          🔁 <b>Event:</b> ${EVENT}
-
-          📋 <b>Results:</b>
-          $(if [[ "$EVENT" != "workflow_dispatch" ]]; then echo "          • Lint: ${{ needs.lint.result }}"; fi)
-          • Run tests: ${{ needs.run-tests.result }}
-          • Allure report: ${{ needs.publish-allure-report.result }}
-
-          🔗 <b>Pipeline:</b>
-          ${RUN_URL}
-
-          📊 <b>Allure report:</b>
-          ${REPORT_URL}
-EOF
-          )"
+          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s' \
+            '${{ steps.status.outputs.emoji }} <b>'"${REPO}"'</b> - tests <b>${{ steps.status.outputs.text }}</b>' \
+            "${BRANCH}" \
+            "${ACTOR}" \
+            "${EVENT}" \
+            "${LINT_LINE}" \
+            '${{ needs.run-tests.result }}' \
+            '${{ needs.publish-allure-report.result }}' \
+            "${RUN_URL}" \
+            "${REPORT_URL}")"
           
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
