@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
@@ -35,33 +38,103 @@ jobs:
       uses: ./.github/actions/openmrs-setup
 
     - name: Run API tests
-      run: pytest -n 2 -m api
+      run: pytest -n 2 -m api --alluredir=allure-results
 
-
-    - name: Send Telegram notification
+    - name: Upload Allure results artifact
       if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-results
+        path: allure-results
+        if-no-files-found: ignore
+
+  publish-allure-report:
+    runs-on: ubuntu-latest
+    needs: run-tests
+    if: always()
+    steps:
+    - name: Download Allure results artifact
+      uses: actions/download-artifact@v4
+      continue-on-error: true
+      with:
+        name: allure-results
+        path: allure-results
+
+    - name: Ensure Allure results directory exists
+      run: mkdir -p allure-results
+
+    - name: Checkout gh-pages branch for report history
+      uses: actions/checkout@v4
+      continue-on-error: true
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Ensure history directory exists
+      run: mkdir -p gh-pages
+
+    - name: Generate Allure report with history
+      uses: simple-elf/allure-report-action@v1.9
+      with:
+        allure_results: allure-results
+        gh_pages: gh-pages
+        allure_history: allure-history
+        keep_reports: 20
+
+    - name: Publish report to gh-pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: allure-history
+
+    - name: Report URL
       run: |
-        if [ "${{ job.status }}" == "success" ]; then
-          STATUS="✅ CI SUCCESS"
-          RESULT="success"
-        else
-          STATUS="❌ CI FAILED"
-          RESULT="failure"
-        fi
+        echo "Allure report URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+        
 
-        MESSAGE="$STATUS
+  notify:
+    name: Telegram Notification
+    runs-on: ubuntu-latest
+    needs: [ run-tests, publish-allure-report ]
+    if: always()
 
-        *Repository:" ${{ github.repository }}
-        🌿 *Branch:* ${{ github.ref_name }}
-        👤 *Author:* ${{ github.actor }}
+    steps:
+      - name: Resolve status
+        id: status
+        run: |
+          TESTS="${{ needs.run-tests.result }}"
+          REPORT="${{ needs.publish-allure-report.result }}"
 
-        📋 *Results:*
-        • API Tests: $RESULT
-        • UI Tests: $RESULT
+          if [[ "$TESTS" == "failure" || "$REPORT" == "failure" ]]; then
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "text=FAILED" >> $GITHUB_OUTPUT
+          elif [[ "$TESTS" == "cancelled" || "$REPORT" == "cancelled" ]]; then
+            echo "emoji=⚪" >> $GITHUB_OUTPUT
+            echo "text=CANCELLED" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "text=PASSED" >> $GITHUB_OUTPUT
+          fi
 
-        *Pipeline:* [ Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-      
-          curl -s -X POST "https://api.telegram.org/bot${ { secrets.TELEGRAM_BOT_TOKEN } }/sendMessage" \
-          -d chat_id="${ { secrets.TELEGRAM_CHAT_ID } }" \
-              -d text="$MESSAGE" \
-          -d parse_mode="Markdown"
+      - name: Send Telegram notification
+        run: |
+          MESSAGE="${{ steps.status.outputs.emoji }} *${{ github.repository }}* — tests *${{ steps.status.outputs.text }}*
+
+          🌿 *Branch:* \`${{ github.ref_name }}\`
+          👤 *Triggered by:* ${{ github.actor }}
+          🔁 *Event:* ${{ github.event_name }}
+
+          📋 *Results:*
+          • Run tests: ${{ needs.run-tests.result }}
+          • Allure report: ${{ needs.publish-allure-report.result }}
+
+          🔗 *Pipeline:* [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          📊 *Allure report:* https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "parse_mode=Markdown" \
+            --data-urlencode "disable_web_page_preview=true"
