@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import random
 import re
@@ -44,6 +45,16 @@ def _safe_nodeid(nodeid: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", nodeid)
 
 
+def _safe_log_filename(nodeid: str, max_stem_len: int = 180) -> str:
+    safe_nodeid = _safe_nodeid(nodeid)
+    if len(safe_nodeid) <= max_stem_len:
+        return safe_nodeid
+
+    digest = hashlib.sha1(safe_nodeid.encode("utf-8")).hexdigest()[:12]
+    keep_len = max_stem_len - len(digest) - 2
+    return f"{safe_nodeid[:keep_len]}__{digest}"
+
+
 def _test_log_path(item: pytest.Item) -> Path:  # noqa: F405
     workerid = "master"
     if hasattr(item.config, "workerinput"):
@@ -52,7 +63,7 @@ def _test_log_path(item: pytest.Item) -> Path:  # noqa: F405
     base_dir = Path("artifacts/logs/tests") / workerid
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    filename = f"{_safe_nodeid(item.nodeid)}__{time.time_ns()}.log"
+    filename = f"{_safe_log_filename(item.nodeid)}__{time.time_ns()}.log"
     return base_dir / filename
 
 
