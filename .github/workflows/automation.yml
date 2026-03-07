@@ -36,3 +36,32 @@ jobs:
 
     - name: Run API tests
       run: pytest -n 2 -m api
+
+
+    - name: Send Telegram notification
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          STATUS="✅ *CI SUCCESS*"
+          RESULT="success"
+        else
+          STATUS="❌ *CI FAILED*"
+          RESULT="failure"
+        fi
+
+        MESSAGE="$STATUS
+
+    *Repository:* ${{ github.repository }}
+    🌿 *Branch:* ${{ github.ref_name }}
+    👤 *Author:* ${{ github.actor }}
+
+    📋 *Results:*
+    • API Tests: $RESULT
+    • UI Tests: $RESULT
+
+    *Pipeline:* [Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+    
+    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+    -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+    -d text="$MESSAGE" \
+    -d parse_mode="Markdown"
