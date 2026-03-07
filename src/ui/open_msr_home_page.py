@@ -20,7 +20,7 @@ class OpenMsrHomePage(BasePage):
 
     @allure.step("click_add_patient")
     def click_add_patient(self):
-        self._click(self.add_patient_button, "add_patient_button")
+        self.add_patient_button.click()
         return self
 
     @allure.step("wait_until_loaded")

@@ -71,30 +71,30 @@ class PatientCreatePage(BasePage):
         age: int,
         middle: str | None = None,
     ):
-        self._fill(self.given_name_input, given, "given_name")
+        self.given_name_input.fill(given)
         if middle is not None:
-            self._fill(self.middle_name_input, middle, "middle_name")
-        self._fill(self.family_name_input, family, "family_name")
+            self.middle_name_input.fill(middle)
+        self.family_name_input.fill(family)
 
         g = gender.lower()
         if g == "male":
-            self._click(self.male_radio, "gender_male")
+            self.male_radio.click()
         elif g == "female":
-            self._click(self.female_radio, "gender_female")
+            self.female_radio.click()
         elif g in ("unknown", "other"):
-            self._click(self.unknown_radio, "gender_unknown")
+            self.unknown_radio.click()
 
         # Date of Birth Known? -> No (then Age field appears)
-        self._click(self.dob_known_no_tab, "dob_known_no_tab")
+        self.dob_known_no_tab.click()
 
         # Age
-        self._fill(self.age_input, str(age), "age")
+        self.age_input.fill(str(age))
 
         return self
 
     @allure.step("submit")
     def submit(self):
-        self._click(self.register_button, "register_patient_button")
+        self.register_button.click()
         return self
 
     @allure.step("should_be_opened")
