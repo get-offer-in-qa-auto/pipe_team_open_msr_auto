@@ -38,7 +38,15 @@ jobs:
       uses: ./.github/actions/openmrs-setup
 
     - name: Run API tests
-      run: pytest -n 2 -m api --alluredir=allure-results
+      run: |
+        mkdir -p artifacts/logs
+        pytest -n 2 -m api --alluredir=allure-results --log-file=artifacts/logs/pytest.log --log-file-level=INFO
+
+    - name: Collect OpenMRS Docker logs
+      if: always()
+      run: |
+        mkdir -p artifacts/logs
+        docker compose logs --no-color > artifacts/logs/openmrs-docker.log || true
 
     - name: Upload Allure results artifact
       if: always()
@@ -46,6 +54,14 @@ jobs:
       with:
         name: allure-results
         path: allure-results
+        if-no-files-found: ignore
+
+    - name: Upload test logs artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-logs
+        path: artifacts/logs
         if-no-files-found: ignore
 
   publish-allure-report:
@@ -92,4 +108,5 @@ jobs:
     - name: Report location
       run: |
         echo "Allure HTML saved as artifact: allure-html-report"
+        echo "Test logs saved as artifact: test-logs"
         echo "Download artifact from this workflow run and open index.html locally."
