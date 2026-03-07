@@ -119,22 +119,31 @@ jobs:
 
       - name: Send Telegram notification
         run: |
-          MESSAGE="${{ steps.status.outputs.emoji }} *${{ github.repository }}* — tests *${{ steps.status.outputs.text }}*
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          ACTOR="${{ github.actor }}"
+          EVENT="${{ github.event_name }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
 
-          🌿 *Branch:* \`${{ github.ref_name }}\`
-          👤 *Triggered by:* ${{ github.actor }}
-          🔁 *Event:* ${{ github.event_name }}
+          MESSAGE="${{ steps.status.outputs.emoji }} <b>${REPO}</b> — tests <b>${{ steps.status.outputs.text }}</b>
 
-          📋 *Results:*
+          🌿 <b>Branch:</b> ${BRANCH}
+          👤 <b>Triggered by:</b> ${ACTOR}
+          🔁 <b>Event:</b> ${EVENT}
+    
+          📋 <b>Results:</b>
           • Run tests: ${{ needs.run-tests.result }}
           • Allure report: ${{ needs.publish-allure-report.result }}
-
-          🔗 *Pipeline:* [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-          📊 *Allure report:* https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
-
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            --data-urlencode "text=${MESSAGE}" \
-            --data-urlencode "parse_mode=Markdown" \
-            --data-urlencode "disable_web_page_preview=true"
+    
+          🔗 <b>Pipeline:</b>
+          ${RUN_URL}
+    
+          📊 <b>Allure report:</b>
+          ${REPORT_URL}"
+          
+          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+          --data-urlencode "text=${MESSAGE}" \
+          --data-urlencode "parse_mode=HTML" \
+          --data-urlencode "disable_web_page_preview=true"
