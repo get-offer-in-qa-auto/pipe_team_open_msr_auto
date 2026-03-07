@@ -63,9 +63,18 @@ jobs:
     - name: Ensure Allure results directory exists
       run: mkdir -p allure-results
 
+    - name: Check if gh-pages branch exists
+      id: gh_pages_check
+      run: |
+        if git ls-remote --exit-code --heads "https://github.com/${{ github.repository }}.git" gh-pages; then
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Checkout gh-pages branch for report history
+      if: steps.gh_pages_check.outputs.exists == 'true'
       uses: actions/checkout@v4
-      continue-on-error: true
       with:
         ref: gh-pages
         path: gh-pages
@@ -87,6 +96,7 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_branch: gh-pages
         publish_dir: allure-history
+        force_orphan: true
 
     - name: Report URL
       run: |
