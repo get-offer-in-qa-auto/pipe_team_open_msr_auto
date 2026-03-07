@@ -131,6 +131,63 @@ jobs:
 
     - name: Report location
       run: |
+        echo "Allure report URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
         echo "Allure HTML saved as artifact: allure-html-report"
         echo "Test logs saved as artifact: test-logs"
         echo "Allure GitHub Pages URL: https://get-offer-in-qa-auto.github.io/pipe_team_open_msr_auto/"
+        
+
+  notify:
+    name: Telegram Notification
+    runs-on: ubuntu-latest
+    needs: [ run-tests, publish-allure-report ]
+    if: always()
+
+    steps:
+      - name: Resolve status
+        id: status
+        run: |
+          TESTS="${{ needs.run-tests.result }}"
+          REPORT="${{ needs.publish-allure-report.result }}"
+
+          if [[ "$TESTS" == "failure" || "$REPORT" == "failure" ]]; then
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "text=FAILED" >> $GITHUB_OUTPUT
+          elif [[ "$TESTS" == "cancelled" || "$REPORT" == "cancelled" ]]; then
+            echo "emoji=⚪" >> $GITHUB_OUTPUT
+            echo "text=CANCELLED" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "text=PASSED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Telegram notification
+        run: |
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          ACTOR="${{ github.actor }}"
+          EVENT="${{ github.event_name }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+
+          MESSAGE="${{ steps.status.outputs.emoji }} <b>${REPO}</b> — tests <b>${{ steps.status.outputs.text }}</b>
+
+          🌿 <b>Branch:</b> ${BRANCH}
+          👤 <b>Triggered by:</b> ${ACTOR}
+          🔁 <b>Event:</b> ${EVENT}
+    
+          📋 <b>Results:</b>
+          • Run tests: ${{ needs.run-tests.result }}
+          • Allure report: ${{ needs.publish-allure-report.result }}
+    
+          🔗 <b>Pipeline:</b>
+          ${RUN_URL}
+    
+          📊 <b>Allure report:</b>
+          ${REPORT_URL}"
+          
+          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+          --data-urlencode "text=${MESSAGE}" \
+          --data-urlencode "parse_mode=HTML" \
+          --data-urlencode "disable_web_page_preview=true"
