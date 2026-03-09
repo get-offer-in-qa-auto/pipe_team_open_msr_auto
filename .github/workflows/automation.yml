@@ -206,7 +206,7 @@ jobs:
           ACTOR="${{ github.actor }}"
           EVENT="${{ github.event_name }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/"
 
           LINT_LINE=""
           if [[ "$EVENT" != "workflow_dispatch" ]]; then
