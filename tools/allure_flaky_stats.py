@@ -1,0 +1,314 @@
+from __future__ import annotations
+
+import argparse
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from zipfile import BadZipFile, ZipFile
+
+
+@dataclass
+class RunStats:
+    run_name: str
+    total_tests: int
+    flaky_tests: int
+    passed_tests: int
+    failed_tests: int
+    broken_tests: int
+    total_duration_ms: int
+    suite_duration_ms: int
+
+    @property
+    def flaky_percent(self) -> float:
+        if self.total_tests == 0:
+            return 0.0
+        return (self.flaky_tests / self.total_tests) * 100.0
+
+    @property
+    def pass_percent(self) -> float:
+        if self.total_tests == 0:
+            return 0.0
+        return (self.passed_tests / self.total_tests) * 100.0
+
+    @property
+    def fail_percent(self) -> float:
+        if self.total_tests == 0:
+            return 0.0
+        return (self.failed_tests / self.total_tests) * 100.0
+
+    @property
+    def broken_percent(self) -> float:
+        if self.total_tests == 0:
+            return 0.0
+        return (self.broken_tests / self.total_tests) * 100.0
+
+    @property
+    def avg_duration_seconds(self) -> float:
+        if self.total_tests == 0:
+            return 0.0
+        return self.total_duration_ms / self.total_tests / 1000.0
+
+    @property
+    def suite_duration_seconds(self) -> float:
+        return self.suite_duration_ms / 1000.0
+
+
+@dataclass
+class SlowTestRecord:
+    run_name: str
+    test_name: str
+    duration_ms: int
+    status: str
+
+    @property
+    def duration_seconds(self) -> float:
+        return self.duration_ms / 1000.0
+
+
+def _is_flaky_from_result(payload: dict) -> bool:
+    status_details = payload.get("statusDetails")
+    if isinstance(status_details, dict) and status_details.get("flaky") is True:
+        return True
+
+    labels = payload.get("labels")
+    if isinstance(labels, list):
+        for label in labels:
+            if not isinstance(label, dict):
+                continue
+            if str(label.get("name", "")).lower() != "flaky":
+                continue
+            value = str(label.get("value", "")).strip().lower()
+            if value in {"true", "1", "yes"}:
+                return True
+    return False
+
+
+def _is_flaky_from_test_case(payload: dict) -> bool:
+    return payload.get("flaky") is True
+
+
+def _iter_json_from_zip(zip_path: Path, suffix: str, path_part: str | None = None) -> list[dict]:
+    items: list[dict] = []
+    with ZipFile(zip_path) as archive:
+        for info in archive.infolist():
+            if not info.filename.endswith(suffix):
+                continue
+            if info.is_dir():
+                continue
+            if path_part and path_part not in info.filename:
+                continue
+
+            try:
+                with archive.open(info, "r") as f:
+                    payload = json.load(f)
+                if isinstance(payload, dict):
+                    items.append(payload)
+            except (OSError, json.JSONDecodeError):
+                continue
+    return items
+
+
+def _extract_duration_ms(payload: dict) -> int:
+    direct_duration = payload.get("duration")
+    if isinstance(direct_duration, (int, float)) and direct_duration >= 0:
+        return int(direct_duration)
+
+    direct_start = payload.get("start")
+    direct_stop = payload.get("stop")
+    if isinstance(direct_start, (int, float)) and isinstance(direct_stop, (int, float)) and direct_stop >= direct_start:
+        return int(direct_stop - direct_start)
+
+    time_data = payload.get("time")
+    if not isinstance(time_data, dict):
+        return 0
+
+    duration = time_data.get("duration")
+    if isinstance(duration, (int, float)) and duration >= 0:
+        return int(duration)
+
+    start = time_data.get("start")
+    stop = time_data.get("stop")
+    if isinstance(start, (int, float)) and isinstance(stop, (int, float)) and stop >= start:
+        return int(stop - start)
+    return 0
+
+
+def _extract_start_stop(payload: dict) -> tuple[int, int] | None:
+    start = payload.get("start")
+    stop = payload.get("stop")
+    if isinstance(start, (int, float)) and isinstance(stop, (int, float)) and stop >= start:
+        return int(start), int(stop)
+
+    time_data = payload.get("time")
+    if not isinstance(time_data, dict):
+        return None
+
+    start = time_data.get("start")
+    stop = time_data.get("stop")
+    if isinstance(start, (int, float)) and isinstance(stop, (int, float)) and stop >= start:
+        return int(start), int(stop)
+    return None
+
+
+def _extract_test_name(payload: dict) -> str:
+    for key in ("fullName", "testCaseName", "name", "uid"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return "unknown_test"
+
+
+def _iter_test_payloads(zip_path: Path) -> list[dict]:
+    result_items = _iter_json_from_zip(zip_path, "-result.json")
+    if result_items:
+        return result_items
+
+    test_case_items = _iter_json_from_zip(zip_path, ".json", path_part="data/test-cases/")
+    return [item for item in test_case_items if "status" in item and "uid" in item]
+
+
+def collect_stats_for_zip(zip_path: Path) -> RunStats:
+    payloads = _iter_test_payloads(zip_path)
+    if payloads:
+        total = len(payloads)
+        has_result_format = any("labels" in item or "statusDetails" in item for item in payloads)
+        if has_result_format:
+            flaky = sum(1 for item in payloads if _is_flaky_from_result(item))
+        else:
+            flaky = sum(1 for item in payloads if _is_flaky_from_test_case(item))
+        passed = sum(1 for item in payloads if str(item.get("status", "")).lower() == "passed")
+        failed = sum(1 for item in payloads if str(item.get("status", "")).lower() == "failed")
+        broken = sum(1 for item in payloads if str(item.get("status", "")).lower() == "broken")
+        duration_ms = sum(_extract_duration_ms(item) for item in payloads)
+        start_stop_values = [v for v in (_extract_start_stop(item) for item in payloads) if v is not None]
+        if start_stop_values:
+            min_start = min(v[0] for v in start_stop_values)
+            max_stop = max(v[1] for v in start_stop_values)
+            suite_duration_ms = max(0, max_stop - min_start)
+        else:
+            suite_duration_ms = 0
+        return RunStats(
+            run_name=zip_path.name,
+            total_tests=total,
+            flaky_tests=flaky,
+            passed_tests=passed,
+            failed_tests=failed,
+            broken_tests=broken,
+            total_duration_ms=duration_ms,
+            suite_duration_ms=suite_duration_ms,
+        )
+
+    return RunStats(
+        run_name=zip_path.name,
+        total_tests=0,
+        flaky_tests=0,
+        passed_tests=0,
+        failed_tests=0,
+        broken_tests=0,
+        total_duration_ms=0,
+        suite_duration_ms=0,
+    )
+
+
+def collect_slowest_tests(artifacts_dir: Path, limit: int = 20) -> list[SlowTestRecord]:
+    zip_files = sorted(artifacts_dir.glob("*.zip"))
+    records: list[SlowTestRecord] = []
+    for path in zip_files:
+        try:
+            payloads = _iter_test_payloads(path)
+        except BadZipFile:
+            continue
+
+        for item in payloads:
+            duration_ms = _extract_duration_ms(item)
+            if duration_ms <= 0:
+                continue
+            records.append(
+                SlowTestRecord(
+                    run_name=path.name,
+                    test_name=_extract_test_name(item),
+                    duration_ms=duration_ms,
+                    status=str(item.get("status", "unknown")),
+                )
+            )
+
+    records.sort(key=lambda r: r.duration_ms, reverse=True)
+    return records[:max(1, limit)]
+
+
+def collect_all_stats(artifacts_dir: Path) -> list[RunStats]:
+    zip_files = sorted(artifacts_dir.glob("*.zip"))
+    rows: list[RunStats] = []
+    for path in zip_files:
+        try:
+            rows.append(collect_stats_for_zip(path))
+        except BadZipFile:
+            continue
+    return rows
+
+
+def print_report(rows: list[RunStats]) -> None:
+    if not rows:
+        print("No .zip artifacts found.")
+        return
+
+    print(
+        "run,total_tests,passed_tests,pass_percent,failed_tests,fail_percent,broken_tests,broken_percent,"
+        "flaky_tests,flaky_percent,"
+        "total_duration_ms,avg_duration_sec,suite_duration_ms,suite_duration_sec"
+    )
+    for row in rows:
+        print(
+            f"{row.run_name},{row.total_tests},{row.passed_tests},{row.pass_percent:.2f},"
+            f"{row.failed_tests},{row.fail_percent:.2f},{row.broken_tests},{row.broken_percent:.2f},"
+            f"{row.flaky_tests},{row.flaky_percent:.2f},{row.total_duration_ms},{row.avg_duration_seconds:.2f},"
+            f"{row.suite_duration_ms},{row.suite_duration_seconds:.2f}"
+        )
+
+    total_tests = sum(row.total_tests for row in rows)
+    total_passed = sum(row.passed_tests for row in rows)
+    total_failed = sum(row.failed_tests for row in rows)
+    total_broken = sum(row.broken_tests for row in rows)
+    total_flaky = sum(row.flaky_tests for row in rows)
+    total_duration_ms = sum(row.total_duration_ms for row in rows)
+    total_suite_duration_ms = sum(row.suite_duration_ms for row in rows)
+    total_pass_percent = (total_passed / total_tests * 100.0) if total_tests else 0.0
+    total_fail_percent = (total_failed / total_tests * 100.0) if total_tests else 0.0
+    total_broken_percent = (total_broken / total_tests * 100.0) if total_tests else 0.0
+    total_percent = (total_flaky / total_tests * 100.0) if total_tests else 0.0
+    total_avg_duration_sec = (total_duration_ms / total_tests / 1000.0) if total_tests else 0.0
+    print(
+        f"TOTAL,{total_tests},{total_passed},{total_pass_percent:.2f},"
+        f"{total_failed},{total_fail_percent:.2f},{total_broken},{total_broken_percent:.2f},"
+        f"{total_flaky},{total_percent:.2f},"
+        f"{total_duration_ms},{total_avg_duration_sec:.2f},{total_suite_duration_ms},{total_suite_duration_ms / 1000.0:.2f}"
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Collect flaky tests statistics from downloaded Allure report/artifact zip files."
+    )
+    parser.add_argument(
+        "--artifacts-dir",
+        type=Path,
+        default=Path("downloaded_artifacts"),
+        help="Directory containing downloaded .zip artifacts (default: downloaded_artifacts).",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    artifacts_dir: Path = args.artifacts_dir
+    if not artifacts_dir.exists() or not artifacts_dir.is_dir():
+        print(f"Artifacts directory not found: {artifacts_dir}")
+        return 1
+
+    rows = collect_all_stats(artifacts_dir)
+    print_report(rows)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
