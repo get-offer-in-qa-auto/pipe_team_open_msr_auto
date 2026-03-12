@@ -114,6 +114,13 @@ Create `.env` in project root:
 
 ```bash
 GITHUB_TOKEN=your_personal_access_token
+REPORT_EMAIL_TO=qa-team@example.com,dev-team@example.com
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=bot@example.com
+SMTP_PASSWORD=your_smtp_password
+SMTP_FROM=bot@example.com
+SMTP_USE_SSL=false
 ```
 
 Run:
@@ -131,10 +138,12 @@ Fields in UI:
 - `Output folder` - where `.zip` artifacts will be downloaded
 
 Main actions in UI:
-- `Find artifacts` - only list artifacts
-- `Find + download` - download all non-expired artifacts
-- `Download only allure-results` - download only non-expired artifacts with `allure-results` in the name
 - `Generate report` - download `allure-results`, generate `reports/metrics_dashboard.html`, and open it in browser
+- `Send report` - send already generated `reports/metrics_dashboard.html` to recipients via SMTP
+
+Email recipients field:
+- default value is `ekaterina-konchina@yandex.ru`
+- you can remove it and add one or more recipients separated by commas
 
 ## 8. Flaky tests stats from downloaded artifacts
 

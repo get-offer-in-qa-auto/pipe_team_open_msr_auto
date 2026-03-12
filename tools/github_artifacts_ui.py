@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import mimetypes
 import os
 import re
+import smtplib
 import subprocess
 import sys
 import threading
@@ -10,6 +12,7 @@ import tkinter as tk
 import webbrowser
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
@@ -18,6 +21,7 @@ import requests
 
 GITHUB_API = "https://api.github.com"
 DEFAULT_TIMEOUT = 30
+DEFAULT_REPORT_RECIPIENT = "ekaterina-konchina@yandex.ru"
 
 
 def load_env_value(key: str, env_path: Path | None = None) -> str:
@@ -51,6 +55,10 @@ def load_env_value(key: str, env_path: Path | None = None) -> str:
         return value
 
     return ""
+
+
+def config_value(key: str, default: str = "") -> str:
+    return load_env_value(key) or os.getenv(key, default)
 
 
 @dataclass
@@ -159,6 +167,7 @@ class App(tk.Tk):
         self.branch_var = tk.StringVar(value="main")
         self.days_var = tk.StringVar(value="7")
         self.output_var = tk.StringVar(value=str(Path.cwd() / "downloaded_artifacts"))
+        self.email_to_var = tk.StringVar(value=config_value("REPORT_EMAIL_TO", DEFAULT_REPORT_RECIPIENT))
 
         self._build_ui()
         self._ensure_visible()
@@ -188,27 +197,27 @@ class App(tk.Tk):
                   width=70).grid(row=3, column=1, columnspan=2, sticky="ew", padx=8, pady=(8, 0))
         ttk.Button(frm, text="Browse", command=self._choose_dir).grid(row=3, column=3, sticky="ew", pady=(8, 0))
 
+        ttk.Label(frm, text="Email recipients").grid(row=4, column=0, sticky="w", pady=(8, 0))
+        ttk.Entry(frm, textvariable=self.email_to_var,
+                  width=70).grid(row=4, column=1, columnspan=3, sticky="ew", padx=8, pady=(8, 0))
+
         btn_frame = ttk.Frame(frm)
-        btn_frame.grid(row=4, column=0, columnspan=4, sticky="ew", pady=(12, 8))
-        self.find_btn = ttk.Button(btn_frame, text="Find artifacts", command=self._run_find)
-        self.find_btn.pack(side=tk.LEFT)
-        self.download_btn = ttk.Button(btn_frame, text="Find + download", command=self._run_download)
-        self.download_btn.pack(side=tk.LEFT, padx=(8, 0))
-        self.download_allure_btn = ttk.Button(
-            btn_frame,
-            text="Download only allure-results",
-            command=self._run_download_allure_results,
-        )
-        self.download_allure_btn.pack(side=tk.LEFT, padx=(8, 0))
+        btn_frame.grid(row=5, column=0, columnspan=4, sticky="ew", pady=(12, 8))
         self.generate_report_btn = ttk.Button(
             btn_frame,
             text="Generate report",
             command=self._run_generate_report,
         )
-        self.generate_report_btn.pack(side=tk.LEFT, padx=(8, 0))
+        self.generate_report_btn.pack(side=tk.LEFT)
+        self.send_report_btn = ttk.Button(
+            btn_frame,
+            text="Send report",
+            command=self._run_send_report,
+        )
+        self.send_report_btn.pack(side=tk.LEFT, padx=(8, 0))
 
         self.progress = ttk.Progressbar(frm, mode="determinate", maximum=100)
-        self.progress.grid(row=5, column=0, columnspan=4, sticky="ew")
+        self.progress.grid(row=6, column=0, columnspan=4, sticky="ew")
 
         columns = ("id", "name", "branch", "created", "expired")
         self.tree = ttk.Treeview(frm, columns=columns, show="headings", height=14)
@@ -223,14 +232,14 @@ class App(tk.Tk):
         for col in columns:
             self.tree.heading(col, text=headings[col])
             self.tree.column(col, width=widths[col], anchor="w")
-        self.tree.grid(row=6, column=0, columnspan=4, sticky="nsew")
+        self.tree.grid(row=7, column=0, columnspan=4, sticky="nsew")
 
         self.status = tk.StringVar(value="Ready")
-        ttk.Label(frm, textvariable=self.status).grid(row=7, column=0, columnspan=4, sticky="w", pady=(8, 0))
+        ttk.Label(frm, textvariable=self.status).grid(row=8, column=0, columnspan=4, sticky="w", pady=(8, 0))
 
         frm.grid_columnconfigure(1, weight=1)
         frm.grid_columnconfigure(3, weight=1)
-        frm.grid_rowconfigure(6, weight=1)
+        frm.grid_rowconfigure(7, weight=1)
 
     def _ensure_visible(self) -> None:
         self.update_idletasks()
@@ -316,10 +325,8 @@ class App(tk.Tk):
 
     def _set_buttons_enabled(self, enabled: bool) -> None:
         state = tk.NORMAL if enabled else tk.DISABLED
-        self.find_btn.configure(state=state)
-        self.download_btn.configure(state=state)
-        self.download_allure_btn.configure(state=state)
         self.generate_report_btn.configure(state=state)
+        self.send_report_btn.configure(state=state)
 
     def _set_progress_indeterminate(self, active: bool) -> None:
         if active:
@@ -356,17 +363,34 @@ class App(tk.Tk):
                 ),
             )
 
-    def _run_find(self) -> None:
-        self._run_worker(download=False)
-
-    def _run_download(self) -> None:
-        self._run_worker(download=True, only_allure_results=False)
-
-    def _run_download_allure_results(self) -> None:
-        self._run_worker(download=True, only_allure_results=True)
-
     def _run_generate_report(self) -> None:
-        self._run_worker(download=True, only_allure_results=True, generate_report=True)
+        self._run_worker(download=True, only_allure_results=True, generate_report=True, send_email=False)
+
+    def _run_send_report(self) -> None:
+        self._set_buttons_enabled(False)
+        self._set_progress_indeterminate(True)
+
+        def work() -> None:
+            try:
+                branch = self.branch_var.get().strip() or "main"
+                report_path = Path.cwd() / "reports" / "metrics_dashboard.html"
+                if not report_path.exists():
+                    raise ValueError(f"Report not found: {report_path}. Generate report first.")
+                self.after(0, lambda: self._set_status("Sending report via email..."))
+                self._send_report_email(report_path, branch)
+                self.after(0, lambda p=report_path: self._set_status(f"Report emailed: {p}"))
+            except Exception as exc:  # noqa: BLE001
+                self.after(0, lambda err=exc: messagebox.showerror("Error", str(err)))
+                self.after(0, lambda: self._set_status("Failed"))
+            finally:
+                self.after(0, lambda: self._set_progress_indeterminate(False))
+                self.after(0, lambda: self._set_buttons_enabled(True))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    @staticmethod
+    def _parse_recipients(value: str) -> list[str]:
+        return [item.strip() for item in value.split(",") if item.strip()]
 
     def _generate_dashboard(self, artifacts_dir: Path, branch: str) -> Path:
         script_path = Path(__file__).with_name("build_flaky_dashboard.py")
@@ -392,7 +416,57 @@ class App(tk.Tk):
             raise RuntimeError(f"Failed to generate dashboard: {details}")
         return report_path
 
-    def _run_worker(self, download: bool, only_allure_results: bool = False, generate_report: bool = False) -> None:
+    def _send_report_email(self, report_path: Path, branch: str) -> None:
+        recipients = self._parse_recipients(self.email_to_var.get().strip())
+        if not recipients:
+            raise ValueError("Email recipients are required for report sending")
+
+        smtp_host = config_value("SMTP_HOST")
+        smtp_port = int(config_value("SMTP_PORT", "587"))
+        smtp_username = config_value("SMTP_USERNAME")
+        smtp_password = config_value("SMTP_PASSWORD")
+        smtp_from = config_value("SMTP_FROM", smtp_username)
+        smtp_use_ssl = config_value("SMTP_USE_SSL", "false").strip().lower() in {"1", "true", "yes"}
+
+        if not smtp_host:
+            raise ValueError("SMTP_HOST is required")
+        if not smtp_username:
+            raise ValueError("SMTP_USERNAME is required")
+        if not smtp_password:
+            raise ValueError("SMTP_PASSWORD is required")
+        if not smtp_from:
+            raise ValueError("SMTP_FROM is required")
+
+        msg = EmailMessage()
+        msg["Subject"] = f"QA Metrics Dashboard ({branch})"
+        msg["From"] = smtp_from
+        msg["To"] = ", ".join(recipients)
+        msg.set_content("Automated QA metrics report is attached as HTML.")
+
+        mime_type, _ = mimetypes.guess_type(str(report_path))
+        main_type, sub_type = (mime_type or "text/html").split("/", 1)
+        msg.add_attachment(report_path.read_bytes(), maintype=main_type, subtype=sub_type, filename=report_path.name)
+
+        if smtp_use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30) as smtp:
+                smtp.login(smtp_username, smtp_password)
+                smtp.send_message(msg)
+            return
+
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as smtp:
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.ehlo()
+            smtp.login(smtp_username, smtp_password)
+            smtp.send_message(msg)
+
+    def _run_worker(
+        self,
+        download: bool,
+        only_allure_results: bool = False,
+        generate_report: bool = False,
+        send_email: bool = False,
+    ) -> None:
         self._set_buttons_enabled(False)
         self._set_progress_indeterminate(True)
 
@@ -482,11 +556,18 @@ class App(tk.Tk):
                         self.after(0, lambda: self._set_progress_indeterminate(True))
                         self.after(0, lambda: self._set_status("Generating metrics dashboard..."))
                         report_path = self._generate_dashboard(output, branch)
-                        try:
-                            webbrowser.open(report_path.resolve().as_uri())
-                            self.after(0, lambda p=report_path: self._set_status(f"Report generated and opened: {p}"))
-                        except Exception:  # noqa: BLE001
-                            self.after(0, lambda p=report_path: self._set_status(f"Report generated: {p}"))
+                        if send_email:
+                            self.after(0, lambda: self._set_status("Sending report via email..."))
+                            self._send_report_email(report_path, branch)
+                            self.after(0, lambda p=report_path: self._set_status(f"Report generated and emailed: {p}"))
+                        else:
+                            try:
+                                webbrowser.open(report_path.resolve().as_uri())
+                                self.after(
+                                    0, lambda p=report_path: self._set_status(f"Report generated and opened: {p}")
+                                )
+                            except Exception:  # noqa: BLE001
+                                self.after(0, lambda p=report_path: self._set_status(f"Report generated: {p}"))
                         self.after(0, lambda: self._set_progress_indeterminate(False))
                 else:
                     self.after(0, lambda: self._set_progress_indeterminate(False))

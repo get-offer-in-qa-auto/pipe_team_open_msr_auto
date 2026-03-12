@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flaky Tests Rate (main) Dashboard</title>
+  <style>
+    :root {
+      --bg0: #f4efe7;
+      --bg1: #fffdf8;
+      --ink: #18212f;
+      --muted: #5e6b7a;
+      --line: #d8d2c7;
+      --accent: #0a7a78;
+      --accent-2: #ff7f50;
+      --card: #ffffffcc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 400px at 0% 0%, #f0e3cf 10%, transparent 70%),
+        radial-gradient(900px 500px at 100% 100%, #dceeea 10%, transparent 65%),
+        var(--bg0);
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+    .title {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 42px);
+      letter-spacing: 0.01em;
+    }
+    .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+    .cards {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 10px 28px rgba(24, 33, 47, 0.07);
+    }
+    .label { color: var(--muted); font-size: 13px; }
+    .value { margin-top: 6px; font-size: 30px; font-weight: 700; line-height: 1; }
+    .panel {
+      background: var(--bg1);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 14px 30px rgba(24, 33, 47, 0.08);
+    }
+    .panel h2 { margin: 0 0 10px; font-size: 18px; }
+    canvas { width: 100%; height: 360px; display: block; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 14px;
+    }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #eee9df; }
+    th { background: #f9f6f0; font-weight: 600; color: #3f4a57; }
+    tr:hover td { background: #fffbf4; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">Flaky Tests Rate (main)</h1>
+    <p class="subtitle">Flaky tests trend across GitHub runs (Allure artifacts)</p>
+
+    <div class="cards">
+      <div class="card"><div class="label">Total Runs</div><div class="value">10</div></div>
+      <div class="card"><div class="label">Total Tests</div><div class="value">1194</div></div>
+      <div class="card"><div class="label">Total Flaky</div><div class="value">0</div></div>
+      <div class="card"><div class="label">Flaky Rate</div><div class="value">0.00%</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Trend by Run</h2>
+      <canvas id="trend"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Runs Table</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Run</th>
+            <th>Total tests</th>
+            <th>Flaky tests</th>
+            <th>Flaky %</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const data = [{"run_name": "20260307_131915_5811367046_allure-results.zip", "run_label": "2026-03-07 13:19", "total_tests": 100, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260307_145039_5811732263_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260307_145051_5811733041_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260307_151004_5811814975_allure-results.zip", "run_label": "2026-03-07 15:10", "total_tests": 14, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "total_tests": 142, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "total_tests": 142, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "total_tests": 142, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "total_tests": 142, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "total_tests": 142, "flaky_tests": 0, "flaky_percent": 0.0}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "total_tests": 142, "flaky_tests": 0, "flaky_percent": 0.0}];
+    const canvas = document.getElementById('trend');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(canvas.clientWidth * dpr);
+      canvas.height = Math.floor(canvas.clientHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawChart();
+    }
+
+    function drawChart() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      if (!data.length) {
+        ctx.fillStyle = '#5e6b7a';
+        ctx.font = '16px sans-serif';
+        ctx.fillText('No data', 20, 40);
+        return;
+      }
+
+      const pad = { top: 24, right: 18, bottom: 70, left: 54 };
+      const innerW = w - pad.left - pad.right;
+      const innerH = h - pad.top - pad.bottom;
+      const maxY = Math.max(...data.map(d => d.flaky_percent), 1);
+
+      ctx.strokeStyle = '#ddd6ca';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (innerH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(w - pad.right, y);
+        ctx.stroke();
+
+        const v = (maxY - (maxY / 4) * i).toFixed(2) + '%';
+        ctx.fillStyle = '#6d7886';
+        ctx.font = '12px sans-serif';
+        ctx.fillText(v, 6, y + 4);
+      }
+
+      const stepX = data.length === 1 ? 0 : innerW / (data.length - 1);
+      const points = data.map((d, i) => {
+        const x = pad.left + i * stepX;
+        const y = pad.top + innerH - (d.flaky_percent / maxY) * innerH;
+        return { x, y, d };
+      });
+
+      ctx.strokeStyle = '#0a7a78';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+
+      points.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.fillStyle = '#ff7f50';
+        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (i % Math.max(1, Math.ceil(points.length / 7)) === 0 || i === points.length - 1) {
+          ctx.save();
+          ctx.translate(p.x, h - 54);
+          ctx.rotate(-0.55);
+          ctx.fillStyle = '#5e6b7a';
+          ctx.font = '11px sans-serif';
+          ctx.fillText(p.d.run_label, 0, 0);
+          ctx.restore();
+        }
+      });
+    }
+
+    function fillTable() {
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = data.map(d => `
+        <tr>
+          <td>${d.run_label}</td>
+          <td>${d.total_tests}</td>
+          <td>${d.flaky_tests}</td>
+          <td>${d.flaky_percent.toFixed(2)}%</td>
+        </tr>
+      `).join('');
+    }
+
+    fillTable();
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+</body>
+</html>
