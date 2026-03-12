@@ -61,6 +61,11 @@ def config_value(key: str, default: str = "") -> str:
     return load_env_value(key) or os.getenv(key, default)
 
 
+def log_info(message: str) -> None:
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{ts}] [report-ui] {message}")
+
+
 @dataclass
 class Artifact:
     artifact_id: int
@@ -380,6 +385,7 @@ class App(tk.Tk):
                 self._send_report_email(report_path, branch)
                 self.after(0, lambda p=report_path: self._set_status(f"Report emailed: {p}"))
             except Exception as exc:  # noqa: BLE001
+                log_info(f"Send report failed: {exc}")
                 self.after(0, lambda err=exc: messagebox.showerror("Error", str(err)))
                 self.after(0, lambda: self._set_status("Failed"))
             finally:
@@ -392,9 +398,33 @@ class App(tk.Tk):
     def _parse_recipients(value: str) -> list[str]:
         return [item.strip() for item in value.split(",") if item.strip()]
 
+    @staticmethod
+    def _required_smtp_keys() -> list[str]:
+        return ["SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM"]
+
+    def _validate_smtp_config(self) -> dict[str, str]:
+        values = {key: config_value(key).strip() for key in self._required_smtp_keys()}
+        missing = [key for key, value in values.items() if not value]
+        if missing:
+            message = (
+                "SMTP settings are incomplete.\n\n"
+                "Missing variables:\n"
+                f"- {', '.join(missing)}\n\n"
+                "Expected .env format:\n"
+                "SMTP_HOST=smtp.gmail.com\n"
+                "SMTP_PORT=465\n"
+                "SMTP_USERNAME=tuzikthecoolest@gmail.com\n"
+                "SMTP_PASSWORD=YOUR_GMAIL_APP_PASSWORD\n"
+                "SMTP_FROM=tuzikthecoolest@gmail.com\n"
+                "SMTP_USE_SSL=true"
+            )
+            raise ValueError(message)
+        return values
+
     def _generate_dashboard(self, artifacts_dir: Path, branch: str) -> Path:
         script_path = Path(__file__).with_name("build_flaky_dashboard.py")
         report_path = Path.cwd() / "reports" / "metrics_dashboard.html"
+        log_info(f"Generate dashboard: branch='{branch}', artifacts_dir='{artifacts_dir}'")
         result = subprocess.run(
             [
                 sys.executable,
@@ -413,29 +443,31 @@ class App(tk.Tk):
             stderr = result.stderr.strip()
             stdout = result.stdout.strip()
             details = stderr or stdout or "Unknown error"
-            raise RuntimeError(f"Failed to generate dashboard: {details}")
+            raise RuntimeError(
+                "Failed to generate dashboard.\n\n"
+                "Details:\n"
+                f"{details}\n\n"
+                "Hint: check that downloaded artifacts exist and build_flaky_dashboard.py runs locally."
+            )
+        log_info(f"Dashboard generated: '{report_path}'")
         return report_path
 
     def _send_report_email(self, report_path: Path, branch: str) -> None:
         recipients = self._parse_recipients(self.email_to_var.get().strip())
         if not recipients:
-            raise ValueError("Email recipients are required for report sending")
+            raise ValueError(
+                "Email recipients are empty.\n"
+                "Please provide one or more recipients in 'Email recipients' separated by commas."
+            )
 
-        smtp_host = config_value("SMTP_HOST")
-        smtp_port = int(config_value("SMTP_PORT", "587"))
-        smtp_username = config_value("SMTP_USERNAME")
-        smtp_password = config_value("SMTP_PASSWORD")
-        smtp_from = config_value("SMTP_FROM", smtp_username)
+        smtp_values = self._validate_smtp_config()
+        smtp_host = smtp_values["SMTP_HOST"]
+        smtp_port = int(smtp_values["SMTP_PORT"])
+        smtp_username = smtp_values["SMTP_USERNAME"]
+        smtp_password = smtp_values["SMTP_PASSWORD"]
+        smtp_from = smtp_values["SMTP_FROM"]
         smtp_use_ssl = config_value("SMTP_USE_SSL", "false").strip().lower() in {"1", "true", "yes"}
-
-        if not smtp_host:
-            raise ValueError("SMTP_HOST is required")
-        if not smtp_username:
-            raise ValueError("SMTP_USERNAME is required")
-        if not smtp_password:
-            raise ValueError("SMTP_PASSWORD is required")
-        if not smtp_from:
-            raise ValueError("SMTP_FROM is required")
+        log_info(f"Send email: to={', '.join(recipients)} host={smtp_host}:{smtp_port} ssl={smtp_use_ssl}")
 
         msg = EmailMessage()
         msg["Subject"] = f"QA Metrics Dashboard ({branch})"
@@ -451,6 +483,7 @@ class App(tk.Tk):
             with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30) as smtp:
                 smtp.login(smtp_username, smtp_password)
                 smtp.send_message(msg)
+            log_info("Email sent successfully (SMTP SSL)")
             return
 
         with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as smtp:
@@ -459,6 +492,7 @@ class App(tk.Tk):
             smtp.ehlo()
             smtp.login(smtp_username, smtp_password)
             smtp.send_message(msg)
+        log_info("Email sent successfully (SMTP STARTTLS)")
 
     def _run_worker(
         self,
@@ -573,6 +607,7 @@ class App(tk.Tk):
                     self.after(0, lambda: self._set_progress_indeterminate(False))
                     self.after(0, lambda: self._set_status(f"Found {len(artifacts)} artifacts"))
             except Exception as exc:  # noqa: BLE001
+                log_info(f"Generate report flow failed: {exc}")
                 self.after(0, lambda: self._set_progress_indeterminate(False))
                 self.after(0, lambda err=exc: messagebox.showerror("Error", str(err)))
                 self.after(0, lambda: self._set_status("Failed"))

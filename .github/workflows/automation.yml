@@ -1,6 +1,12 @@
 name: Run tests
 on:
   workflow_dispatch:
+    inputs:
+      send_metrics_report:
+        description: 'Generate and send metrics report by email'
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -109,6 +115,7 @@ jobs:
     if: always()
     outputs:
       report_url: ${{ steps.report_url.outputs.url }}
+      metrics_url: ${{ steps.report_url.outputs.metrics_url }}
     steps:
     - uses: actions/checkout@v4
 
@@ -132,6 +139,23 @@ jobs:
     - name: Prepare report directories
       run: mkdir -p gh-pages
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies for metrics dashboard
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
     - name: Generate Allure report with history
       uses: simple-elf/allure-report-action@v1.13
       with:
@@ -145,12 +169,37 @@ jobs:
         ls -la allure-history
         test -f allure-history/index.html
 
+    - name: Build metrics dashboard from Allure results
+      run: |
+        mkdir -p downloaded_artifacts
+        ARCHIVE_NAME="$(date +'%Y%m%d_%H%M%S')_${{ github.run_id }}_allure-results.zip"
+        cd allure-results
+        zip -r "../downloaded_artifacts/${ARCHIVE_NAME}" ./ || true
+        cd ..
+        python tools/build_flaky_dashboard.py \
+          --artifacts-dir downloaded_artifacts \
+          --report-title "QA Metrics Dashboard (${{ github.ref_name }})" \
+          --output reports/metrics_dashboard.html
+
+    - name: Add metrics dashboard to GitHub Pages content
+      run: |
+        mkdir -p allure-history/metrics
+        cp reports/metrics_dashboard.html allure-history/metrics/index.html
+
     - name: Upload generated Allure HTML artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: allure-html-report
         path: allure-history
+        if-no-files-found: error
+
+    - name: Upload generated metrics dashboard artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: metrics-dashboard-html
+        path: reports/metrics_dashboard.html
         if-no-files-found: error
 
     - name: Deploy Allure report to GitHub Pages
@@ -166,18 +215,51 @@ jobs:
       id: report_url
       run: |
         REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+        METRICS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/metrics/index.html"
         echo "url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+        echo "metrics_url=${METRICS_URL}" >> "$GITHUB_OUTPUT"
         echo "### Allure report URL" >> "$GITHUB_STEP_SUMMARY"
         echo "${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
+        echo "### Metrics report URL" >> "$GITHUB_STEP_SUMMARY"
+        echo "${METRICS_URL}" >> "$GITHUB_STEP_SUMMARY"
         echo "Allure report URL: ${REPORT_URL}"
+        echo "Metrics report URL: ${METRICS_URL}"
         echo "Allure HTML saved as artifact: allure-html-report"
+        echo "Metrics HTML saved as artifact: metrics-dashboard-html"
         echo "Test logs saved as artifact: test-logs"
-        
+
+  metrics-email-report:
+    name: Metrics Report Email
+    runs-on: ubuntu-latest
+    needs: [ publish-allure-report ]
+    if: ${{ always() && ( (github.event_name == 'workflow_dispatch' && github.event.inputs.send_metrics_report == 'true') || (github.event_name != 'workflow_dispatch' && vars.METRICS_REPORT_ENABLED == 'true') ) }}
+    env:
+      REPORT_RECIPIENTS: ekaterina-konchina@yandex.ru
+    steps:
+    - name: Download metrics dashboard artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: metrics-dashboard-html
+        path: reports
+
+    - name: Send metrics dashboard email
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.SMTP_HOST }}
+        server_port: ${{ secrets.SMTP_PORT }}
+        secure: true
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        from: ${{ secrets.SMTP_FROM }}
+        to: ${{ env.REPORT_RECIPIENTS }}
+        subject: "QA Metrics Dashboard (${{ github.ref_name }})"
+        body: "Automated QA metrics dashboard is attached."
+        attachments: reports/metrics_dashboard.html
 
   notify:
     name: Telegram Notification
     runs-on: ubuntu-latest
-    needs: [ lint, run-tests, publish-allure-report ]
+    needs: [ lint, run-tests, publish-allure-report, metrics-email-report ]
     if: always()
 
     steps:
@@ -187,11 +269,12 @@ jobs:
           LINT="${{ needs.lint.result }}"
           TESTS="${{ needs.run-tests.result }}"
           REPORT="${{ needs.publish-allure-report.result }}"
+          METRICS="${{ needs.metrics-email-report.result }}"
 
-          if [[ "$LINT" == "failure" || "$TESTS" == "failure" || "$REPORT" == "failure" ]]; then
+          if [[ "$LINT" == "failure" || "$TESTS" == "failure" || "$REPORT" == "failure" || "$METRICS" == "failure" ]]; then
             echo "emoji=❌" >> $GITHUB_OUTPUT
             echo "text=FAILED" >> $GITHUB_OUTPUT
-          elif [[ "$LINT" == "cancelled" || "$TESTS" == "cancelled" || "$REPORT" == "cancelled" ]]; then
+          elif [[ "$LINT" == "cancelled" || "$TESTS" == "cancelled" || "$REPORT" == "cancelled" || "$METRICS" == "cancelled" ]]; then
             echo "emoji=⚪" >> $GITHUB_OUTPUT
             echo "text=CANCELLED" >> $GITHUB_OUTPUT
           else
@@ -207,13 +290,15 @@ jobs:
           EVENT="${{ github.event_name }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
+          METRICS_REPORT_URL="${{ needs.publish-allure-report.outputs.metrics_url }}"
+          METRICS_LINE="$(printf '• Metrics email report: %s\n' '${{ needs.metrics-email-report.result }}')"
 
           LINT_LINE=""
           if [[ "$EVENT" != "workflow_dispatch" ]]; then
             LINT_LINE="$(printf '• Lint: %s\n' '${{ needs.lint.result }}')"
           fi
 
-          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s' \
+          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s\n\n📈 <b>Metrics report:</b>\n%s' \
             '${{ steps.status.outputs.emoji }} <b>'"${REPO}"'</b> - tests <b>${{ steps.status.outputs.text }}</b>' \
             "${BRANCH}" \
             "${ACTOR}" \
@@ -222,7 +307,10 @@ jobs:
             '${{ needs.run-tests.result }}' \
             '${{ needs.publish-allure-report.result }}' \
             "${RUN_URL}" \
-            "${REPORT_URL}")"
+            "${REPORT_URL}" \
+            "${METRICS_REPORT_URL}")"
+          
+          MESSAGE="$(printf '%s\n%s' "$MESSAGE" "$METRICS_LINE")"
           
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \

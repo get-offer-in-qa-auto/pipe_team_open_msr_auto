@@ -145,6 +145,17 @@ Email recipients field:
 - default value is `ekaterina-konchina@yandex.ru`
 - you can remove it and add one or more recipients separated by commas
 
+If report sending fails:
+- UI now shows detailed error diagnostics for missing SMTP variables and report generation issues.
+- Check `.env` contains:
+  - `SMTP_HOST=smtp.gmail.com`
+  - `SMTP_PORT=465`
+  - `SMTP_USERNAME=tuzikthecoolest@gmail.com`
+  - `SMTP_PASSWORD=YOUR_GMAIL_APP_PASSWORD`
+  - `SMTP_FROM=tuzikthecoolest@gmail.com`
+  - `SMTP_USE_SSL=true`
+- For Gmail, use an app password (regular account password will fail with `Application-specific password required`).
+
 ## 8. Flaky tests stats from downloaded artifacts
 
 After downloading Allure artifacts (`.zip`) to `downloaded_artifacts`, run:
@@ -167,3 +178,30 @@ python3 tools/build_flaky_dashboard.py \
   --report-title "QA Metrics Dashboard (main)" \
   --output reports/metrics_dashboard.html
 ```
+
+## 10. Automatic metrics report in GitHub Actions
+
+Workflow supports metrics report generation and email delivery with a flag.
+
+How to enable:
+- For manual run (`workflow_dispatch`): set input `send_metrics_report=true`
+- For push/PR runs: set repository variable `METRICS_REPORT_ENABLED=true`
+
+Email recipients list:
+- Set directly in workflow YAML (`.github/workflows/automation.yml`) in job `metrics-email-report`:
+- `REPORT_RECIPIENTS: ekaterina-konchina@yandex.ru,other@example.com`
+
+Published links:
+- Allure report: `https://<owner>.github.io/<repo>/index.html`
+- Metrics report: `https://<owner>.github.io/<repo>/metrics/index.html`
+
+Pipeline artifacts:
+- `allure-html-report`
+- `metrics-dashboard-html`
+
+Required repository secrets:
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `SMTP_FROM`
