@@ -78,7 +78,7 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
     report_title_safe = report_title.replace("<", "&lt;").replace(">", "&gt;")
 
     return f"""<!doctype html>
-<html lang=\"ru\">
+<html lang=\"en\">
 <head>
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />
@@ -167,16 +167,35 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
 
     <section class=\"group\">
       <h2>1️⃣ Test Result Distribution</h2>
-      <p class=\"desc\">Распределение результатов тестов по статусам.</p>
+      <p class=\"desc\">Distribution of test outcomes by status.</p>
       <div class=\"metric-cards\">
         <div class=\"card\"><div class=\"label\">pass rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
         <div class=\"card\"><div class=\"label\">fail rate</div><div class=\"value\">{fail_rate:.2f}%</div></div>
         <div class=\"card\"><div class=\"label\">broken rate</div><div class=\"value\">{broken_rate:.2f}%</div></div>
       </div>
 
-      <div class=\"panel chart-single\">
-        <h3>Distribution Trend by Run</h3>
-        <canvas id=\"distribution-trend\"></canvas>
+      <div class=\"panel\">
+        <h3>How Metrics Are Calculated</h3>
+        <div class=\"formulas\">
+          pass rate = passed tests / total tests = {total_passed} / {total_tests} = {pass_rate:.2f}%<br/>
+          fail rate = failed tests / total tests = {total_failed} / {total_tests} = {fail_rate:.2f}%<br/>
+          broken rate = broken tests / total tests = {total_broken} / {total_tests} = {broken_rate:.2f}%
+        </div>
+      </div>
+
+      <div class=\"charts-2\">
+        <div class=\"panel\">
+          <h3>Pass Rate</h3>
+          <canvas id=\"pass-rate-donut\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Fail Rate</h3>
+          <canvas id=\"fail-rate-donut\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Broken Rate</h3>
+          <canvas id=\"broken-rate-donut\"></canvas>
+        </div>
       </div>
 
       <div class=\"panel\">
@@ -185,6 +204,9 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
           <thead>
             <tr>
               <th>Run</th>
+              <th>Passed</th>
+              <th>Failed</th>
+              <th>Broken</th>
               <th>Pass %</th>
               <th>Fail %</th>
               <th>Broken %</th>
@@ -196,8 +218,8 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
     </section>
 
     <section class=\"group\">
-      <h2>2️⃣ Метрики стабильности тестов</h2>
-      <p class=\"desc\">Показывают, насколько тестам можно доверять.</p>
+      <h2>2️⃣ Test Stability Metrics</h2>
+      <p class=\"desc\">Show how reliable your tests are over time.</p>
       <div class=\"formulas\">
         Pass Rate = Passed tests / Total tests<br/>
         Flaky Rate = Flaky tests / Total tests<br/>
@@ -231,7 +253,7 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       </div>
 
       <div class=\"panel\">
-        <h3>Стабильность по запускам</h3>
+        <h3>Stability by Run</h3>
         <table>
           <thead>
             <tr>
@@ -248,8 +270,8 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
     </section>
 
     <section class=\"group\">
-      <h2>3️⃣ Метрики скорости</h2>
-      <p class=\"desc\">Показывают, насколько быстрый pipeline. CI Pipeline Duration сейчас оценивается по доступным runtime данным тестов.</p>
+      <h2>3️⃣ Speed Metrics</h2>
+      <p class=\"desc\">Show how fast the pipeline is. CI Pipeline Duration is currently estimated from available test runtime data.</p>
       <div class=\"formulas\">
         Test Execution Time = Total runtime<br/>
         Average Test Duration = Total runtime / Number of tests<br/>
@@ -273,7 +295,7 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       </div>
 
       <div class=\"panel\">
-        <h3>Время выполнения по запускам</h3>
+        <h3>Execution Time by Run</h3>
         <table>
           <thead>
             <tr>
@@ -393,61 +415,50 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       drawLineChart('stability-trend', 'stability_value', 100, '#1f854f', '#159a55', '%');
     }}
 
-    function drawDistributionChart() {{
-      const canvas = document.getElementById('distribution-trend');
+    function drawDonutChart(canvasId, valuePercent, color, label) {{
+      const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext('2d');
       setupCanvas(canvas, ctx);
 
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
-      if (!data.length) {{
-        ctx.fillStyle = '#5e6b7a';
-        ctx.font = '16px sans-serif';
-        ctx.fillText('No data', 20, 40);
-        return;
-      }}
 
-      const axis = drawAxis(ctx, w, h, 100, '%');
-      const pad = axis.pad;
-      const innerW = axis.innerW;
-      const innerH = axis.innerH;
-      const stepX = data.length === 1 ? 0 : innerW / (data.length - 1);
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) * 0.30;
+      const pct = Math.max(0, Math.min(100, valuePercent));
+      const angle = (pct / 100) * Math.PI * 2;
+      const green = '#159a55';
+      const red = '#cf3f34';
+      const remainderColor = color === green ? red : green;
 
-      function lineFor(key, stroke, fill) {{
-        const points = data.map((d, i) => {{
-          const x = pad.left + i * stepX;
-          const y = pad.top + innerH - ((d[key] || 0) / 100) * innerH;
-          return {{ x, y, d }};
-        }});
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        points.forEach((p, i) => {{
-          if (i === 0) ctx.moveTo(p.x, p.y);
-          else ctx.lineTo(p.x, p.y);
-        }});
-        ctx.stroke();
-        points.forEach((p, i) => {{
-          ctx.beginPath();
-          ctx.fillStyle = fill;
-          ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-          ctx.fill();
-          if (i % Math.max(1, Math.ceil(points.length / 7)) === 0 || i === points.length - 1) {{
-            ctx.save();
-            ctx.translate(p.x, h - 54);
-            ctx.rotate(-0.55);
-            ctx.fillStyle = '#5e6b7a';
-            ctx.font = '11px sans-serif';
-            ctx.fillText(p.d.run_label, 0, 0);
-            ctx.restore();
-          }}
-        }});
-      }}
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.fillStyle = color;
+      ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + angle);
+      ctx.closePath();
+      ctx.fill();
 
-      lineFor('pass_percent', '#2f6bff', '#2f6bff');
-      lineFor('fail_percent', '#cf3f34', '#cf3f34');
-      lineFor('broken_percent', '#6e42c1', '#6e42c1');
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.fillStyle = remainderColor;
+      ctx.arc(cx, cy, radius, -Math.PI / 2 + angle, -Math.PI / 2 + Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = '#fffdf8';
+      ctx.arc(cx, cy, radius * 0.58, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#18212f';
+      ctx.font = '700 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(pct.toFixed(2) + '%', cx, cy + 8);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#5e6b7a';
+      ctx.fillText(label, cx, cy + 28);
     }}
 
     function fillTables() {{
@@ -475,6 +486,9 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       distributionBody.innerHTML = data.map(d => `
         <tr>
           <td>${{d.run_label}}</td>
+          <td>${{d.passed_tests}}</td>
+          <td>${{d.failed_tests}}</td>
+          <td>${{d.broken_tests}}</td>
           <td>${{d.pass_percent.toFixed(2)}}%</td>
           <td>${{d.fail_percent.toFixed(2)}}%</td>
           <td>${{d.broken_percent.toFixed(2)}}%</td>
@@ -501,7 +515,9 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       drawLineChart('pass-trend', 'pass_percent', passMax, '#2f6bff', '#2f6bff', '%');
       drawLineChart('flaky-trend', 'flaky_percent', flakyMax, '#0a7a78', '#ff7f50', '%');
       drawStabilityChart();
-      drawDistributionChart();
+      drawDonutChart('pass-rate-donut', {pass_rate:.2f}, '#159a55', 'pass rate');
+      drawDonutChart('fail-rate-donut', {fail_rate:.2f}, '#cf3f34', 'fail rate');
+      drawDonutChart('broken-rate-donut', {broken_rate:.2f}, '#cf3f34', 'broken rate');
       drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's');
       drawLineChart('suite-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
     }}
@@ -545,7 +561,7 @@ def main() -> int:
         return 1
 
     rows = collect_all_stats(args.artifacts_dir)
-    slow_records = collect_slowest_tests(args.artifacts_dir, limit=20)
+    slow_records = collect_slowest_tests(args.artifacts_dir, limit=4)
     slowest_tests = [
         {
             "run_name": r.run_name,
