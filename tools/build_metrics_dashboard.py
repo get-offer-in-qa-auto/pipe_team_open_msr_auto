@@ -59,12 +59,21 @@ DEFAULT_GATES: dict[str, dict[str, Any]] = {
         },
     "avg_duration_sec":
         {
-            "name": "Average Test Duration",
+            "name": "Average Test Duration UI tests",
             "unit": "s",
             "good_threshold": 8.0,
             "warn_threshold": 12.0,
             "higher_is_better": False,
             "recommendation": "Optimize slow tests and reduce external dependencies.",
+        },
+    "avg_api_duration_sec":
+        {
+            "name": "Average Test Duration API tests",
+            "unit": "s",
+            "good_threshold": 8.0,
+            "warn_threshold": 12.0,
+            "higher_is_better": False,
+            "recommendation": "Optimize slow API tests and reduce network/DB overhead.",
         },
     "suite_duration_sec":
         {
@@ -178,15 +187,36 @@ def build_gate(
 def build_html(
     report_title: str,
     rows: list[RunStats],
-    slowest_tests: list[dict],
+    slowest_ui_tests: list[dict],
+    slowest_api_tests: list[dict],
     gates_config: dict[str, dict[str, Any]],
 ) -> str:
     sorted_rows = sorted(rows, key=lambda r: parse_run_datetime(r.run_name) or datetime.min)
+    distribution_gate_keys = ["pass_rate", "fail_rate", "broken_rate"]
 
     points: list[dict] = []
     for row in sorted_rows:
         run_dt = parse_run_datetime(row.run_name)
         run_success = row.total_tests > 0 and row.passed_tests == row.total_tests
+        run_values = {
+            "pass_rate": row.pass_percent,
+            "fail_rate": row.fail_percent,
+            "broken_rate": row.broken_percent,
+        }
+        run_qg_passed = 0
+        for key in distribution_gate_keys:
+            cfg = gates_config.get(key, DEFAULT_GATES[key])
+            gate_status = evaluate_gate(
+                value=float(run_values[key]),
+                good_threshold=float(cfg["good_threshold"]),
+                warn_threshold=float(cfg["warn_threshold"]),
+                higher_is_better=bool(cfg["higher_is_better"]),
+            )
+            if gate_status == "ok":
+                run_qg_passed += 1
+        run_qg_failed = len(distribution_gate_keys) - run_qg_passed
+        run_qg_status = "OK" if run_qg_failed == 0 else "Failed"
+        run_qg_css_class = "metric-ok" if run_qg_failed == 0 else "metric-fail"
         points.append(
             {
                 "run_name": row.run_name,
@@ -202,8 +232,13 @@ def build_html(
                 "flaky_percent": round(row.flaky_percent, 2),
                 "run_success": run_success,
                 "stability_value": 100.0 if run_success else 0.0,
+                "run_qg_passed": run_qg_passed,
+                "run_qg_failed": run_qg_failed,
+                "run_qg_status": run_qg_status,
+                "run_qg_css_class": run_qg_css_class,
                 "total_duration_ms": row.total_duration_ms,
                 "avg_duration_sec": round(row.avg_duration_seconds, 2),
+                "avg_api_duration_sec": round(row.avg_api_duration_seconds, 2),
                 "suite_duration_ms": row.suite_duration_ms,
                 "suite_duration_sec": round(row.suite_duration_seconds, 2),
             }
@@ -213,6 +248,8 @@ def build_html(
     total_tests = sum(r.total_tests for r in rows)
     total_flaky = sum(r.flaky_tests for r in rows)
     total_duration_ms = sum(r.total_duration_ms for r in rows)
+    total_api_tests = sum(r.api_tests for r in rows)
+    total_api_duration_ms = sum(r.api_duration_ms for r in rows)
     total_suite_duration_ms = sum(r.suite_duration_ms for r in rows)
     successful_runs = sum(1 for r in rows if r.total_tests > 0 and r.passed_tests == r.total_tests)
 
@@ -224,6 +261,7 @@ def build_html(
     avg_broken_rate = round((sum(r.broken_percent for r in rows) / total_runs), 2) if total_runs else 0.0
 
     avg_duration_sec = round((total_duration_ms / total_tests / 1000.0), 2) if total_tests else 0.0
+    avg_api_duration_sec = round((total_api_duration_ms / total_api_tests / 1000.0), 2) if total_api_tests else 0.0
     avg_suite_duration_sec = round((total_suite_duration_ms / total_runs / 1000.0), 2) if total_runs else 0.0
 
     pass_series = " + ".join(f"{r.pass_percent:.2f}" for r in sorted_rows)
@@ -257,6 +295,11 @@ def build_html(
                 f"{round(total_duration_ms / 1000.0, 2)}/{total_tests}={avg_duration_sec:.2f}s"
                 if total_tests else "0/0=0.00s"
             ),
+        "avg_api_duration_sec":
+            (
+                f"{round(total_api_duration_ms / 1000.0, 2)}/{total_api_tests}={avg_api_duration_sec:.2f}s"
+                if total_api_tests else "0/0=0.00s"
+            ),
         "suite_duration_sec":
             (
                 f"{round(total_suite_duration_ms / 1000.0, 2)}/{total_runs}={avg_suite_duration_sec:.2f}s"
@@ -270,6 +313,7 @@ def build_html(
         "flaky_rate": flaky_rate,
         "stability_rate": stability_rate,
         "avg_duration_sec": avg_duration_sec,
+        "avg_api_duration_sec": avg_api_duration_sec,
         "suite_duration_sec": avg_suite_duration_sec,
     }
     gate_name_overrides = {
@@ -301,13 +345,17 @@ def build_html(
         "broken_rate": "Average share of broken tests across all runs in the selected period.",
         "flaky_rate": "Share of flaky tests that behave inconsistently across runs.",
         "stability_rate": "Share of successful runs among all runs.",
-        "avg_duration_sec": "Average execution time per test.",
+        "avg_duration_sec": "Average execution time per UI test.",
+        "avg_api_duration_sec": "Average execution time per API test.",
         "suite_duration_sec": "Average total suite duration per run.",
     }
 
-    def build_section_gates(keys: list[str],
-                            include_action: bool = True,
-                            include_description: bool = False) -> tuple[int, int, str]:
+    def build_section_gates(
+        keys: list[str],
+        include_action: bool = True,
+        include_description: bool = False,
+        action_as_description: bool = False
+    ) -> tuple[int, int, str]:
         section_gates = [gate_by_key[key] for key in keys]
         ok_count = sum(1 for item in section_gates if item["status"] == "ok")
         fail_count = sum(1 for item in section_gates if item["status"] == "fail")
@@ -320,7 +368,7 @@ def build_html(
                     f"<td>{item['threshold']}</td>"
                     f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
                     f"<td>{item['formula']}</td>"
-                    f"<td>{item['recommendation']}</td>"
+                    f"<td>{metric_descriptions.get(item['key'], 'Metric definition is not set.') if action_as_description else item['recommendation']}</td>"
                     "</tr>"
                 ) for item in section_gates
             )
@@ -333,7 +381,6 @@ def build_html(
                     f"<td>{item['value']:.2f}{item['unit']}</td>"
                     f"<td>{item['threshold']}</td>"
                     f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
-                    f"<td>{item['formula']}</td>"
                     "</tr>"
                 ) for item in section_gates
             )
@@ -351,22 +398,22 @@ def build_html(
             )
         return ok_count, fail_count, rows_html
 
-    dist_ok, dist_fail, dist_rows_html = build_section_gates(
+    _, _, dist_rows_html = build_section_gates(
         ["pass_rate", "fail_rate", "broken_rate"], include_action=False, include_description=True
     )
-    stability_ok, stability_fail, stability_rows_html = build_section_gates(["flaky_rate", "stability_rate"])
-    speed_ok, speed_fail, speed_rows_html = build_section_gates(["avg_duration_sec", "suite_duration_sec"])
+    speed_ok, speed_fail, speed_rows_html = build_section_gates(
+        ["avg_duration_sec", "avg_api_duration_sec", "suite_duration_sec"], action_as_description=True
+    )
 
     pass_rate_class = gate_by_key["pass_rate"]["css_class"]
     fail_rate_class = gate_by_key["fail_rate"]["css_class"]
     broken_rate_class = gate_by_key["broken_rate"]["css_class"]
-    flaky_rate_class = gate_by_key["flaky_rate"]["css_class"]
-    stability_rate_class = gate_by_key["stability_rate"]["css_class"]
     avg_duration_class = gate_by_key["avg_duration_sec"]["css_class"]
     suite_duration_class = gate_by_key["suite_duration_sec"]["css_class"]
 
     points_json = json.dumps(points, ensure_ascii=False)
-    slowest_json = json.dumps(slowest_tests, ensure_ascii=False)
+    slowest_ui_json = json.dumps(slowest_ui_tests, ensure_ascii=False)
+    slowest_api_json = json.dumps(slowest_api_tests, ensure_ascii=False)
     report_title_safe = report_title.replace("<", "&lt;").replace(">", "&gt;")
 
     return f"""<!doctype html>
@@ -453,6 +500,13 @@ def build_html(
     th, td {{ text-align: left; padding: 9px 10px; border-bottom: 1px solid #eee9df; }}
     th {{ background: #f9f6f0; font-weight: 600; color: #3f4a57; }}
     tr:hover td {{ background: #fffbf4; }}
+    .slow-tests-table {{ table-layout: fixed; }}
+    .slow-tests-table th:nth-child(2), .slow-tests-table td:nth-child(2) {{
+      width: 58%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }}
 
     @media (max-width: 960px) {{ .charts-2 {{ grid-template-columns: 1fr; }} }}
   </style>
@@ -472,10 +526,6 @@ def build_html(
       <p class=\"desc\">Distribution of test outcomes by status.</p>
       <div class=\"panel\">
         <h3>🚦 Quality Gates</h3>
-        <div class=\"metric-cards\">
-          <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{dist_ok}</div></div>
-          <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{dist_fail}</div></div>
-        </div>
         <table>
           <thead>
             <tr>
@@ -484,7 +534,6 @@ def build_html(
               <th>Current Value</th>
               <th>Target</th>
               <th>Status</th>
-              <th>Calculation</th>
             </tr>
           </thead>
           <tbody>
@@ -521,7 +570,6 @@ def build_html(
           <canvas id=\"broken-rate-donut\"></canvas>
         </div>
       </div>
-
       <div class=\"panel\">
         <h3>Distribution by Run</h3>
         <table>
@@ -534,74 +582,12 @@ def build_html(
               <th>Pass %</th>
               <th>Fail %</th>
               <th>Broken %</th>
+              <th>QG Passed</th>
+              <th>QG Failed</th>
+              <th>QG Status</th>
             </tr>
           </thead>
           <tbody id=\"distribution-rows\"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class=\"group\">
-      <h2>2️⃣ Test Stability Metrics</h2>
-      <p class=\"desc\">Show how reliable your tests are over time.</p>
-      <div class=\"panel\">
-        <h3>🚦 Quality Gates</h3>
-        <div class=\"metric-cards\">
-          <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{stability_ok}</div></div>
-          <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{stability_fail}</div></div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>Current Value</th>
-              <th>Target</th>
-              <th>Status</th>
-              <th>Calculation</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stability_rows_html}
-          </tbody>
-        </table>
-      </div>
-      <div class=\"formulas\">
-        Flaky Rate = Flaky tests / Total tests<br/>
-        Test Stability = Successful runs / Total runs
-      </div>
-      <div class=\"metric-cards\">
-        <div class=\"card {flaky_rate_class}\"><div class=\"label\">Flaky Rate</div><div class=\"value\">{flaky_rate:.2f}%</div></div>
-        <div class=\"card {stability_rate_class}\"><div class=\"label\">Test Stability</div><div class=\"value\">{stability_rate:.2f}%</div></div>
-        <div class=\"card\"><div class=\"label\">Successful Runs</div><div class=\"value\">{successful_runs}/{total_runs}</div></div>
-      </div>
-
-      <div class=\"panel chart-single\">
-        <h3>Flaky Rate Trend</h3>
-        <canvas id=\"flaky-trend\"></canvas>
-      </div>
-
-      <div class=\"panel chart-single\">
-        <h3>Test Stability by Run</h3>
-        <canvas id=\"stability-trend\"></canvas>
-        <div class=\"legend\">
-          <span><span class=\"dot\" style=\"background:#159a55;\"></span>Successful run (100%)</span>
-          <span><span class=\"dot\" style=\"background:#d14f45;\"></span>Unstable run (0%)</span>
-        </div>
-      </div>
-
-      <div class=\"panel\">
-        <h3>Stability by Run</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Total tests</th>
-              <th>Flaky %</th>
-              <th>Successful run</th>
-            </tr>
-          </thead>
-          <tbody id=\"stability-rows\"></tbody>
         </table>
       </div>
     </section>
@@ -623,7 +609,7 @@ def build_html(
               <th>Target</th>
               <th>Status</th>
               <th>Calculation</th>
-              <th>Action</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>
@@ -633,23 +619,24 @@ def build_html(
       </div>
       <div class=\"formulas\">
         Test Execution Time = Total runtime<br/>
-        Average Test Duration = Total runtime / Number of tests<br/>
+        Average Test Duration UI tests = Total runtime / Number of tests<br/>
+        Average Test Duration API tests = API runtime / Number of API tests<br/>
         CI Pipeline Duration = build + deploy + tests
       </div>
       <div class=\"metric-cards\">
         <div class=\"card\"><div class=\"label\">Test Execution Time</div><div class=\"value\">{round(total_suite_duration_ms / 1000.0, 1)}s</div></div>
-        <div class=\"card {avg_duration_class}\"><div class=\"label\">Average Test Duration</div><div class=\"value\">{avg_duration_sec:.2f}s</div></div>
+        <div class=\"card {avg_duration_class}\"><div class=\"label\">Average Test Duration UI tests</div><div class=\"value\">{avg_duration_sec:.2f}s</div></div>
         <div class=\"card {suite_duration_class}\"><div class=\"label\">CI Pipeline Duration</div><div class=\"value\">{avg_suite_duration_sec:.2f}s</div></div>
       </div>
 
       <div class=\"charts-2\">
         <div class=\"panel\">
-          <h3>Average Test Duration Trend</h3>
+          <h3>Average Test Duration UI tests Trend</h3>
           <canvas id=\"avg-duration-trend\"></canvas>
         </div>
         <div class=\"panel\">
-          <h3>Suite Duration Trend</h3>
-          <canvas id=\"suite-duration-trend\"></canvas>
+          <h3>CI Pipeline Duration (proxy) Trend</h3>
+          <canvas id=\"ci-pipeline-duration-trend\"></canvas>
         </div>
       </div>
 
@@ -659,7 +646,8 @@ def build_html(
           <thead>
             <tr>
               <th>Run</th>
-              <th>Avg test duration (s)</th>
+              <th>Avg UI test duration (s)</th>
+              <th>Avg API test duration (s)</th>
               <th>Suite duration (s)</th>
             </tr>
           </thead>
@@ -668,8 +656,8 @@ def build_html(
       </div>
 
       <div class=\"panel\">
-        <h3>Slowest tests</h3>
-        <table>
+        <h3>Slowest tests UI</h3>
+        <table class=\"slow-tests-table\">
           <thead>
             <tr>
               <th>Run</th>
@@ -678,7 +666,21 @@ def build_html(
               <th>Status</th>
             </tr>
           </thead>
-          <tbody id=\"slowest-rows\"></tbody>
+          <tbody id=\"slowest-ui-rows\"></tbody>
+        </table>
+      </div>
+      <div class=\"panel\">
+        <h3>Slowest tests API</h3>
+        <table class=\"slow-tests-table\">
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Test</th>
+              <th>Duration (s)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id=\"slowest-api-rows\"></tbody>
         </table>
       </div>
     </section>
@@ -687,7 +689,8 @@ def build_html(
 
   <script>
     const data = {points_json};
-    const slowestTests = {slowest_json};
+    const slowestUiTests = {slowest_ui_json};
+    const slowestApiTests = {slowest_api_json};
 
     function setupCanvas(canvas, ctx) {{
       const dpr = window.devicePixelRatio || 1;
@@ -821,21 +824,12 @@ def build_html(
     }}
 
     function fillTables() {{
-      const stabilityBody = document.getElementById('stability-rows');
-      stabilityBody.innerHTML = data.map(d => `
-        <tr>
-          <td>${{d.run_label}}</td>
-          <td>${{d.total_tests}}</td>
-          <td>${{d.flaky_percent.toFixed(2)}}%</td>
-          <td>${{d.run_success ? 'Yes' : 'No'}}</td>
-        </tr>
-      `).join('');
-
       const durationBody = document.getElementById('duration-rows');
       durationBody.innerHTML = data.map(d => `
         <tr>
           <td>${{d.run_label}}</td>
           <td>${{d.avg_duration_sec.toFixed(2)}}</td>
+          <td>${{d.avg_api_duration_sec.toFixed(2)}}</td>
           <td>${{d.suite_duration_sec.toFixed(2)}}</td>
         </tr>
       `).join('');
@@ -850,32 +844,46 @@ def build_html(
           <td>${{d.pass_percent.toFixed(2)}}%</td>
           <td>${{d.fail_percent.toFixed(2)}}%</td>
           <td>${{d.broken_percent.toFixed(2)}}%</td>
+          <td>${{d.run_qg_passed}}</td>
+          <td>${{d.run_qg_failed}}</td>
+          <td><span class="status-badge ${{d.run_qg_css_class}}">${{d.run_qg_status}}</span></td>
         </tr>
       `).join('');
 
-      const slowestBody = document.getElementById('slowest-rows');
-      slowestBody.innerHTML = slowestTests.map(t => `
-        <tr>
-          <td>${{t.run_label}}</td>
-          <td>${{t.test_name}}</td>
-          <td>${{t.duration_sec.toFixed(2)}}</td>
-          <td>${{t.status}}</td>
-        </tr>
-      `).join('');
+      const renderSlowestRows = (rows) => {{
+        if (!rows.length) {{
+          return `
+            <tr>
+              <td colspan="4">No data</td>
+            </tr>
+          `;
+        }}
+        return rows.map(t => `
+          <tr>
+            <td>${{t.run_label}}</td>
+            <td>${{t.test_name}}</td>
+            <td>${{t.duration_sec.toFixed(2)}}</td>
+            <td>${{t.status}}</td>
+          </tr>
+        `).join('');
+      }};
+
+      const slowestUiBody = document.getElementById('slowest-ui-rows');
+      slowestUiBody.innerHTML = renderSlowestRows(slowestUiTests);
+
+      const slowestApiBody = document.getElementById('slowest-api-rows');
+      slowestApiBody.innerHTML = renderSlowestRows(slowestApiTests);
     }}
 
     function render() {{
-      const flakyMax = Math.max(...data.map(d => d.flaky_percent), 1);
       const avgDurMax = Math.max(...data.map(d => d.avg_duration_sec), 1);
       const suiteDurMax = Math.max(...data.map(d => d.suite_duration_sec), 1);
 
-      drawLineChart('flaky-trend', 'flaky_percent', flakyMax, '#0a7a78', '#ff7f50', '%');
-      drawStabilityChart();
       drawDonutChart('pass-rate-donut', {avg_pass_rate:.2f}, '#159a55', 'avg pass rate');
       drawDonutChart('fail-rate-donut', {avg_fail_rate:.2f}, '#cf3f34', 'avg fail rate');
       drawDonutChart('broken-rate-donut', {avg_broken_rate:.2f}, '#cf3f34', 'avg broken rate');
       drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's');
-      drawLineChart('suite-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
+      drawLineChart('ci-pipeline-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
     }}
 
     fillTables();
@@ -924,7 +932,7 @@ def main() -> int:
 
     rows = collect_all_stats(args.artifacts_dir)
     gates_config, slowest_tests_limit = load_dashboard_config(args.gates_config)
-    slow_records = collect_slowest_tests(args.artifacts_dir, limit=slowest_tests_limit)
+    slow_records = collect_slowest_tests(args.artifacts_dir, limit=max(1, sum(r.total_tests for r in rows)))
     slowest_tests = [
         {
             "run_name": r.run_name,
@@ -934,8 +942,13 @@ def main() -> int:
             "status": r.status,
         } for r in slow_records
     ]
+    slowest_ui_tests = [item for item in slowest_tests if ".ui." in item["test_name"]][:slowest_tests_limit]
+    slowest_api_tests = [item for item in slowest_tests if ".api." in item["test_name"]][:slowest_tests_limit]
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(build_html(args.report_title, rows, slowest_tests, gates_config), encoding="utf-8")
+    args.output.write_text(
+        build_html(args.report_title, rows, slowest_ui_tests, slowest_api_tests, gates_config),
+        encoding="utf-8",
+    )
     print(f"Dashboard generated: {args.output}")
     return 0
 

@@ -43,12 +43,20 @@ gates:
     recommendation: "Track unstable runs and fix recurring root causes."
 
   avg_duration_sec:
-    name: "Average Test Duration"
+    name: "Average Test Duration UI tests"
     unit: "s"
     good_threshold: 8.0
     warn_threshold: 12.0
     higher_is_better: false
     recommendation: "Optimize slow tests and reduce external dependencies."
+
+  avg_api_duration_sec:
+    name: "Average Test Duration API tests"
+    unit: "s"
+    good_threshold: 8.0
+    warn_threshold: 12.0
+    higher_is_better: false
+    recommendation: "Optimize slow API tests and reduce network/DB overhead."
 
   suite_duration_sec:
     name: "CI Pipeline Duration (proxy)"

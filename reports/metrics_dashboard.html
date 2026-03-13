@@ -82,6 +82,13 @@
     th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #eee9df; }
     th { background: #f9f6f0; font-weight: 600; color: #3f4a57; }
     tr:hover td { background: #fffbf4; }
+    .slow-tests-table { table-layout: fixed; }
+    .slow-tests-table th:nth-child(2), .slow-tests-table td:nth-child(2) {
+      width: 58%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
 
     @media (max-width: 960px) { .charts-2 { grid-template-columns: 1fr; } }
   </style>
@@ -101,10 +108,6 @@
       <p class="desc">Distribution of test outcomes by status.</p>
       <div class="panel">
         <h3>🚦 Quality Gates</h3>
-        <div class="metric-cards">
-          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">3</div></div>
-          <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">0</div></div>
-        </div>
         <table>
           <thead>
             <tr>
@@ -113,13 +116,12 @@
               <th>Current Value</th>
               <th>Target</th>
               <th>Status</th>
-              <th>Calculation</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Average Pass Rate</td><td>Average share of passed tests across all runs in the selected period.</td><td>99.01%</td><td>>= 98.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>average pass rate = (100.00 + 100.00 + 100.00 + 100.00 + 97.89 + 99.30 + 98.59 + 99.30 + 97.89 + 97.18) / 10 = 99.01%</td></tr>
-<tr><td>Average Fail Rate</td><td>Average share of failed tests across all runs in the selected period.</td><td>0.99%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>average fail rate = (0.00 + 0.00 + 0.00 + 0.00 + 2.11 + 0.70 + 1.41 + 0.70 + 2.11 + 2.82) / 10 = 0.99%</td></tr>
-<tr><td>Average Broken Rate</td><td>Average share of broken tests across all runs in the selected period.</td><td>0.00%</td><td><= 1.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>average broken rate = (0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00) / 10 = 0.00%</td></tr>
+            <tr><td>Average Pass Rate</td><td>Average share of passed tests across all runs in the selected period.</td><td>99.01%</td><td>>= 98.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
+<tr><td>Average Fail Rate</td><td>Average share of failed tests across all runs in the selected period.</td><td>0.99%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
+<tr><td>Average Broken Rate</td><td>Average share of broken tests across all runs in the selected period.</td><td>0.00%</td><td><= 1.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -152,7 +154,6 @@
           <canvas id="broken-rate-donut"></canvas>
         </div>
       </div>
-
       <div class="panel">
         <h3>Distribution by Run</h3>
         <table>
@@ -165,75 +166,12 @@
               <th>Pass %</th>
               <th>Fail %</th>
               <th>Broken %</th>
+              <th>QG Passed</th>
+              <th>QG Failed</th>
+              <th>QG Status</th>
             </tr>
           </thead>
           <tbody id="distribution-rows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="group">
-      <h2>2️⃣ Test Stability Metrics</h2>
-      <p class="desc">Show how reliable your tests are over time.</p>
-      <div class="panel">
-        <h3>🚦 Quality Gates</h3>
-        <div class="metric-cards">
-          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">1</div></div>
-          <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">1</div></div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>Current Value</th>
-              <th>Target</th>
-              <th>Status</th>
-              <th>Calculation</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Flaky Rate</td><td>0.00%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>0/1194=0.00%</td><td>Quarantine flaky tests and remove unstable waits.</td></tr>
-<tr><td>Test Stability</td><td>40.00%</td><td>>= 95.00%</td><td><span class="status-badge metric-fail">Failed</span></td><td>4/10=40.00%</td><td>Track unstable runs and fix recurring root causes.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="formulas">
-        Flaky Rate = Flaky tests / Total tests<br/>
-        Test Stability = Successful runs / Total runs
-      </div>
-      <div class="metric-cards">
-        <div class="card metric-ok"><div class="label">Flaky Rate</div><div class="value">0.00%</div></div>
-        <div class="card metric-fail"><div class="label">Test Stability</div><div class="value">40.00%</div></div>
-        <div class="card"><div class="label">Successful Runs</div><div class="value">4/10</div></div>
-      </div>
-
-      <div class="panel chart-single">
-        <h3>Flaky Rate Trend</h3>
-        <canvas id="flaky-trend"></canvas>
-      </div>
-
-      <div class="panel chart-single">
-        <h3>Test Stability by Run</h3>
-        <canvas id="stability-trend"></canvas>
-        <div class="legend">
-          <span><span class="dot" style="background:#159a55;"></span>Successful run (100%)</span>
-          <span><span class="dot" style="background:#d14f45;"></span>Unstable run (0%)</span>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Stability by Run</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Total tests</th>
-              <th>Flaky %</th>
-              <th>Successful run</th>
-            </tr>
-          </thead>
-          <tbody id="stability-rows"></tbody>
         </table>
       </div>
     </section>
@@ -244,7 +182,7 @@
       <div class="panel">
         <h3>🚦 Quality Gates</h3>
         <div class="metric-cards">
-          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">2</div></div>
+          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">3</div></div>
           <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">0</div></div>
         </div>
         <table>
@@ -255,34 +193,36 @@
               <th>Target</th>
               <th>Status</th>
               <th>Calculation</th>
-              <th>Action</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Average Test Duration</td><td>1.76s</td><td><= 8.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>2105.14/1194=1.76s</td><td>Optimize slow tests and reduce external dependencies.</td></tr>
-<tr><td>CI Pipeline Duration (proxy)</td><td>160.08s</td><td><= 1800.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>1600.83/10=160.08s</td><td>Increase parallelism and remove long serial bottlenecks.</td></tr>
+            <tr><td>Average Test Duration UI tests</td><td>1.76s</td><td><= 8.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>2105.14/1194=1.76s</td><td>Average execution time per UI test.</td></tr>
+<tr><td>Average Test Duration API tests</td><td>0.12s</td><td><= 8.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>104.78/900=0.12s</td><td>Average execution time per API test.</td></tr>
+<tr><td>CI Pipeline Duration (proxy)</td><td>160.08s</td><td><= 1800.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>1600.83/10=160.08s</td><td>Average total suite duration per run.</td></tr>
           </tbody>
         </table>
       </div>
       <div class="formulas">
         Test Execution Time = Total runtime<br/>
-        Average Test Duration = Total runtime / Number of tests<br/>
+        Average Test Duration UI tests = Total runtime / Number of tests<br/>
+        Average Test Duration API tests = API runtime / Number of API tests<br/>
         CI Pipeline Duration = build + deploy + tests
       </div>
       <div class="metric-cards">
         <div class="card"><div class="label">Test Execution Time</div><div class="value">1600.8s</div></div>
-        <div class="card metric-ok"><div class="label">Average Test Duration</div><div class="value">1.76s</div></div>
+        <div class="card metric-ok"><div class="label">Average Test Duration UI tests</div><div class="value">1.76s</div></div>
         <div class="card metric-ok"><div class="label">CI Pipeline Duration</div><div class="value">160.08s</div></div>
       </div>
 
       <div class="charts-2">
         <div class="panel">
-          <h3>Average Test Duration Trend</h3>
+          <h3>Average Test Duration UI tests Trend</h3>
           <canvas id="avg-duration-trend"></canvas>
         </div>
         <div class="panel">
-          <h3>Suite Duration Trend</h3>
-          <canvas id="suite-duration-trend"></canvas>
+          <h3>CI Pipeline Duration (proxy) Trend</h3>
+          <canvas id="ci-pipeline-duration-trend"></canvas>
         </div>
       </div>
 
@@ -292,7 +232,8 @@
           <thead>
             <tr>
               <th>Run</th>
-              <th>Avg test duration (s)</th>
+              <th>Avg UI test duration (s)</th>
+              <th>Avg API test duration (s)</th>
               <th>Suite duration (s)</th>
             </tr>
           </thead>
@@ -301,8 +242,8 @@
       </div>
 
       <div class="panel">
-        <h3>Slowest tests</h3>
-        <table>
+        <h3>Slowest tests UI</h3>
+        <table class="slow-tests-table">
           <thead>
             <tr>
               <th>Run</th>
@@ -311,7 +252,21 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody id="slowest-rows"></tbody>
+          <tbody id="slowest-ui-rows"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>Slowest tests API</h3>
+        <table class="slow-tests-table">
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Test</th>
+              <th>Duration (s)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="slowest-api-rows"></tbody>
         </table>
       </div>
     </section>
@@ -319,8 +274,9 @@
   </div>
 
   <script>
-    const data = [{"run_name": "20260307_131915_5811367046_allure-results.zip", "run_label": "2026-03-07 13:19", "total_tests": 100, "passed_tests": 100, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "total_duration_ms": 12362, "avg_duration_sec": 0.12, "suite_duration_ms": 12371, "suite_duration_sec": 12.37}, {"run_name": "20260307_145039_5811732263_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "total_duration_ms": 91027, "avg_duration_sec": 0.8, "suite_duration_ms": 70944, "suite_duration_sec": 70.94}, {"run_name": "20260307_145051_5811733041_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "total_duration_ms": 94571, "avg_duration_sec": 0.83, "suite_duration_ms": 73088, "suite_duration_sec": 73.09}, {"run_name": "20260307_151004_5811814975_allure-results.zip", "run_label": "2026-03-07 15:10", "total_tests": 14, "passed_tests": 14, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "total_duration_ms": 85464, "avg_duration_sec": 6.1, "suite_duration_ms": 61654, "suite_duration_sec": 61.65}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "total_duration_ms": 303050, "avg_duration_sec": 2.13, "suite_duration_ms": 233776, "suite_duration_sec": 233.78}, {"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "total_duration_ms": 291728, "avg_duration_sec": 2.05, "suite_duration_ms": 217687, "suite_duration_sec": 217.69}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "total_tests": 142, "passed_tests": 140, "pass_percent": 98.59, "failed_tests": 2, "fail_percent": 1.41, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "total_duration_ms": 307398, "avg_duration_sec": 2.16, "suite_duration_ms": 232616, "suite_duration_sec": 232.62}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "total_duration_ms": 305413, "avg_duration_sec": 2.15, "suite_duration_ms": 231072, "suite_duration_sec": 231.07}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "total_duration_ms": 300891, "avg_duration_sec": 2.12, "suite_duration_ms": 230194, "suite_duration_sec": 230.19}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "total_tests": 142, "passed_tests": 138, "pass_percent": 97.18, "failed_tests": 4, "fail_percent": 2.82, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "total_duration_ms": 313234, "avg_duration_sec": 2.21, "suite_duration_ms": 237426, "suite_duration_sec": 237.43}];
-    const slowestTests = [{"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 17.03, "status": "passed"}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.96, "status": "passed"}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.83, "status": "passed"}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.56, "status": "passed"}];
+    const data = [{"run_name": "20260307_131915_5811367046_allure-results.zip", "run_label": "2026-03-07 13:19", "total_tests": 100, "passed_tests": 100, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 12362, "avg_duration_sec": 0.12, "avg_api_duration_sec": 0.12, "suite_duration_ms": 12371, "suite_duration_sec": 12.37}, {"run_name": "20260307_145039_5811732263_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 91027, "avg_duration_sec": 0.8, "avg_api_duration_sec": 0.11, "suite_duration_ms": 70944, "suite_duration_sec": 70.94}, {"run_name": "20260307_145051_5811733041_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 94571, "avg_duration_sec": 0.83, "avg_api_duration_sec": 0.12, "suite_duration_ms": 73088, "suite_duration_sec": 73.09}, {"run_name": "20260307_151004_5811814975_allure-results.zip", "run_label": "2026-03-07 15:10", "total_tests": 14, "passed_tests": 14, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 85464, "avg_duration_sec": 6.1, "avg_api_duration_sec": 0.0, "suite_duration_ms": 61654, "suite_duration_sec": 61.65}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 303050, "avg_duration_sec": 2.13, "avg_api_duration_sec": 0.12, "suite_duration_ms": 233776, "suite_duration_sec": 233.78}, {"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 291728, "avg_duration_sec": 2.05, "avg_api_duration_sec": 0.1, "suite_duration_ms": 217687, "suite_duration_sec": 217.69}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "total_tests": 142, "passed_tests": 140, "pass_percent": 98.59, "failed_tests": 2, "fail_percent": 1.41, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 307398, "avg_duration_sec": 2.16, "avg_api_duration_sec": 0.13, "suite_duration_ms": 232616, "suite_duration_sec": 232.62}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 305413, "avg_duration_sec": 2.15, "avg_api_duration_sec": 0.11, "suite_duration_ms": 231072, "suite_duration_sec": 231.07}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 300891, "avg_duration_sec": 2.12, "avg_api_duration_sec": 0.11, "suite_duration_ms": 230194, "suite_duration_sec": 230.19}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "total_tests": 142, "passed_tests": 138, "pass_percent": 97.18, "failed_tests": 4, "fail_percent": 2.82, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 313234, "avg_duration_sec": 2.21, "avg_api_duration_sec": 0.13, "suite_duration_ms": 237426, "suite_duration_sec": 237.43}];
+    const slowestUiTests = [{"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 17.03, "status": "passed"}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.96, "status": "passed"}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.83, "status": "passed"}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.56, "status": "passed"}];
+    const slowestApiTests = [{"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.72, "status": "passed"}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.58, "status": "passed"}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.58, "status": "passed"}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.57, "status": "passed"}];
 
     function setupCanvas(canvas, ctx) {
       const dpr = window.devicePixelRatio || 1;
@@ -454,21 +410,12 @@
     }
 
     function fillTables() {
-      const stabilityBody = document.getElementById('stability-rows');
-      stabilityBody.innerHTML = data.map(d => `
-        <tr>
-          <td>${d.run_label}</td>
-          <td>${d.total_tests}</td>
-          <td>${d.flaky_percent.toFixed(2)}%</td>
-          <td>${d.run_success ? 'Yes' : 'No'}</td>
-        </tr>
-      `).join('');
-
       const durationBody = document.getElementById('duration-rows');
       durationBody.innerHTML = data.map(d => `
         <tr>
           <td>${d.run_label}</td>
           <td>${d.avg_duration_sec.toFixed(2)}</td>
+          <td>${d.avg_api_duration_sec.toFixed(2)}</td>
           <td>${d.suite_duration_sec.toFixed(2)}</td>
         </tr>
       `).join('');
@@ -483,32 +430,46 @@
           <td>${d.pass_percent.toFixed(2)}%</td>
           <td>${d.fail_percent.toFixed(2)}%</td>
           <td>${d.broken_percent.toFixed(2)}%</td>
+          <td>${d.run_qg_passed}</td>
+          <td>${d.run_qg_failed}</td>
+          <td><span class="status-badge ${d.run_qg_css_class}">${d.run_qg_status}</span></td>
         </tr>
       `).join('');
 
-      const slowestBody = document.getElementById('slowest-rows');
-      slowestBody.innerHTML = slowestTests.map(t => `
-        <tr>
-          <td>${t.run_label}</td>
-          <td>${t.test_name}</td>
-          <td>${t.duration_sec.toFixed(2)}</td>
-          <td>${t.status}</td>
-        </tr>
-      `).join('');
+      const renderSlowestRows = (rows) => {
+        if (!rows.length) {
+          return `
+            <tr>
+              <td colspan="4">No data</td>
+            </tr>
+          `;
+        }
+        return rows.map(t => `
+          <tr>
+            <td>${t.run_label}</td>
+            <td>${t.test_name}</td>
+            <td>${t.duration_sec.toFixed(2)}</td>
+            <td>${t.status}</td>
+          </tr>
+        `).join('');
+      };
+
+      const slowestUiBody = document.getElementById('slowest-ui-rows');
+      slowestUiBody.innerHTML = renderSlowestRows(slowestUiTests);
+
+      const slowestApiBody = document.getElementById('slowest-api-rows');
+      slowestApiBody.innerHTML = renderSlowestRows(slowestApiTests);
     }
 
     function render() {
-      const flakyMax = Math.max(...data.map(d => d.flaky_percent), 1);
       const avgDurMax = Math.max(...data.map(d => d.avg_duration_sec), 1);
       const suiteDurMax = Math.max(...data.map(d => d.suite_duration_sec), 1);
 
-      drawLineChart('flaky-trend', 'flaky_percent', flakyMax, '#0a7a78', '#ff7f50', '%');
-      drawStabilityChart();
       drawDonutChart('pass-rate-donut', 99.01, '#159a55', 'avg pass rate');
       drawDonutChart('fail-rate-donut', 0.99, '#cf3f34', 'avg fail rate');
       drawDonutChart('broken-rate-donut', 0.00, '#cf3f34', 'avg broken rate');
       drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's');
-      drawLineChart('suite-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
+      drawLineChart('ci-pipeline-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
     }
 
     fillTables();
