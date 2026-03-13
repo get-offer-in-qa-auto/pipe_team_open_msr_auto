@@ -61,8 +61,8 @@ DEFAULT_GATES: dict[str, dict[str, Any]] = {
         {
             "name": "Average Test Duration UI tests",
             "unit": "s",
-            "good_threshold": 8.0,
-            "warn_threshold": 12.0,
+            "good_threshold": 3.0,
+            "warn_threshold": 5.0,
             "higher_is_better": False,
             "recommendation": "Optimize slow tests and reduce external dependencies.",
         },
@@ -70,17 +70,35 @@ DEFAULT_GATES: dict[str, dict[str, Any]] = {
         {
             "name": "Average Test Duration API tests",
             "unit": "s",
-            "good_threshold": 8.0,
-            "warn_threshold": 12.0,
+            "good_threshold": 0.2,
+            "warn_threshold": 0.35,
             "higher_is_better": False,
             "recommendation": "Optimize slow API tests and reduce network/DB overhead.",
+        },
+    "ui_run_duration_sec":
+        {
+            "name": "Average UI Test Run Duration",
+            "unit": "s",
+            "good_threshold": 240.0,
+            "warn_threshold": 360.0,
+            "higher_is_better": False,
+            "recommendation": "Reduce end-to-end UI runtime with better parallelization and setup reuse.",
+        },
+    "api_run_duration_sec":
+        {
+            "name": "Average API Test Run Duration",
+            "unit": "s",
+            "good_threshold": 20.0,
+            "warn_threshold": 30.0,
+            "higher_is_better": False,
+            "recommendation": "Optimize API request/DB paths and trim heavy setup per run.",
         },
     "suite_duration_sec":
         {
             "name": "CI Pipeline Duration (proxy)",
             "unit": "s",
-            "good_threshold": 1800.0,
-            "warn_threshold": 2700.0,
+            "good_threshold": 240.0,
+            "warn_threshold": 360.0,
             "higher_is_better": False,
             "recommendation": "Increase parallelism and remove long serial bottlenecks.",
         },
@@ -239,6 +257,8 @@ def build_html(
                 "total_duration_ms": row.total_duration_ms,
                 "avg_duration_sec": round(row.avg_duration_seconds, 2),
                 "avg_api_duration_sec": round(row.avg_api_duration_seconds, 2),
+                "ui_run_duration_sec": round(row.ui_duration_seconds, 2),
+                "api_run_duration_sec": round(row.api_duration_seconds, 2),
                 "suite_duration_ms": row.suite_duration_ms,
                 "suite_duration_sec": round(row.suite_duration_seconds, 2),
             }
@@ -247,10 +267,6 @@ def build_html(
     total_runs = len(rows)
     total_tests = sum(r.total_tests for r in rows)
     total_flaky = sum(r.flaky_tests for r in rows)
-    total_duration_ms = sum(r.total_duration_ms for r in rows)
-    total_api_tests = sum(r.api_tests for r in rows)
-    total_api_duration_ms = sum(r.api_duration_ms for r in rows)
-    total_suite_duration_ms = sum(r.suite_duration_ms for r in rows)
     successful_runs = sum(1 for r in rows if r.total_tests > 0 and r.passed_tests == r.total_tests)
 
     flaky_rate = round((total_flaky / total_tests * 100.0), 2) if total_tests else 0.0
@@ -260,9 +276,11 @@ def build_html(
     avg_fail_rate = round((sum(r.fail_percent for r in rows) / total_runs), 2) if total_runs else 0.0
     avg_broken_rate = round((sum(r.broken_percent for r in rows) / total_runs), 2) if total_runs else 0.0
 
-    avg_duration_sec = round((total_duration_ms / total_tests / 1000.0), 2) if total_tests else 0.0
-    avg_api_duration_sec = round((total_api_duration_ms / total_api_tests / 1000.0), 2) if total_api_tests else 0.0
-    avg_suite_duration_sec = round((total_suite_duration_ms / total_runs / 1000.0), 2) if total_runs else 0.0
+    avg_duration_sec = round((sum(r.avg_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
+    avg_api_duration_sec = round((sum(r.avg_api_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
+    ui_run_duration_sec = round((sum(r.ui_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
+    api_run_duration_sec = round((sum(r.api_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
+    avg_suite_duration_sec = round((sum(r.suite_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
 
     pass_series = " + ".join(f"{r.pass_percent:.2f}" for r in sorted_rows)
     fail_series = " + ".join(f"{r.fail_percent:.2f}" for r in sorted_rows)
@@ -279,6 +297,13 @@ def build_html(
         f"average broken rate = ({broken_series}) / {total_runs} = {avg_broken_rate:.2f}%"
         if total_runs else "average broken rate = n/a"
     )
+    avg_duration_series = " + ".join(f"{r.avg_duration_seconds:.2f}" for r in sorted_rows)
+
+    avg_api_duration_series = " + ".join(f"{r.avg_api_duration_seconds:.2f}" for r in sorted_rows)
+    ui_run_duration_series = " + ".join(f"{r.ui_duration_seconds:.2f}" for r in sorted_rows)
+    api_run_duration_series = " + ".join(f"{r.api_duration_seconds:.2f}" for r in sorted_rows)
+    avg_suite_duration_series = " + ".join(f"{r.suite_duration_seconds:.2f}" for r in sorted_rows)
+
     formulas = {
         "pass_rate":
             avg_pass_formula,
@@ -290,21 +315,15 @@ def build_html(
             f"{total_flaky}/{total_tests}={flaky_rate:.2f}%" if total_tests else "0/0=0.00%",
         "stability_rate":
             f"{successful_runs}/{total_runs}={stability_rate:.2f}%" if total_runs else "0/0=0.00%",
-        "avg_duration_sec":
-            (
-                f"{round(total_duration_ms / 1000.0, 2)}/{total_tests}={avg_duration_sec:.2f}s"
-                if total_tests else "0/0=0.00s"
-            ),
+        "avg_duration_sec": (f"({avg_duration_series})/{total_runs}={avg_duration_sec:.2f}s" if total_runs else "n/a"),
         "avg_api_duration_sec":
-            (
-                f"{round(total_api_duration_ms / 1000.0, 2)}/{total_api_tests}={avg_api_duration_sec:.2f}s"
-                if total_api_tests else "0/0=0.00s"
-            ),
+            (f"({avg_api_duration_series})/{total_runs}={avg_api_duration_sec:.2f}s" if total_runs else "n/a"),
+        "ui_run_duration_sec":
+            (f"({ui_run_duration_series})/{total_runs}={ui_run_duration_sec:.2f}s" if total_runs else "n/a"),
+        "api_run_duration_sec":
+            (f"({api_run_duration_series})/{total_runs}={api_run_duration_sec:.2f}s" if total_runs else "n/a"),
         "suite_duration_sec":
-            (
-                f"{round(total_suite_duration_ms / 1000.0, 2)}/{total_runs}={avg_suite_duration_sec:.2f}s"
-                if total_runs else "0/0=0.00s"
-            ),
+            (f"({avg_suite_duration_series})/{total_runs}={avg_suite_duration_sec:.2f}s" if total_runs else "n/a"),
     }
     values = {
         "pass_rate": avg_pass_rate,
@@ -314,12 +333,15 @@ def build_html(
         "stability_rate": stability_rate,
         "avg_duration_sec": avg_duration_sec,
         "avg_api_duration_sec": avg_api_duration_sec,
+        "ui_run_duration_sec": ui_run_duration_sec,
+        "api_run_duration_sec": api_run_duration_sec,
         "suite_duration_sec": avg_suite_duration_sec,
     }
     gate_name_overrides = {
         "pass_rate": "Average Pass Rate",
         "fail_rate": "Average Fail Rate",
         "broken_rate": "Average Broken Rate",
+        "suite_duration_sec": "Average Pipeline Duration",
     }
     gates = []
     for key in DEFAULT_GATES.keys():
@@ -345,16 +367,20 @@ def build_html(
         "broken_rate": "Average share of broken tests across all runs in the selected period.",
         "flaky_rate": "Share of flaky tests that behave inconsistently across runs.",
         "stability_rate": "Share of successful runs among all runs.",
-        "avg_duration_sec": "Average execution time per UI test.",
-        "avg_api_duration_sec": "Average execution time per API test.",
-        "suite_duration_sec": "Average total suite duration per run.",
+        "avg_duration_sec": "Average Test Duration UI tests = Sum(run average durations) / Number of runs",
+        "avg_api_duration_sec": "Average Test Duration API tests = Sum(run average API durations) / Number of runs",
+        "ui_run_duration_sec": "Average UI Test Run Duration = Sum(UI run durations) / Number of runs",
+        "api_run_duration_sec": "Average API Test Run Duration = Sum(API run durations) / Number of runs",
+        "suite_duration_sec": "CI Pipeline Duration = build + deploy + tests",
     }
 
     def build_section_gates(
         keys: list[str],
         include_action: bool = True,
         include_description: bool = False,
-        action_as_description: bool = False
+        action_as_description: bool = False,
+        include_calculation: bool = True,
+        description_after_metric: bool = False
     ) -> tuple[int, int, str]:
         section_gates = [gate_by_key[key] for key in keys]
         ok_count = sum(1 for item in section_gates if item["status"] == "ok")
@@ -362,14 +388,20 @@ def build_html(
         if include_action:
             rows_html = "\n".join(
                 (
-                    "<tr>"
-                    f"<td>{item['name']}</td>"
-                    f"<td>{item['value']:.2f}{item['unit']}</td>"
-                    f"<td>{item['threshold']}</td>"
-                    f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
-                    f"<td>{item['formula']}</td>"
-                    f"<td>{metric_descriptions.get(item['key'], 'Metric definition is not set.') if action_as_description else item['recommendation']}</td>"
-                    "</tr>"
+                    (
+                        "<tr>" + f"<td>{item['name']}</td>" +
+                        f"<td>{metric_descriptions.get(item['key'], 'Metric definition is not set.') if action_as_description else item['recommendation']}</td>"
+                        + f"<td>{item['value']:.2f}{item['unit']}</td>" + f"<td>{item['threshold']}</td>" +
+                        f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>" +
+                        (f"<td>{item['formula']}</td>" if include_calculation else "") + "</tr>"
+                    ) if description_after_metric else (
+                        "<tr>" + f"<td>{item['name']}</td>" + f"<td>{item['value']:.2f}{item['unit']}</td>" +
+                        f"<td>{item['threshold']}</td>" +
+                        f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>" +
+                        (f"<td>{item['formula']}</td>" if include_calculation else "") + (
+                            f"<td>{metric_descriptions.get(item['key'], 'Metric definition is not set.') if action_as_description else item['recommendation']}</td>"
+                        ) + "</tr>"
+                    )
                 ) for item in section_gates
             )
         elif include_description:
@@ -401,14 +433,48 @@ def build_html(
     _, _, dist_rows_html = build_section_gates(
         ["pass_rate", "fail_rate", "broken_rate"], include_action=False, include_description=True
     )
+    speed_gate_keys = [
+        "avg_duration_sec",
+        "avg_api_duration_sec",
+        "ui_run_duration_sec",
+        "api_run_duration_sec",
+        "suite_duration_sec",
+    ]
     speed_ok, speed_fail, speed_rows_html = build_section_gates(
-        ["avg_duration_sec", "avg_api_duration_sec", "suite_duration_sec"], action_as_description=True
+        speed_gate_keys,
+        action_as_description=True,
+        include_calculation=False,
+        description_after_metric=True,
+    )
+    speed_formulas_html = "<br/>".join(
+        f"{gate_by_key[key]['name']} = {gate_by_key[key]['formula']}" for key in speed_gate_keys
+    )
+    pass_rate_target = float(gates_config.get("pass_rate", DEFAULT_GATES["pass_rate"])["good_threshold"])
+    fail_rate_target = float(gates_config.get("fail_rate", DEFAULT_GATES["fail_rate"])["good_threshold"])
+    broken_rate_target = float(gates_config.get("broken_rate", DEFAULT_GATES["broken_rate"])["good_threshold"])
+    slow_ui_target_sec = float(
+        gates_config.get("avg_duration_sec", DEFAULT_GATES["avg_duration_sec"])["good_threshold"]
+    )
+    slow_api_target_sec = float(
+        gates_config.get("avg_api_duration_sec", DEFAULT_GATES["avg_api_duration_sec"])["good_threshold"]
+    )
+    ui_run_target_sec = float(
+        gates_config.get("ui_run_duration_sec", DEFAULT_GATES["ui_run_duration_sec"])["good_threshold"]
+    )
+    api_run_target_sec = float(
+        gates_config.get("api_run_duration_sec", DEFAULT_GATES["api_run_duration_sec"])["good_threshold"]
+    )
+    pipeline_target_sec = float(
+        gates_config.get("suite_duration_sec", DEFAULT_GATES["suite_duration_sec"])["good_threshold"]
     )
 
     pass_rate_class = gate_by_key["pass_rate"]["css_class"]
     fail_rate_class = gate_by_key["fail_rate"]["css_class"]
     broken_rate_class = gate_by_key["broken_rate"]["css_class"]
     avg_duration_class = gate_by_key["avg_duration_sec"]["css_class"]
+    avg_api_duration_class = gate_by_key["avg_api_duration_sec"]["css_class"]
+    ui_run_duration_class = gate_by_key["ui_run_duration_sec"]["css_class"]
+    api_run_duration_class = gate_by_key["api_run_duration_sec"]["css_class"]
     suite_duration_class = gate_by_key["suite_duration_sec"]["css_class"]
 
     points_json = json.dumps(points, ensure_ascii=False)
@@ -490,6 +556,7 @@ def build_html(
     }}
     .panel h3 {{ margin: 0 0 10px; font-size: 18px; }}
     .charts-2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }}
+    .metric-pair {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }}
     .chart-single {{ margin-top: 16px; }}
 
     canvas {{ width: 100%; height: 340px; display: block; }}
@@ -508,7 +575,10 @@ def build_html(
       word-break: break-word;
     }}
 
-    @media (max-width: 960px) {{ .charts-2 {{ grid-template-columns: 1fr; }} }}
+    @media (max-width: 960px) {{
+      .charts-2 {{ grid-template-columns: 1fr; }}
+      .metric-pair {{ grid-template-columns: 1fr; }}
+    }}
   </style>
 </head>
 <body>
@@ -556,44 +626,70 @@ def build_html(
         </div>
       </div>
 
-      <div class=\"charts-2\">
+      <div class=\"metric-pair\">
         <div class=\"panel\">
-          <h3>Average Pass Rate</h3>
-          <canvas id=\"pass-rate-donut\"></canvas>
+          <h3>Average Pass Rate Trend</h3>
+          <canvas id=\"pass-rate-trend\"></canvas>
         </div>
         <div class=\"panel\">
-          <h3>Average Fail Rate</h3>
-          <canvas id=\"fail-rate-donut\"></canvas>
-        </div>
-        <div class=\"panel\">
-          <h3>Average Broken Rate</h3>
-          <canvas id=\"broken-rate-donut\"></canvas>
+          <h3>Pass Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Pass %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"pass-distribution-rows\"></tbody>
+          </table>
         </div>
       </div>
-      <div class=\"panel\">
-        <h3>Distribution by Run</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Passed</th>
-              <th>Failed</th>
-              <th>Broken</th>
-              <th>Pass %</th>
-              <th>Fail %</th>
-              <th>Broken %</th>
-              <th>QG Passed</th>
-              <th>QG Failed</th>
-              <th>QG Status</th>
-            </tr>
-          </thead>
-          <tbody id=\"distribution-rows\"></tbody>
-        </table>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average Fail Rate Trend</h3>
+          <canvas id=\"fail-rate-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Fail Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Fail %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"fail-distribution-rows\"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average Broken Rate Trend</h3>
+          <canvas id=\"broken-rate-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Broken Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Broken %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"broken-distribution-rows\"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <section class=\"group\">
-      <h2>3️⃣ Speed Metrics</h2>
+      <h2>2️⃣ Speed Metrics</h2>
       <p class=\"desc\">Show how fast the pipeline is. CI Pipeline Duration is currently estimated from available test runtime data.</p>
       <div class=\"panel\">
         <h3>🚦 Quality Gates</h3>
@@ -605,11 +701,10 @@ def build_html(
           <thead>
             <tr>
               <th>Metric</th>
+              <th>Description</th>
               <th>Current Value</th>
               <th>Target</th>
               <th>Status</th>
-              <th>Calculation</th>
-              <th>Description</th>
             </tr>
           </thead>
           <tbody>
@@ -617,42 +712,119 @@ def build_html(
           </tbody>
         </table>
       </div>
-      <div class=\"formulas\">
-        Test Execution Time = Total runtime<br/>
-        Average Test Duration UI tests = Total runtime / Number of tests<br/>
-        Average Test Duration API tests = API runtime / Number of API tests<br/>
-        CI Pipeline Duration = build + deploy + tests
+      <div class=\"panel\">
+        <h3>How Metrics Are Calculated</h3>
+        <div class=\"formulas\">
+          {speed_formulas_html}
+        </div>
       </div>
       <div class=\"metric-cards\">
-        <div class=\"card\"><div class=\"label\">Test Execution Time</div><div class=\"value\">{round(total_suite_duration_ms / 1000.0, 1)}s</div></div>
         <div class=\"card {avg_duration_class}\"><div class=\"label\">Average Test Duration UI tests</div><div class=\"value\">{avg_duration_sec:.2f}s</div></div>
-        <div class=\"card {suite_duration_class}\"><div class=\"label\">CI Pipeline Duration</div><div class=\"value\">{avg_suite_duration_sec:.2f}s</div></div>
+        <div class=\"card {avg_api_duration_class}\"><div class=\"label\">Average Test Duration API tests</div><div class=\"value\">{avg_api_duration_sec:.2f}s</div></div>
+        <div class=\"card {ui_run_duration_class}\"><div class=\"label\">Average UI Test Run Duration</div><div class=\"value\">{ui_run_duration_sec:.2f}s</div></div>
+        <div class=\"card {api_run_duration_class}\"><div class=\"label\">Average API Test Run Duration</div><div class=\"value\">{api_run_duration_sec:.2f}s</div></div>
+        <div class=\"card {suite_duration_class}\"><div class=\"label\">Average Pipeline Duration</div><div class=\"value\">{avg_suite_duration_sec:.2f}s</div></div>
       </div>
 
-      <div class=\"charts-2\">
+      <div class=\"metric-pair\">
         <div class=\"panel\">
           <h3>Average Test Duration UI tests Trend</h3>
           <canvas id=\"avg-duration-trend\"></canvas>
         </div>
         <div class=\"panel\">
-          <h3>CI Pipeline Duration (proxy) Trend</h3>
-          <canvas id=\"ci-pipeline-duration-trend\"></canvas>
+          <h3>Average Test Duration UI tests vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Value</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"speed-avg-ui-duration-rows\"></tbody>
+          </table>
         </div>
       </div>
-
-      <div class=\"panel\">
-        <h3>Execution Time by Run</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Avg UI test duration (s)</th>
-              <th>Avg API test duration (s)</th>
-              <th>Suite duration (s)</th>
-            </tr>
-          </thead>
-          <tbody id=\"duration-rows\"></tbody>
-        </table>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average Test Duration API tests Trend</h3>
+          <canvas id=\"avg-api-duration-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Average Test Duration API tests vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Value</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"speed-avg-api-duration-rows\"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average UI Test Run Duration Trend</h3>
+          <canvas id=\"ui-run-duration-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Average UI Test Run Duration vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Value</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"speed-ui-run-duration-rows\"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average API Test Run Duration Trend</h3>
+          <canvas id=\"api-run-duration-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Average API Test Run Duration vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Value</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"speed-api-run-duration-rows\"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average Pipeline Duration Trend</h3>
+          <canvas id=\"ci-pipeline-duration-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>Average Pipeline Duration vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Value</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"speed-pipeline-duration-rows\"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class=\"panel\">
@@ -663,6 +835,7 @@ def build_html(
               <th>Run</th>
               <th>Test</th>
               <th>Duration (s)</th>
+              <th>Target (s)</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -677,6 +850,7 @@ def build_html(
               <th>Run</th>
               <th>Test</th>
               <th>Duration (s)</th>
+              <th>Target (s)</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -691,6 +865,14 @@ def build_html(
     const data = {points_json};
     const slowestUiTests = {slowest_ui_json};
     const slowestApiTests = {slowest_api_json};
+    const passRateTarget = {pass_rate_target:.2f};
+    const failRateTarget = {fail_rate_target:.2f};
+    const brokenRateTarget = {broken_rate_target:.2f};
+    const slowUiTargetSec = {slow_ui_target_sec:.2f};
+    const slowApiTargetSec = {slow_api_target_sec:.2f};
+    const uiRunTargetSec = {ui_run_target_sec:.2f};
+    const apiRunTargetSec = {api_run_target_sec:.2f};
+    const pipelineTargetSec = {pipeline_target_sec:.2f};
 
     function setupCanvas(canvas, ctx) {{
       const dpr = window.devicePixelRatio || 1;
@@ -719,7 +901,7 @@ def build_html(
       return {{ pad, innerW, innerH }};
     }}
 
-    function drawLineChart(canvasId, valueKey, maxY, lineColor, pointColor, unit) {{
+    function drawLineChart(canvasId, valueKey, maxY, lineColor, pointColor, unit, targetValue = null, targetColor = '#6d7886') {{
       const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext('2d');
       setupCanvas(canvas, ctx);
@@ -740,6 +922,24 @@ def build_html(
       const innerW = axis.innerW;
       const innerH = axis.innerH;
       const stepX = data.length === 1 ? 0 : innerW / (data.length - 1);
+
+      if (Number.isFinite(targetValue)) {{
+        const clampedTarget = Math.max(0, Math.min(targetValue, Math.max(maxY, 1)));
+        const targetY = pad.top + innerH - (clampedTarget / Math.max(maxY, 1)) * innerH;
+        ctx.save();
+        ctx.setLineDash([6, 5]);
+        ctx.strokeStyle = targetColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, targetY);
+        ctx.lineTo(w - pad.right, targetY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = targetColor;
+        ctx.font = '12px sans-serif';
+        ctx.fillText(`Target: ${{targetValue.toFixed(2)}}${{unit}}`, pad.left + 6, Math.max(14, targetY - 8));
+        ctx.restore();
+      }}
 
       const points = data.map((d, i) => {{
         const x = pad.left + i * stepX;
@@ -824,37 +1024,50 @@ def build_html(
     }}
 
     function fillTables() {{
-      const durationBody = document.getElementById('duration-rows');
-      durationBody.innerHTML = data.map(d => `
-        <tr>
-          <td>${{d.run_label}}</td>
-          <td>${{d.avg_duration_sec.toFixed(2)}}</td>
-          <td>${{d.avg_api_duration_sec.toFixed(2)}}</td>
-          <td>${{d.suite_duration_sec.toFixed(2)}}</td>
-        </tr>
-      `).join('');
+      const renderTargetRows = (valueKey, target, unit, higherIsBetter = false) => data.map(d => {{
+        const value = d[valueKey] || 0;
+        const isOk = higherIsBetter ? value >= target : value <= target;
+        const css = isOk ? 'metric-ok' : 'metric-fail';
+        const label = isOk ? 'OK' : 'Failed';
+        return `
+          <tr>
+            <td>${{d.run_label}}</td>
+            <td>${{value.toFixed(2)}}${{unit}}</td>
+            <td>${{higherIsBetter ? '>=' : '<='}} ${{target.toFixed(2)}}${{unit}}</td>
+            <td><span class="status-badge ${{css}}">${{label}}</span></td>
+          </tr>
+        `;
+      }}).join('');
 
-      const distributionBody = document.getElementById('distribution-rows');
-      distributionBody.innerHTML = data.map(d => `
-        <tr>
-          <td>${{d.run_label}}</td>
-          <td>${{d.passed_tests}}</td>
-          <td>${{d.failed_tests}}</td>
-          <td>${{d.broken_tests}}</td>
-          <td>${{d.pass_percent.toFixed(2)}}%</td>
-          <td>${{d.fail_percent.toFixed(2)}}%</td>
-          <td>${{d.broken_percent.toFixed(2)}}%</td>
-          <td>${{d.run_qg_passed}}</td>
-          <td>${{d.run_qg_failed}}</td>
-          <td><span class="status-badge ${{d.run_qg_css_class}}">${{d.run_qg_status}}</span></td>
-        </tr>
-      `).join('');
+      const passDistributionBody = document.getElementById('pass-distribution-rows');
+      passDistributionBody.innerHTML = renderTargetRows('pass_percent', passRateTarget, '%', true);
 
-      const renderSlowestRows = (rows) => {{
+      const failDistributionBody = document.getElementById('fail-distribution-rows');
+      failDistributionBody.innerHTML = renderTargetRows('fail_percent', failRateTarget, '%', false);
+
+      const brokenDistributionBody = document.getElementById('broken-distribution-rows');
+      brokenDistributionBody.innerHTML = renderTargetRows('broken_percent', brokenRateTarget, '%', false);
+
+      const speedAvgUiBody = document.getElementById('speed-avg-ui-duration-rows');
+      speedAvgUiBody.innerHTML = renderTargetRows('avg_duration_sec', slowUiTargetSec, 's', false);
+
+      const speedAvgApiBody = document.getElementById('speed-avg-api-duration-rows');
+      speedAvgApiBody.innerHTML = renderTargetRows('avg_api_duration_sec', slowApiTargetSec, 's', false);
+
+      const speedUiRunBody = document.getElementById('speed-ui-run-duration-rows');
+      speedUiRunBody.innerHTML = renderTargetRows('ui_run_duration_sec', uiRunTargetSec, 's', false);
+
+      const speedApiRunBody = document.getElementById('speed-api-run-duration-rows');
+      speedApiRunBody.innerHTML = renderTargetRows('api_run_duration_sec', apiRunTargetSec, 's', false);
+
+      const speedPipelineBody = document.getElementById('speed-pipeline-duration-rows');
+      speedPipelineBody.innerHTML = renderTargetRows('suite_duration_sec', pipelineTargetSec, 's', false);
+
+      const renderSlowestRows = (rows, targetSec) => {{
         if (!rows.length) {{
           return `
             <tr>
-              <td colspan="4">No data</td>
+              <td colspan="5">No data</td>
             </tr>
           `;
         }}
@@ -863,27 +1076,37 @@ def build_html(
             <td>${{t.run_label}}</td>
             <td>${{t.test_name}}</td>
             <td>${{t.duration_sec.toFixed(2)}}</td>
-            <td>${{t.status}}</td>
+            <td>${{targetSec.toFixed(2)}}</td>
+            <td><span class="status-badge ${{t.duration_sec <= targetSec ? 'metric-ok' : 'metric-fail'}}">${{t.duration_sec <= targetSec ? 'OK' : 'Failed'}}</span></td>
           </tr>
         `).join('');
       }};
 
       const slowestUiBody = document.getElementById('slowest-ui-rows');
-      slowestUiBody.innerHTML = renderSlowestRows(slowestUiTests);
+      slowestUiBody.innerHTML = renderSlowestRows(slowestUiTests, slowUiTargetSec);
 
       const slowestApiBody = document.getElementById('slowest-api-rows');
-      slowestApiBody.innerHTML = renderSlowestRows(slowestApiTests);
+      slowestApiBody.innerHTML = renderSlowestRows(slowestApiTests, slowApiTargetSec);
     }}
 
     function render() {{
+      const passRateMax = Math.max(...data.map(d => d.pass_percent), 1);
+      const failRateMax = Math.max(...data.map(d => d.fail_percent), 1);
+      const brokenRateMax = Math.max(...data.map(d => d.broken_percent), 1);
       const avgDurMax = Math.max(...data.map(d => d.avg_duration_sec), 1);
+      const avgApiDurMax = Math.max(...data.map(d => d.avg_api_duration_sec), 1);
+      const uiRunDurMax = Math.max(...data.map(d => d.ui_run_duration_sec), 1);
+      const apiRunDurMax = Math.max(...data.map(d => d.api_run_duration_sec), 1);
       const suiteDurMax = Math.max(...data.map(d => d.suite_duration_sec), 1);
 
-      drawDonutChart('pass-rate-donut', {avg_pass_rate:.2f}, '#159a55', 'avg pass rate');
-      drawDonutChart('fail-rate-donut', {avg_fail_rate:.2f}, '#cf3f34', 'avg fail rate');
-      drawDonutChart('broken-rate-donut', {avg_broken_rate:.2f}, '#cf3f34', 'avg broken rate');
-      drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's');
-      drawLineChart('ci-pipeline-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
+      drawLineChart('pass-rate-trend', 'pass_percent', passRateMax, '#1b8a4f', '#159a55', '%', {pass_rate_target:.2f}, '#1b8a4f');
+      drawLineChart('fail-rate-trend', 'fail_percent', failRateMax, '#b63a31', '#cf3f34', '%', {fail_rate_target:.2f}, '#b63a31');
+      drawLineChart('broken-rate-trend', 'broken_percent', brokenRateMax, '#8f3245', '#a73b52', '%', {broken_rate_target:.2f}, '#8f3245');
+      drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's', {slow_ui_target_sec:.2f}, '#7a4a18');
+      drawLineChart('avg-api-duration-trend', 'avg_api_duration_sec', avgApiDurMax, '#1c5d8f', '#2f7fc3', 's', {slow_api_target_sec:.2f}, '#1c5d8f');
+      drawLineChart('ui-run-duration-trend', 'ui_run_duration_sec', uiRunDurMax, '#216a4c', '#2c9568', 's', {ui_run_target_sec:.2f}, '#216a4c');
+      drawLineChart('api-run-duration-trend', 'api_run_duration_sec', apiRunDurMax, '#6f4b1f', '#a36a28', 's', {api_run_target_sec:.2f}, '#6f4b1f');
+      drawLineChart('ci-pipeline-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's', {pipeline_target_sec:.2f}, '#7b2f8e');
     }}
 
     fillTables();

@@ -45,23 +45,39 @@ gates:
   avg_duration_sec:
     name: "Average Test Duration UI tests"
     unit: "s"
-    good_threshold: 8.0
-    warn_threshold: 12.0
+    good_threshold: 3.0
+    warn_threshold: 5.0
     higher_is_better: false
     recommendation: "Optimize slow tests and reduce external dependencies."
 
   avg_api_duration_sec:
     name: "Average Test Duration API tests"
     unit: "s"
-    good_threshold: 8.0
-    warn_threshold: 12.0
+    good_threshold: 0.2
+    warn_threshold: 0.35
     higher_is_better: false
     recommendation: "Optimize slow API tests and reduce network/DB overhead."
+
+  ui_run_duration_sec:
+    name: "Average UI Test Run Duration"
+    unit: "s"
+    good_threshold: 240.0
+    warn_threshold: 360.0
+    higher_is_better: false
+    recommendation: "Reduce end-to-end UI runtime with better parallelization and setup reuse."
+
+  api_run_duration_sec:
+    name: "Average API Test Run Duration"
+    unit: "s"
+    good_threshold: 20.0
+    warn_threshold: 30.0
+    higher_is_better: false
+    recommendation: "Optimize API request/DB paths and trim heavy setup per run."
 
   suite_duration_sec:
     name: "CI Pipeline Duration (proxy)"
     unit: "s"
-    good_threshold: 1800.0
-    warn_threshold: 2700.0
+    good_threshold: 240.0
+    warn_threshold: 360.0
     higher_is_better: false
     recommendation: "Increase parallelism and remove long serial bottlenecks."

@@ -12,12 +12,14 @@ class RunStats:
     run_name: str
     total_tests: int
     api_tests: int
+    ui_tests: int
     flaky_tests: int
     passed_tests: int
     failed_tests: int
     broken_tests: int
     total_duration_ms: int
     api_duration_ms: int
+    ui_duration_ms: int
     suite_duration_ms: int
 
     @property
@@ -55,6 +57,14 @@ class RunStats:
         if self.api_tests == 0:
             return 0.0
         return self.api_duration_ms / self.api_tests / 1000.0
+
+    @property
+    def ui_duration_seconds(self) -> float:
+        return self.ui_duration_ms / 1000.0
+
+    @property
+    def api_duration_seconds(self) -> float:
+        return self.api_duration_ms / 1000.0
 
     @property
     def suite_duration_seconds(self) -> float:
@@ -179,19 +189,31 @@ def collect_stats_for_zip(zip_path: Path) -> RunStats:
     payloads = _iter_test_payloads(zip_path)
     if payloads:
         total = len(payloads)
-        api_tests = sum(1 for item in payloads if ".api." in _extract_test_name(item).lower())
+        api_tests = 0
+        ui_tests = 0
+        api_duration_ms = 0
+        ui_duration_ms = 0
+        duration_ms = 0
+        statuses: list[str] = []
+        for item in payloads:
+            test_name = _extract_test_name(item).lower()
+            duration = _extract_duration_ms(item)
+            duration_ms += duration
+            statuses.append(str(item.get("status", "")).lower())
+            if ".api." in test_name:
+                api_tests += 1
+                api_duration_ms += duration
+            if ".ui." in test_name:
+                ui_tests += 1
+                ui_duration_ms += duration
         has_result_format = any("labels" in item or "statusDetails" in item for item in payloads)
         if has_result_format:
             flaky = sum(1 for item in payloads if _is_flaky_from_result(item))
         else:
             flaky = sum(1 for item in payloads if _is_flaky_from_test_case(item))
-        passed = sum(1 for item in payloads if str(item.get("status", "")).lower() == "passed")
-        failed = sum(1 for item in payloads if str(item.get("status", "")).lower() == "failed")
-        broken = sum(1 for item in payloads if str(item.get("status", "")).lower() == "broken")
-        duration_ms = sum(_extract_duration_ms(item) for item in payloads)
-        api_duration_ms = sum(
-            _extract_duration_ms(item) for item in payloads if ".api." in _extract_test_name(item).lower()
-        )
+        passed = sum(1 for status in statuses if status == "passed")
+        failed = sum(1 for status in statuses if status == "failed")
+        broken = sum(1 for status in statuses if status == "broken")
         start_stop_values = [v for v in (_extract_start_stop(item) for item in payloads) if v is not None]
         if start_stop_values:
             min_start = min(v[0] for v in start_stop_values)
@@ -203,12 +225,14 @@ def collect_stats_for_zip(zip_path: Path) -> RunStats:
             run_name=zip_path.name,
             total_tests=total,
             api_tests=api_tests,
+            ui_tests=ui_tests,
             flaky_tests=flaky,
             passed_tests=passed,
             failed_tests=failed,
             broken_tests=broken,
             total_duration_ms=duration_ms,
             api_duration_ms=api_duration_ms,
+            ui_duration_ms=ui_duration_ms,
             suite_duration_ms=suite_duration_ms,
         )
 
@@ -216,12 +240,14 @@ def collect_stats_for_zip(zip_path: Path) -> RunStats:
         run_name=zip_path.name,
         total_tests=0,
         api_tests=0,
+        ui_tests=0,
         flaky_tests=0,
         passed_tests=0,
         failed_tests=0,
         broken_tests=0,
         total_duration_ms=0,
         api_duration_ms=0,
+        ui_duration_ms=0,
         suite_duration_ms=0,
     )
 
