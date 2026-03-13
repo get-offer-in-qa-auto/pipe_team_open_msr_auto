@@ -133,8 +133,8 @@ Fields in UI:
 - `GitHub Token` - loaded from `.env` (`GITHUB_TOKEN`) if present; can be edited manually in the UI
 - `Owner` - GitHub org/user name
 - `Repo` - repository name
-- `Branch` - required branch to filter (for example: `main`, `develop`, `release`)
-- `Days back` - how many days back to search
+- `Branch` - required branch to filter (default from `config/metrics/runtime.yml` -> `source.branch`)
+- `Days back` - how many days back to search (default from `config/metrics/runtime.yml` -> `source.days_back`)
 - `Output folder` - where `.zip` artifacts will be downloaded
 
 Main actions in UI:
@@ -142,7 +142,7 @@ Main actions in UI:
 - `Send report` - send already generated `reports/metrics_dashboard.html` to recipients via SMTP
 
 Email recipients field:
-- default value is loaded from `report_delivery.yml` -> `email.recipients`
+- default value is loaded from `config/metrics/delivery.yml` -> `email.recipients`
 - if `REPORT_EMAIL_TO` is set in `.env`, it overrides config recipients in UI
 - you can remove it and add one or more recipients separated by commas
 
@@ -181,14 +181,19 @@ python3 tools/build_metrics_dashboard.py \
 ```
 
 Quality gates configuration:
-- thresholds/recommendations are stored in `metrics_gates.yml`
-- report settings are also in `metrics_gates.yml` (for example `report.slowest_tests_limit`)
+- thresholds/recommendations are stored in `config/metrics/gates.yml`
+- report settings are also in `config/metrics/gates.yml` (for example `report.slowest_tests_limit`)
 - default path is loaded automatically
 - you can pass custom config path:
 
 ```bash
-python3 tools/build_metrics_dashboard.py --gates-config ./metrics_gates.yml
+python3 tools/build_metrics_dashboard.py --gates-config ./config/metrics/gates.yml
 ```
+
+Metrics config structure:
+- `config/metrics/gates.yml` - quality gates and report metric settings
+- `config/metrics/runtime.yml` - default data source settings (`source.branch`, `source.days_back`)
+- `config/metrics/delivery.yml` - report recipients (`email.recipients`)
 
 ## 10. Automatic metrics report in GitHub Actions
 
@@ -199,7 +204,7 @@ How to enable:
 - For push/PR runs: set repository variable `METRICS_REPORT_ENABLED=true`
 
 Email recipients list:
-- Set in `report_delivery.yml`:
+- Set in `config/metrics/delivery.yml`:
 - `email.recipients: ["ekaterina-konchina@yandex.ru", "other@example.com"]`
 - Workflow job `metrics-email-report` reads recipients from this config automatically
 

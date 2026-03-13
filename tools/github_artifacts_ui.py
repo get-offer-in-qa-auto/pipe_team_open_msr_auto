@@ -23,6 +23,10 @@ import yaml
 GITHUB_API = "https://api.github.com"
 DEFAULT_TIMEOUT = 30
 DEFAULT_REPORT_RECIPIENTS = ["ekaterina-konchina@yandex.ru"]
+DEFAULT_BRANCH = "main"
+DEFAULT_DAYS_BACK = 10
+DELIVERY_CONFIG_PATH = Path("config/metrics/delivery.yml")
+RUNTIME_CONFIG_PATH = Path("config/metrics/runtime.yml")
 
 
 def load_env_value(key: str, env_path: Path | None = None) -> str:
@@ -63,9 +67,13 @@ def config_value(key: str, default: str = "") -> str:
 
 
 def default_recipients_from_config(config_path: Path | None = None) -> str:
-    path = config_path or (Path.cwd() / "report_delivery.yml")
+    path = config_path or (Path.cwd() / DELIVERY_CONFIG_PATH)
     if not path.exists():
-        return ",".join(DEFAULT_REPORT_RECIPIENTS)
+        legacy_path = Path.cwd() / "report_delivery.yml"
+        if legacy_path.exists():
+            path = legacy_path
+        else:
+            return ",".join(DEFAULT_REPORT_RECIPIENTS)
     try:
         payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception:  # noqa: BLE001
@@ -81,6 +89,30 @@ def default_recipients_from_config(config_path: Path | None = None) -> str:
         if parsed:
             return ",".join(parsed)
     return ",".join(DEFAULT_REPORT_RECIPIENTS)
+
+
+def runtime_defaults_from_config(config_path: Path | None = None) -> tuple[str, str]:
+    path = config_path or (Path.cwd() / RUNTIME_CONFIG_PATH)
+    if not path.exists():
+        return DEFAULT_BRANCH, str(DEFAULT_DAYS_BACK)
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return DEFAULT_BRANCH, str(DEFAULT_DAYS_BACK)
+
+    source_cfg = payload.get("source")
+    if not isinstance(source_cfg, dict):
+        return DEFAULT_BRANCH, str(DEFAULT_DAYS_BACK)
+
+    branch = str(source_cfg.get("branch", DEFAULT_BRANCH)).strip() or DEFAULT_BRANCH
+    days_raw = source_cfg.get("days_back", DEFAULT_DAYS_BACK)
+    try:
+        days = int(days_raw)
+    except (TypeError, ValueError):
+        days = DEFAULT_DAYS_BACK
+    if days < 0:
+        days = DEFAULT_DAYS_BACK
+    return branch, str(days)
 
 
 def log_info(message: str) -> None:
@@ -188,11 +220,12 @@ class App(tk.Tk):
 
         token_from_env_file = load_env_value("GITHUB_TOKEN")
         default_owner, default_repo = self._detect_repo_from_git()
+        default_branch, default_days = runtime_defaults_from_config()
         self.token_var = tk.StringVar(value=token_from_env_file or os.getenv("GITHUB_TOKEN", ""))
         self.owner_var = tk.StringVar(value=default_owner)
         self.repo_var = tk.StringVar(value=default_repo)
-        self.branch_var = tk.StringVar(value="main")
-        self.days_var = tk.StringVar(value="7")
+        self.branch_var = tk.StringVar(value=config_value("METRICS_BRANCH", default_branch))
+        self.days_var = tk.StringVar(value=config_value("METRICS_DAYS_BACK", default_days))
         self.output_var = tk.StringVar(value=str(Path.cwd() / "downloaded_artifacts"))
         self.email_to_var = tk.StringVar(value=config_value("REPORT_EMAIL_TO", default_recipients_from_config()))
 

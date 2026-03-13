@@ -100,15 +100,15 @@
     </div>
 
     <section class="group">
-      <h2>🚦 Quality Gates Overview</h2>
-      <p class="desc">Each metric is checked against a threshold. Failed gates are highlighted in red and need action.</p>
-      <div class="metric-cards">
-        <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">6</div></div>
-        <div class="card metric-warn"><div class="label">Warning Gates</div><div class="value">0</div></div>
-        <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">1</div></div>
-      </div>
+      <h2>1️⃣ Test Result Distribution</h2>
+      <p class="desc">Distribution of test outcomes by status.</p>
       <div class="panel">
-        <h3>Gate Status by Metric</h3>
+        <h3>🚦 Quality Gates</h3>
+        <div class="metric-cards">
+          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">3</div></div>
+          <div class="card metric-warn"><div class="label">Warning Gates</div><div class="value">0</div></div>
+          <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">0</div></div>
+        </div>
         <table>
           <thead>
             <tr>
@@ -124,18 +124,9 @@
             <tr><td>Pass Rate</td><td>98.83%</td><td>>= 98.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>1180/1194=98.83%</td><td>Review failing tests and fix frequent assertions.</td></tr>
 <tr><td>Fail Rate</td><td>1.17%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>14/1194=1.17%</td><td>Prioritize top failing suites and stabilize environments.</td></tr>
 <tr><td>Broken Rate</td><td>0.00%</td><td><= 1.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>0/1194=0.00%</td><td>Fix infrastructure/test setup errors first.</td></tr>
-<tr><td>Flaky Rate</td><td>0.00%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>0/1194=0.00%</td><td>Quarantine flaky tests and remove unstable waits.</td></tr>
-<tr><td>Test Stability</td><td>40.00%</td><td>>= 95.00%</td><td><span class="status-badge metric-fail">Failed</span></td><td>4/10=40.00%</td><td>Track unstable runs and fix recurring root causes.</td></tr>
-<tr><td>Average Test Duration</td><td>1.76s</td><td><= 8.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>2105.14/1194=1.76s</td><td>Optimize slow tests and reduce external dependencies.</td></tr>
-<tr><td>CI Pipeline Duration (proxy)</td><td>160.08s</td><td><= 1800.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>1600.83/10=160.08s</td><td>Increase parallelism and remove long serial bottlenecks.</td></tr>
           </tbody>
         </table>
       </div>
-    </section>
-
-    <section class="group">
-      <h2>1️⃣ Test Result Distribution</h2>
-      <p class="desc">Distribution of test outcomes by status.</p>
       <div class="metric-cards">
         <div class="card metric-ok"><div class="label">pass rate</div><div class="value">98.83%</div></div>
         <div class="card metric-ok"><div class="label">fail rate</div><div class="value">1.17%</div></div>
@@ -188,6 +179,31 @@
     <section class="group">
       <h2>2️⃣ Test Stability Metrics</h2>
       <p class="desc">Show how reliable your tests are over time.</p>
+      <div class="panel">
+        <h3>🚦 Quality Gates</h3>
+        <div class="metric-cards">
+          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">2</div></div>
+          <div class="card metric-warn"><div class="label">Warning Gates</div><div class="value">0</div></div>
+          <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">1</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current Value</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Calculation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Pass Rate</td><td>98.83%</td><td>>= 98.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>1180/1194=98.83%</td><td>Review failing tests and fix frequent assertions.</td></tr>
+<tr><td>Flaky Rate</td><td>0.00%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>0/1194=0.00%</td><td>Quarantine flaky tests and remove unstable waits.</td></tr>
+<tr><td>Test Stability</td><td>40.00%</td><td>>= 95.00%</td><td><span class="status-badge metric-fail">Failed</span></td><td>4/10=40.00%</td><td>Track unstable runs and fix recurring root causes.</td></tr>
+          </tbody>
+        </table>
+      </div>
       <div class="formulas">
         Pass Rate = Passed tests / Total tests<br/>
         Flaky Rate = Flaky tests / Total tests<br/>
@@ -240,6 +256,30 @@
     <section class="group">
       <h2>3️⃣ Speed Metrics</h2>
       <p class="desc">Show how fast the pipeline is. CI Pipeline Duration is currently estimated from available test runtime data.</p>
+      <div class="panel">
+        <h3>🚦 Quality Gates</h3>
+        <div class="metric-cards">
+          <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">2</div></div>
+          <div class="card metric-warn"><div class="label">Warning Gates</div><div class="value">0</div></div>
+          <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">0</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current Value</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Calculation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Average Test Duration</td><td>1.76s</td><td><= 8.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>2105.14/1194=1.76s</td><td>Optimize slow tests and reduce external dependencies.</td></tr>
+<tr><td>CI Pipeline Duration (proxy)</td><td>160.08s</td><td><= 1800.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>1600.83/10=160.08s</td><td>Increase parallelism and remove long serial bottlenecks.</td></tr>
+          </tbody>
+        </table>
+      </div>
       <div class="formulas">
         Test Execution Time = Total runtime<br/>
         Average Test Duration = Total runtime / Number of tests<br/>

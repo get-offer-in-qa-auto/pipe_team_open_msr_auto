@@ -116,6 +116,7 @@ jobs:
     outputs:
       report_url: ${{ steps.report_url.outputs.url }}
       metrics_url: ${{ steps.report_url.outputs.metrics_url }}
+      metrics_source_branch: ${{ steps.metrics_source_branch.outputs.branch }}
     steps:
     - uses: actions/checkout@v4
 
@@ -156,6 +157,31 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Resolve metrics source branch
+      id: metrics_source_branch
+      run: |
+        python - <<'PY'
+        import os
+        from pathlib import Path
+        import yaml
+
+        branch = "${{ github.ref_name }}"
+        config_path = Path("config/metrics/runtime.yml")
+        if config_path.exists():
+            try:
+                payload = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+                source_cfg = payload.get("source")
+                if isinstance(source_cfg, dict):
+                    cfg_branch = str(source_cfg.get("branch", "")).strip()
+                    if cfg_branch:
+                        branch = cfg_branch
+            except Exception as exc:  # noqa: BLE001
+                print(f"Failed to parse {config_path}: {exc}")
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+            fh.write(f"branch={branch}\n")
+        print(f"Metrics source branch: {branch}")
+        PY
+
     - name: Generate Allure report with history
       uses: simple-elf/allure-report-action@v1.13
       with:
@@ -178,7 +204,7 @@ jobs:
         cd ..
         python tools/build_metrics_dashboard.py \
           --artifacts-dir downloaded_artifacts \
-          --report-title "QA Metrics Dashboard (${{ github.ref_name }})" \
+          --report-title "QA Metrics Dashboard (${{ steps.metrics_source_branch.outputs.branch }})" \
           --output reports/metrics_dashboard.html
 
     - name: Add metrics dashboard to GitHub Pages content
@@ -260,7 +286,7 @@ jobs:
         from pathlib import Path
         import yaml
 
-        config_path = Path("report_delivery.yml")
+        config_path = Path("config/metrics/delivery.yml")
         fallback = "ekaterina-konchina@yandex.ru"
         recipients = []
 
@@ -273,7 +299,17 @@ jobs:
                     if isinstance(values, list):
                         recipients = [str(v).strip() for v in values if str(v).strip()]
             except Exception as exc:  # noqa: BLE001
-                print(f"Failed to parse report_delivery.yml: {exc}")
+                print(f"Failed to parse {config_path}: {exc}")
+        elif Path("report_delivery.yml").exists():
+            try:
+                payload = yaml.safe_load(Path("report_delivery.yml").read_text(encoding="utf-8")) or {}
+                email_cfg = payload.get("email")
+                if isinstance(email_cfg, dict):
+                    values = email_cfg.get("recipients")
+                    if isinstance(values, list):
+                        recipients = [str(v).strip() for v in values if str(v).strip()]
+            except Exception as exc:  # noqa: BLE001
+                print(f"Failed to parse legacy report_delivery.yml: {exc}")
 
         if not recipients:
             recipients = [fallback]
@@ -290,6 +326,61 @@ jobs:
         name: metrics-dashboard-html
         path: reports
 
+    - name: Build email summary body
+      id: email_body
+      run: |
+        python - <<'PY'
+        import os
+        import re
+        from pathlib import Path
+
+        report_path = Path("reports/metrics_dashboard.html")
+        html = report_path.read_text(encoding="utf-8") if report_path.exists() else ""
+
+        def extract_card(label: str) -> str:
+            pattern = rf'<div class="label">{re.escape(label)}</div><div class="value">([^<]+)</div>'
+            m = re.search(pattern, html, flags=re.IGNORECASE)
+            return m.group(1).strip() if m else "n/a"
+
+        pass_rate = extract_card("pass rate")
+        fail_rate = extract_card("fail rate")
+        broken_rate = extract_card("broken rate")
+        flaky_rate = extract_card("Flaky Rate")
+        stability = extract_card("Test Stability")
+        ok_gates = extract_card("OK Gates")
+        warn_gates = extract_card("Warning Gates")
+        failed_gates = extract_card("Failed Gates")
+
+        metrics_url = "${{ needs.publish-allure-report.outputs.metrics_url }}"
+        if not metrics_url:
+            owner = "${{ github.repository_owner }}"
+            repo = "${{ github.event.repository.name }}"
+            metrics_url = f"https://{owner}.github.io/{repo}/metrics/index.html"
+
+        body = (
+            "Automated QA metrics summary\n\n"
+            f"Branch: ${{ github.ref_name }}\n"
+            f"Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\n"
+            "Key metrics:\n"
+            f"- Pass Rate: {pass_rate}\n"
+            f"- Fail Rate: {fail_rate}\n"
+            f"- Broken Rate: {broken_rate}\n"
+            f"- Flaky Rate: {flaky_rate}\n"
+            f"- Test Stability: {stability}\n\n"
+            "Quality gates:\n"
+            f"- OK: {ok_gates}\n"
+            f"- Warning: {warn_gates}\n"
+            f"- Failed: {failed_gates}\n\n"
+            f"GitHub Pages metrics report: {metrics_url}\n\n"
+            "The full dashboard is attached as HTML."
+        )
+
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+            out.write("body<<EOF\n")
+            out.write(body + "\n")
+            out.write("EOF\n")
+        PY
+
     - name: Send metrics dashboard email
       uses: dawidd6/action-send-mail@v3
       with:
@@ -301,7 +392,7 @@ jobs:
         from: ${{ secrets.SMTP_FROM }}
         to: ${{ steps.recipients.outputs.recipients }}
         subject: "QA Metrics Dashboard (${{ github.ref_name }})"
-        body: "Automated QA metrics dashboard is attached."
+        body: ${{ steps.email_body.outputs.body }}
         attachments: reports/metrics_dashboard.html
 
   notify:

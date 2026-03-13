@@ -83,8 +83,12 @@ def load_dashboard_config(config_path: Path) -> tuple[dict[str, dict[str, Any]],
     gates = copy.deepcopy(DEFAULT_GATES)
     slowest_tests_limit = DEFAULT_SLOWEST_TESTS_LIMIT
     if not config_path.exists():
-        print(f"Gates config not found, using defaults: {config_path}")
-        return gates, slowest_tests_limit
+        legacy_path = Path("metrics_gates.yml")
+        if legacy_path.exists():
+            config_path = legacy_path
+        else:
+            print(f"Gates config not found, using defaults: {config_path}")
+            return gates, slowest_tests_limit
     try:
         raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     except Exception as exc:
@@ -279,21 +283,31 @@ def build_html(
             )
         )
     gate_by_key = {item["key"]: item for item in gates}
-    gates_ok = sum(1 for item in gates if item["status"] == "ok")
-    gates_warn = sum(1 for item in gates if item["status"] == "warn")
-    gates_fail = sum(1 for item in gates if item["status"] == "fail")
-    gate_rows_html = "\n".join(
-        (
-            "<tr>"
-            f"<td>{item['name']}</td>"
-            f"<td>{item['value']:.2f}{item['unit']}</td>"
-            f"<td>{item['threshold']}</td>"
-            f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
-            f"<td>{item['formula']}</td>"
-            f"<td>{item['recommendation']}</td>"
-            "</tr>"
-        ) for item in gates
+
+    def build_section_gates(keys: list[str]) -> tuple[int, int, int, str]:
+        section_gates = [gate_by_key[key] for key in keys]
+        ok_count = sum(1 for item in section_gates if item["status"] == "ok")
+        warn_count = sum(1 for item in section_gates if item["status"] == "warn")
+        fail_count = sum(1 for item in section_gates if item["status"] == "fail")
+        rows_html = "\n".join(
+            (
+                "<tr>"
+                f"<td>{item['name']}</td>"
+                f"<td>{item['value']:.2f}{item['unit']}</td>"
+                f"<td>{item['threshold']}</td>"
+                f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
+                f"<td>{item['formula']}</td>"
+                f"<td>{item['recommendation']}</td>"
+                "</tr>"
+            ) for item in section_gates
+        )
+        return ok_count, warn_count, fail_count, rows_html
+
+    dist_ok, dist_warn, dist_fail, dist_rows_html = build_section_gates(["pass_rate", "fail_rate", "broken_rate"])
+    stability_ok, stability_warn, stability_fail, stability_rows_html = build_section_gates(
+        ["pass_rate", "flaky_rate", "stability_rate"]
     )
+    speed_ok, speed_warn, speed_fail, speed_rows_html = build_section_gates(["avg_duration_sec", "suite_duration_sec"])
 
     pass_rate_class = gate_by_key["pass_rate"]["css_class"]
     fail_rate_class = gate_by_key["fail_rate"]["css_class"]
@@ -409,15 +423,15 @@ def build_html(
     </div>
 
     <section class=\"group\">
-      <h2>🚦 Quality Gates Overview</h2>
-      <p class=\"desc\">Each metric is checked against a threshold. Failed gates are highlighted in red and need action.</p>
-      <div class=\"metric-cards\">
-        <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{gates_ok}</div></div>
-        <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{gates_warn}</div></div>
-        <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{gates_fail}</div></div>
-      </div>
+      <h2>1️⃣ Test Result Distribution</h2>
+      <p class=\"desc\">Distribution of test outcomes by status.</p>
       <div class=\"panel\">
-        <h3>Gate Status by Metric</h3>
+        <h3>🚦 Quality Gates</h3>
+        <div class=\"metric-cards\">
+          <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{dist_ok}</div></div>
+          <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{dist_warn}</div></div>
+          <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{dist_fail}</div></div>
+        </div>
         <table>
           <thead>
             <tr>
@@ -430,15 +444,10 @@ def build_html(
             </tr>
           </thead>
           <tbody>
-            {gate_rows_html}
+            {dist_rows_html}
           </tbody>
         </table>
       </div>
-    </section>
-
-    <section class=\"group\">
-      <h2>1️⃣ Test Result Distribution</h2>
-      <p class=\"desc\">Distribution of test outcomes by status.</p>
       <div class=\"metric-cards\">
         <div class=\"card {pass_rate_class}\"><div class=\"label\">pass rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
         <div class=\"card {fail_rate_class}\"><div class=\"label\">fail rate</div><div class=\"value\">{fail_rate:.2f}%</div></div>
@@ -491,6 +500,29 @@ def build_html(
     <section class=\"group\">
       <h2>2️⃣ Test Stability Metrics</h2>
       <p class=\"desc\">Show how reliable your tests are over time.</p>
+      <div class=\"panel\">
+        <h3>🚦 Quality Gates</h3>
+        <div class=\"metric-cards\">
+          <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{stability_ok}</div></div>
+          <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{stability_warn}</div></div>
+          <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{stability_fail}</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current Value</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Calculation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stability_rows_html}
+          </tbody>
+        </table>
+      </div>
       <div class=\"formulas\">
         Pass Rate = Passed tests / Total tests<br/>
         Flaky Rate = Flaky tests / Total tests<br/>
@@ -543,6 +575,29 @@ def build_html(
     <section class=\"group\">
       <h2>3️⃣ Speed Metrics</h2>
       <p class=\"desc\">Show how fast the pipeline is. CI Pipeline Duration is currently estimated from available test runtime data.</p>
+      <div class=\"panel\">
+        <h3>🚦 Quality Gates</h3>
+        <div class=\"metric-cards\">
+          <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{speed_ok}</div></div>
+          <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{speed_warn}</div></div>
+          <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{speed_fail}</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current Value</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Calculation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {speed_rows_html}
+          </tbody>
+        </table>
+      </div>
       <div class=\"formulas\">
         Test Execution Time = Total runtime<br/>
         Average Test Duration = Total runtime / Number of tests<br/>
@@ -825,7 +880,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--gates-config",
         type=Path,
-        default=Path("metrics_gates.yml"),
+        default=Path("config/metrics/gates.yml"),
         help="YAML config with quality gate thresholds.",
     )
     return parser.parse_args()
