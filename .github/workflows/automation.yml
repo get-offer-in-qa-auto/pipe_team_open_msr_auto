@@ -342,13 +342,12 @@ jobs:
             m = re.search(pattern, html, flags=re.IGNORECASE)
             return m.group(1).strip() if m else "n/a"
 
-        pass_rate = extract_card("pass rate")
-        fail_rate = extract_card("fail rate")
-        broken_rate = extract_card("broken rate")
+        pass_rate = extract_card("average pass rate")
+        fail_rate = extract_card("average fail rate")
+        broken_rate = extract_card("average broken rate")
         flaky_rate = extract_card("Flaky Rate")
         stability = extract_card("Test Stability")
         ok_gates = extract_card("OK Gates")
-        warn_gates = extract_card("Warning Gates")
         failed_gates = extract_card("Failed Gates")
 
         metrics_url = "${{ needs.publish-allure-report.outputs.metrics_url }}"
@@ -362,14 +361,13 @@ jobs:
             f"Branch: ${{ github.ref_name }}\n"
             f"Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\n"
             "Key metrics:\n"
-            f"- Pass Rate: {pass_rate}\n"
-            f"- Fail Rate: {fail_rate}\n"
-            f"- Broken Rate: {broken_rate}\n"
+            f"- Average Pass Rate: {pass_rate}\n"
+            f"- Average Fail Rate: {fail_rate}\n"
+            f"- Average Broken Rate: {broken_rate}\n"
             f"- Flaky Rate: {flaky_rate}\n"
             f"- Test Stability: {stability}\n\n"
             "Quality gates:\n"
             f"- OK: {ok_gates}\n"
-            f"- Warning: {warn_gates}\n"
             f"- Failed: {failed_gates}\n\n"
             f"GitHub Pages metrics report: {metrics_url}\n\n"
             "The full dashboard is attached as HTML."

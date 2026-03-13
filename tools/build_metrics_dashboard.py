@@ -140,17 +140,10 @@ def fmt_datetime(dt: datetime | None, fallback: str) -> str:
 
 
 def evaluate_gate(value: float, good_threshold: float, warn_threshold: float, higher_is_better: bool) -> str:
+    del warn_threshold
     if higher_is_better:
-        if value >= good_threshold:
-            return "ok"
-        if value >= warn_threshold:
-            return "warn"
-        return "fail"
-    if value <= good_threshold:
-        return "ok"
-    if value <= warn_threshold:
-        return "warn"
-    return "fail"
+        return "ok" if value >= good_threshold else "fail"
+    return "ok" if value <= good_threshold else "fail"
 
 
 def build_gate(
@@ -166,8 +159,8 @@ def build_gate(
 ) -> dict:
     status = evaluate_gate(value, good_threshold, warn_threshold, higher_is_better)
     threshold = f">= {good_threshold:.2f}{unit}" if higher_is_better else f"<= {good_threshold:.2f}{unit}"
-    status_label = {"ok": "OK", "warn": "Warning", "fail": "Failed"}[status]
-    css_class = {"ok": "metric-ok", "warn": "metric-warn", "fail": "metric-fail"}[status]
+    status_label = {"ok": "OK", "fail": "Failed"}[status]
+    css_class = {"ok": "metric-ok", "fail": "metric-fail"}[status]
     return {
         "key": key,
         "name": name,
@@ -218,30 +211,43 @@ def build_html(
 
     total_runs = len(rows)
     total_tests = sum(r.total_tests for r in rows)
-    total_passed = sum(r.passed_tests for r in rows)
-    total_failed = sum(r.failed_tests for r in rows)
-    total_broken = sum(r.broken_tests for r in rows)
     total_flaky = sum(r.flaky_tests for r in rows)
     total_duration_ms = sum(r.total_duration_ms for r in rows)
     total_suite_duration_ms = sum(r.suite_duration_ms for r in rows)
     successful_runs = sum(1 for r in rows if r.total_tests > 0 and r.passed_tests == r.total_tests)
 
-    pass_rate = round((total_passed / total_tests * 100.0), 2) if total_tests else 0.0
-    fail_rate = round((total_failed / total_tests * 100.0), 2) if total_tests else 0.0
-    broken_rate = round((total_broken / total_tests * 100.0), 2) if total_tests else 0.0
     flaky_rate = round((total_flaky / total_tests * 100.0), 2) if total_tests else 0.0
     stability_rate = round((successful_runs / total_runs * 100.0), 2) if total_runs else 0.0
+
+    avg_pass_rate = round((sum(r.pass_percent for r in rows) / total_runs), 2) if total_runs else 0.0
+    avg_fail_rate = round((sum(r.fail_percent for r in rows) / total_runs), 2) if total_runs else 0.0
+    avg_broken_rate = round((sum(r.broken_percent for r in rows) / total_runs), 2) if total_runs else 0.0
 
     avg_duration_sec = round((total_duration_ms / total_tests / 1000.0), 2) if total_tests else 0.0
     avg_suite_duration_sec = round((total_suite_duration_ms / total_runs / 1000.0), 2) if total_runs else 0.0
 
+    pass_series = " + ".join(f"{r.pass_percent:.2f}" for r in sorted_rows)
+    fail_series = " + ".join(f"{r.fail_percent:.2f}" for r in sorted_rows)
+    broken_series = " + ".join(f"{r.broken_percent:.2f}" for r in sorted_rows)
+    avg_pass_formula = (
+        f"average pass rate = ({pass_series}) / {total_runs} = {avg_pass_rate:.2f}%"
+        if total_runs else "average pass rate = n/a"
+    )
+    avg_fail_formula = (
+        f"average fail rate = ({fail_series}) / {total_runs} = {avg_fail_rate:.2f}%"
+        if total_runs else "average fail rate = n/a"
+    )
+    avg_broken_formula = (
+        f"average broken rate = ({broken_series}) / {total_runs} = {avg_broken_rate:.2f}%"
+        if total_runs else "average broken rate = n/a"
+    )
     formulas = {
         "pass_rate":
-            f"{total_passed}/{total_tests}={pass_rate:.2f}%" if total_tests else "0/0=0.00%",
+            avg_pass_formula,
         "fail_rate":
-            f"{total_failed}/{total_tests}={fail_rate:.2f}%" if total_tests else "0/0=0.00%",
+            avg_fail_formula,
         "broken_rate":
-            f"{total_broken}/{total_tests}={broken_rate:.2f}%" if total_tests else "0/0=0.00%",
+            avg_broken_formula,
         "flaky_rate":
             f"{total_flaky}/{total_tests}={flaky_rate:.2f}%" if total_tests else "0/0=0.00%",
         "stability_rate":
@@ -258,13 +264,18 @@ def build_html(
             ),
     }
     values = {
-        "pass_rate": pass_rate,
-        "fail_rate": fail_rate,
-        "broken_rate": broken_rate,
+        "pass_rate": avg_pass_rate,
+        "fail_rate": avg_fail_rate,
+        "broken_rate": avg_broken_rate,
         "flaky_rate": flaky_rate,
         "stability_rate": stability_rate,
         "avg_duration_sec": avg_duration_sec,
         "suite_duration_sec": avg_suite_duration_sec,
+    }
+    gate_name_overrides = {
+        "pass_rate": "Average Pass Rate",
+        "fail_rate": "Average Fail Rate",
+        "broken_rate": "Average Broken Rate",
     }
     gates = []
     for key in DEFAULT_GATES.keys():
@@ -272,7 +283,7 @@ def build_html(
         gates.append(
             build_gate(
                 key=key,
-                name=str(cfg["name"]),
+                name=gate_name_overrides.get(key, str(cfg["name"])),
                 value=float(values[key]),
                 unit=str(cfg["unit"]),
                 good_threshold=float(cfg["good_threshold"]),
@@ -284,30 +295,67 @@ def build_html(
         )
     gate_by_key = {item["key"]: item for item in gates}
 
-    def build_section_gates(keys: list[str]) -> tuple[int, int, int, str]:
+    metric_descriptions = {
+        "pass_rate": "Average share of passed tests across all runs in the selected period.",
+        "fail_rate": "Average share of failed tests across all runs in the selected period.",
+        "broken_rate": "Average share of broken tests across all runs in the selected period.",
+        "flaky_rate": "Share of flaky tests that behave inconsistently across runs.",
+        "stability_rate": "Share of successful runs among all runs.",
+        "avg_duration_sec": "Average execution time per test.",
+        "suite_duration_sec": "Average total suite duration per run.",
+    }
+
+    def build_section_gates(keys: list[str],
+                            include_action: bool = True,
+                            include_description: bool = False) -> tuple[int, int, str]:
         section_gates = [gate_by_key[key] for key in keys]
         ok_count = sum(1 for item in section_gates if item["status"] == "ok")
-        warn_count = sum(1 for item in section_gates if item["status"] == "warn")
         fail_count = sum(1 for item in section_gates if item["status"] == "fail")
-        rows_html = "\n".join(
-            (
-                "<tr>"
-                f"<td>{item['name']}</td>"
-                f"<td>{item['value']:.2f}{item['unit']}</td>"
-                f"<td>{item['threshold']}</td>"
-                f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
-                f"<td>{item['formula']}</td>"
-                f"<td>{item['recommendation']}</td>"
-                "</tr>"
-            ) for item in section_gates
-        )
-        return ok_count, warn_count, fail_count, rows_html
+        if include_action:
+            rows_html = "\n".join(
+                (
+                    "<tr>"
+                    f"<td>{item['name']}</td>"
+                    f"<td>{item['value']:.2f}{item['unit']}</td>"
+                    f"<td>{item['threshold']}</td>"
+                    f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
+                    f"<td>{item['formula']}</td>"
+                    f"<td>{item['recommendation']}</td>"
+                    "</tr>"
+                ) for item in section_gates
+            )
+        elif include_description:
+            rows_html = "\n".join(
+                (
+                    "<tr>"
+                    f"<td>{item['name']}</td>"
+                    f"<td>{metric_descriptions.get(item['key'], 'Metric definition is not set.')}</td>"
+                    f"<td>{item['value']:.2f}{item['unit']}</td>"
+                    f"<td>{item['threshold']}</td>"
+                    f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
+                    f"<td>{item['formula']}</td>"
+                    "</tr>"
+                ) for item in section_gates
+            )
+        else:
+            rows_html = "\n".join(
+                (
+                    "<tr>"
+                    f"<td>{item['name']}</td>"
+                    f"<td>{item['value']:.2f}{item['unit']}</td>"
+                    f"<td>{item['threshold']}</td>"
+                    f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
+                    f"<td>{item['formula']}</td>"
+                    "</tr>"
+                ) for item in section_gates
+            )
+        return ok_count, fail_count, rows_html
 
-    dist_ok, dist_warn, dist_fail, dist_rows_html = build_section_gates(["pass_rate", "fail_rate", "broken_rate"])
-    stability_ok, stability_warn, stability_fail, stability_rows_html = build_section_gates(
-        ["pass_rate", "flaky_rate", "stability_rate"]
+    dist_ok, dist_fail, dist_rows_html = build_section_gates(
+        ["pass_rate", "fail_rate", "broken_rate"], include_action=False, include_description=True
     )
-    speed_ok, speed_warn, speed_fail, speed_rows_html = build_section_gates(["avg_duration_sec", "suite_duration_sec"])
+    stability_ok, stability_fail, stability_rows_html = build_section_gates(["flaky_rate", "stability_rate"])
+    speed_ok, speed_fail, speed_rows_html = build_section_gates(["avg_duration_sec", "suite_duration_sec"])
 
     pass_rate_class = gate_by_key["pass_rate"]["css_class"]
     fail_rate_class = gate_by_key["fail_rate"]["css_class"]
@@ -359,7 +407,6 @@ def build_html(
       box-shadow: 0 10px 28px rgba(24, 33, 47, 0.07);
     }}
     .metric-ok {{ border-color: #1c8a56; background: #f1fbf5; }}
-    .metric-warn {{ border-color: #b6801e; background: #fff8e8; }}
     .metric-fail {{ border-color: #b43737; background: #fff1f1; }}
     .status-badge {{
       display: inline-block;
@@ -369,7 +416,6 @@ def build_html(
       font-weight: 700;
     }}
     .status-badge.metric-ok {{ color: #0d6e42; }}
-    .status-badge.metric-warn {{ color: #7a580e; }}
     .status-badge.metric-fail {{ color: #8f2424; }}
     .label {{ color: var(--muted); font-size: 13px; }}
     .value {{ margin-top: 6px; font-size: 30px; font-weight: 700; line-height: 1; }}
@@ -418,7 +464,6 @@ def build_html(
 
     <div class=\"summary\">
       <div class=\"card\"><div class=\"label\">Total Runs</div><div class=\"value\">{total_runs}</div></div>
-      <div class=\"card\"><div class=\"label\">Total Tests</div><div class=\"value\">{total_tests}</div></div>
       <div class=\"card\"><div class=\"label\">Generated Metric Groups</div><div class=\"value\">3</div></div>
     </div>
 
@@ -429,18 +474,17 @@ def build_html(
         <h3>🚦 Quality Gates</h3>
         <div class=\"metric-cards\">
           <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{dist_ok}</div></div>
-          <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{dist_warn}</div></div>
           <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{dist_fail}</div></div>
         </div>
         <table>
           <thead>
             <tr>
               <th>Metric</th>
+              <th>Description</th>
               <th>Current Value</th>
               <th>Target</th>
               <th>Status</th>
               <th>Calculation</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -449,31 +493,31 @@ def build_html(
         </table>
       </div>
       <div class=\"metric-cards\">
-        <div class=\"card {pass_rate_class}\"><div class=\"label\">pass rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
-        <div class=\"card {fail_rate_class}\"><div class=\"label\">fail rate</div><div class=\"value\">{fail_rate:.2f}%</div></div>
-        <div class=\"card {broken_rate_class}\"><div class=\"label\">broken rate</div><div class=\"value\">{broken_rate:.2f}%</div></div>
+        <div class=\"card {pass_rate_class}\"><div class=\"label\">average pass rate</div><div class=\"value\">{avg_pass_rate:.2f}%</div></div>
+        <div class=\"card {fail_rate_class}\"><div class=\"label\">average fail rate</div><div class=\"value\">{avg_fail_rate:.2f}%</div></div>
+        <div class=\"card {broken_rate_class}\"><div class=\"label\">average broken rate</div><div class=\"value\">{avg_broken_rate:.2f}%</div></div>
       </div>
 
       <div class=\"panel\">
         <h3>How Metrics Are Calculated</h3>
         <div class=\"formulas\">
-          pass rate = passed tests / total tests = {total_passed} / {total_tests} = {pass_rate:.2f}%<br/>
-          fail rate = failed tests / total tests = {total_failed} / {total_tests} = {fail_rate:.2f}%<br/>
-          broken rate = broken tests / total tests = {total_broken} / {total_tests} = {broken_rate:.2f}%
+          {avg_pass_formula}<br/>
+          {avg_fail_formula}<br/>
+          {avg_broken_formula}
         </div>
       </div>
 
       <div class=\"charts-2\">
         <div class=\"panel\">
-          <h3>Pass Rate</h3>
+          <h3>Average Pass Rate</h3>
           <canvas id=\"pass-rate-donut\"></canvas>
         </div>
         <div class=\"panel\">
-          <h3>Fail Rate</h3>
+          <h3>Average Fail Rate</h3>
           <canvas id=\"fail-rate-donut\"></canvas>
         </div>
         <div class=\"panel\">
-          <h3>Broken Rate</h3>
+          <h3>Average Broken Rate</h3>
           <canvas id=\"broken-rate-donut\"></canvas>
         </div>
       </div>
@@ -504,7 +548,6 @@ def build_html(
         <h3>🚦 Quality Gates</h3>
         <div class=\"metric-cards\">
           <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{stability_ok}</div></div>
-          <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{stability_warn}</div></div>
           <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{stability_fail}</div></div>
         </div>
         <table>
@@ -524,26 +567,18 @@ def build_html(
         </table>
       </div>
       <div class=\"formulas\">
-        Pass Rate = Passed tests / Total tests<br/>
         Flaky Rate = Flaky tests / Total tests<br/>
         Test Stability = Successful runs / Total runs
       </div>
       <div class=\"metric-cards\">
-        <div class=\"card {pass_rate_class}\"><div class=\"label\">Pass Rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
         <div class=\"card {flaky_rate_class}\"><div class=\"label\">Flaky Rate</div><div class=\"value\">{flaky_rate:.2f}%</div></div>
         <div class=\"card {stability_rate_class}\"><div class=\"label\">Test Stability</div><div class=\"value\">{stability_rate:.2f}%</div></div>
         <div class=\"card\"><div class=\"label\">Successful Runs</div><div class=\"value\">{successful_runs}/{total_runs}</div></div>
       </div>
 
-      <div class=\"charts-2\">
-        <div class=\"panel\">
-          <h3>Pass Rate Trend</h3>
-          <canvas id=\"pass-trend\"></canvas>
-        </div>
-        <div class=\"panel\">
-          <h3>Flaky Rate Trend</h3>
-          <canvas id=\"flaky-trend\"></canvas>
-        </div>
+      <div class=\"panel chart-single\">
+        <h3>Flaky Rate Trend</h3>
+        <canvas id=\"flaky-trend\"></canvas>
       </div>
 
       <div class=\"panel chart-single\">
@@ -562,7 +597,6 @@ def build_html(
             <tr>
               <th>Run</th>
               <th>Total tests</th>
-              <th>Pass %</th>
               <th>Flaky %</th>
               <th>Successful run</th>
             </tr>
@@ -579,7 +613,6 @@ def build_html(
         <h3>🚦 Quality Gates</h3>
         <div class=\"metric-cards\">
           <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{speed_ok}</div></div>
-          <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{speed_warn}</div></div>
           <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{speed_fail}</div></div>
         </div>
         <table>
@@ -793,7 +826,6 @@ def build_html(
         <tr>
           <td>${{d.run_label}}</td>
           <td>${{d.total_tests}}</td>
-          <td>${{d.pass_percent.toFixed(2)}}%</td>
           <td>${{d.flaky_percent.toFixed(2)}}%</td>
           <td>${{d.run_success ? 'Yes' : 'No'}}</td>
         </tr>
@@ -833,17 +865,15 @@ def build_html(
     }}
 
     function render() {{
-      const passMax = Math.max(...data.map(d => d.pass_percent), 1);
       const flakyMax = Math.max(...data.map(d => d.flaky_percent), 1);
       const avgDurMax = Math.max(...data.map(d => d.avg_duration_sec), 1);
       const suiteDurMax = Math.max(...data.map(d => d.suite_duration_sec), 1);
 
-      drawLineChart('pass-trend', 'pass_percent', passMax, '#2f6bff', '#2f6bff', '%');
       drawLineChart('flaky-trend', 'flaky_percent', flakyMax, '#0a7a78', '#ff7f50', '%');
       drawStabilityChart();
-      drawDonutChart('pass-rate-donut', {pass_rate:.2f}, '#159a55', 'pass rate');
-      drawDonutChart('fail-rate-donut', {fail_rate:.2f}, '#cf3f34', 'fail rate');
-      drawDonutChart('broken-rate-donut', {broken_rate:.2f}, '#cf3f34', 'broken rate');
+      drawDonutChart('pass-rate-donut', {avg_pass_rate:.2f}, '#159a55', 'avg pass rate');
+      drawDonutChart('fail-rate-donut', {avg_fail_rate:.2f}, '#cf3f34', 'avg fail rate');
+      drawDonutChart('broken-rate-donut', {avg_broken_rate:.2f}, '#cf3f34', 'avg broken rate');
       drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's');
       drawLineChart('suite-duration-trend', 'suite_duration_sec', suiteDurMax, '#7b2f8e', '#9b4eb2', 's');
     }}
