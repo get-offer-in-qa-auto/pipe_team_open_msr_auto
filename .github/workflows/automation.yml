@@ -291,6 +291,9 @@ jobs:
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.html"
           METRICS_REPORT_URL="${{ needs.publish-allure-report.outputs.metrics_url }}"
+          if [[ -z "$METRICS_REPORT_URL" ]]; then
+            METRICS_REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/metrics/index.html"
+          fi
           METRICS_LINE="$(printf '• Metrics email report: %s\n' '${{ needs.metrics-email-report.result }}')"
 
           LINT_LINE=""
@@ -298,7 +301,7 @@ jobs:
             LINT_LINE="$(printf '• Lint: %s\n' '${{ needs.lint.result }}')"
           fi
 
-          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s\n\n📈 <b>Metrics report:</b>\n%s' \
+          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s\n\n📈 <b>Metrics report (GitHub Pages):</b>\n<a href=\"%s\">Open metrics dashboard</a>\n%s' \
             '${{ steps.status.outputs.emoji }} <b>'"${REPO}"'</b> - tests <b>${{ steps.status.outputs.text }}</b>' \
             "${BRANCH}" \
             "${ACTOR}" \
@@ -308,9 +311,10 @@ jobs:
             '${{ needs.publish-allure-report.result }}' \
             "${RUN_URL}" \
             "${REPORT_URL}" \
+            "${METRICS_REPORT_URL}" \
             "${METRICS_REPORT_URL}")"
           
-          MESSAGE="$(printf '%s\n%s' "$MESSAGE" "$METRICS_LINE")"
+          MESSAGE="$(printf '%s%s' "$MESSAGE" "$METRICS_LINE")"
           
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
