@@ -183,6 +183,12 @@ jobs:
 
     - name: Add metrics dashboard to GitHub Pages content
       run: |
+        # simple-elf/allure-report-action can leave allure-history with restrictive ownership/permissions
+        # on some runners, which breaks mkdir/cp in the next steps.
+        if [ -d allure-history ]; then
+          sudo chown -R "$(id -u):$(id -g)" allure-history || true
+          chmod -R u+rwX allure-history || true
+        fi
         mkdir -p allure-history/metrics
         cp reports/metrics_dashboard.html allure-history/metrics/index.html
 
