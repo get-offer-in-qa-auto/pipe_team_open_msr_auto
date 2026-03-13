@@ -176,7 +176,7 @@ jobs:
         cd allure-results
         zip -r "../downloaded_artifacts/${ARCHIVE_NAME}" ./ || true
         cd ..
-        python tools/build_flaky_dashboard.py \
+        python tools/build_metrics_dashboard.py \
           --artifacts-dir downloaded_artifacts \
           --report-title "QA Metrics Dashboard (${{ github.ref_name }})" \
           --output reports/metrics_dashboard.html
@@ -233,9 +233,51 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ publish-allure-report ]
     if: ${{ always() && ( (github.event_name == 'workflow_dispatch' && github.event.inputs.send_metrics_report == 'true') || (github.event_name != 'workflow_dispatch' && vars.METRICS_REPORT_ENABLED == 'true') ) }}
-    env:
-      REPORT_RECIPIENTS: ekaterina-konchina@yandex.ru
     steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install YAML dependency
+      run: |
+        python -m pip install --upgrade pip
+        pip install PyYAML
+
+    - name: Resolve report recipients from config
+      id: recipients
+      run: |
+        python - <<'PY'
+        import os
+        from pathlib import Path
+        import yaml
+
+        config_path = Path("report_delivery.yml")
+        fallback = "ekaterina-konchina@yandex.ru"
+        recipients = []
+
+        if config_path.exists():
+            try:
+                payload = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+                email_cfg = payload.get("email")
+                if isinstance(email_cfg, dict):
+                    values = email_cfg.get("recipients")
+                    if isinstance(values, list):
+                        recipients = [str(v).strip() for v in values if str(v).strip()]
+            except Exception as exc:  # noqa: BLE001
+                print(f"Failed to parse report_delivery.yml: {exc}")
+
+        if not recipients:
+            recipients = [fallback]
+
+        resolved = ",".join(recipients)
+        print(f"Resolved recipients: {resolved}")
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+            fh.write(f"recipients={resolved}\n")
+        PY
+
     - name: Download metrics dashboard artifact
       uses: actions/download-artifact@v4
       with:
@@ -251,7 +293,7 @@ jobs:
         username: ${{ secrets.SMTP_USERNAME }}
         password: ${{ secrets.SMTP_PASSWORD }}
         from: ${{ secrets.SMTP_FROM }}
-        to: ${{ env.REPORT_RECIPIENTS }}
+        to: ${{ steps.recipients.outputs.recipients }}
         subject: "QA Metrics Dashboard (${{ github.ref_name }})"
         body: "Automated QA metrics dashboard is attached."
         attachments: reports/metrics_dashboard.html

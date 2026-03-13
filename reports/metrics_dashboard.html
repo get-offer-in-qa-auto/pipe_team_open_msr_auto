@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QA Metrics Dashboard (main)</title>
+  <title>QA Metrics Dashboard</title>
   <style>
     :root {
       --bg0: #f4efe7;
@@ -35,6 +35,19 @@
       backdrop-filter: blur(4px);
       box-shadow: 0 10px 28px rgba(24, 33, 47, 0.07);
     }
+    .metric-ok { border-color: #1c8a56; background: #f1fbf5; }
+    .metric-warn { border-color: #b6801e; background: #fff8e8; }
+    .metric-fail { border-color: #b43737; background: #fff1f1; }
+    .status-badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-badge.metric-ok { color: #0d6e42; }
+    .status-badge.metric-warn { color: #7a580e; }
+    .status-badge.metric-fail { color: #8f2424; }
     .label { color: var(--muted); font-size: 13px; }
     .value { margin-top: 6px; font-size: 30px; font-weight: 700; line-height: 1; }
 
@@ -77,7 +90,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1 class="title">QA Metrics Dashboard (main)</h1>
+    <h1 class="title">QA Metrics Dashboard</h1>
     <p class="subtitle">Quality metrics across GitHub runs (Allure artifacts)</p>
 
     <div class="summary">
@@ -87,12 +100,46 @@
     </div>
 
     <section class="group">
+      <h2>🚦 Quality Gates Overview</h2>
+      <p class="desc">Each metric is checked against a threshold. Failed gates are highlighted in red and need action.</p>
+      <div class="metric-cards">
+        <div class="card metric-ok"><div class="label">OK Gates</div><div class="value">6</div></div>
+        <div class="card metric-warn"><div class="label">Warning Gates</div><div class="value">0</div></div>
+        <div class="card metric-fail"><div class="label">Failed Gates</div><div class="value">1</div></div>
+      </div>
+      <div class="panel">
+        <h3>Gate Status by Metric</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current Value</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Calculation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Pass Rate</td><td>98.83%</td><td>>= 98.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>1180/1194=98.83%</td><td>Review failing tests and fix frequent assertions.</td></tr>
+<tr><td>Fail Rate</td><td>1.17%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>14/1194=1.17%</td><td>Prioritize top failing suites and stabilize environments.</td></tr>
+<tr><td>Broken Rate</td><td>0.00%</td><td><= 1.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>0/1194=0.00%</td><td>Fix infrastructure/test setup errors first.</td></tr>
+<tr><td>Flaky Rate</td><td>0.00%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td><td>0/1194=0.00%</td><td>Quarantine flaky tests and remove unstable waits.</td></tr>
+<tr><td>Test Stability</td><td>40.00%</td><td>>= 95.00%</td><td><span class="status-badge metric-fail">Failed</span></td><td>4/10=40.00%</td><td>Track unstable runs and fix recurring root causes.</td></tr>
+<tr><td>Average Test Duration</td><td>1.76s</td><td><= 8.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>2105.14/1194=1.76s</td><td>Optimize slow tests and reduce external dependencies.</td></tr>
+<tr><td>CI Pipeline Duration (proxy)</td><td>160.08s</td><td><= 1800.00s</td><td><span class="status-badge metric-ok">OK</span></td><td>1600.83/10=160.08s</td><td>Increase parallelism and remove long serial bottlenecks.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="group">
       <h2>1️⃣ Test Result Distribution</h2>
       <p class="desc">Distribution of test outcomes by status.</p>
       <div class="metric-cards">
-        <div class="card"><div class="label">pass rate</div><div class="value">98.83%</div></div>
-        <div class="card"><div class="label">fail rate</div><div class="value">1.17%</div></div>
-        <div class="card"><div class="label">broken rate</div><div class="value">0.00%</div></div>
+        <div class="card metric-ok"><div class="label">pass rate</div><div class="value">98.83%</div></div>
+        <div class="card metric-ok"><div class="label">fail rate</div><div class="value">1.17%</div></div>
+        <div class="card metric-ok"><div class="label">broken rate</div><div class="value">0.00%</div></div>
       </div>
 
       <div class="panel">
@@ -147,9 +194,9 @@
         Test Stability = Successful runs / Total runs
       </div>
       <div class="metric-cards">
-        <div class="card"><div class="label">Pass Rate</div><div class="value">98.83%</div></div>
-        <div class="card"><div class="label">Flaky Rate</div><div class="value">0.00%</div></div>
-        <div class="card"><div class="label">Test Stability</div><div class="value">40.00%</div></div>
+        <div class="card metric-ok"><div class="label">Pass Rate</div><div class="value">98.83%</div></div>
+        <div class="card metric-ok"><div class="label">Flaky Rate</div><div class="value">0.00%</div></div>
+        <div class="card metric-fail"><div class="label">Test Stability</div><div class="value">40.00%</div></div>
         <div class="card"><div class="label">Successful Runs</div><div class="value">4/10</div></div>
       </div>
 
@@ -200,8 +247,8 @@
       </div>
       <div class="metric-cards">
         <div class="card"><div class="label">Test Execution Time</div><div class="value">1600.8s</div></div>
-        <div class="card"><div class="label">Average Test Duration</div><div class="value">1.76s</div></div>
-        <div class="card"><div class="label">CI Pipeline Duration</div><div class="value">160.08s</div></div>
+        <div class="card metric-ok"><div class="label">Average Test Duration</div><div class="value">1.76s</div></div>
+        <div class="card metric-ok"><div class="label">CI Pipeline Duration</div><div class="value">160.08s</div></div>
       </div>
 
       <div class="charts-2">

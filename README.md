@@ -142,7 +142,8 @@ Main actions in UI:
 - `Send report` - send already generated `reports/metrics_dashboard.html` to recipients via SMTP
 
 Email recipients field:
-- default value is `ekaterina-konchina@yandex.ru`
+- default value is loaded from `report_delivery.yml` -> `email.recipients`
+- if `REPORT_EMAIL_TO` is set in `.env`, it overrides config recipients in UI
 - you can remove it and add one or more recipients separated by commas
 
 If report sending fails:
@@ -173,10 +174,20 @@ Output format:
 Generate a static HTML page with metric title, KPI cards, trend chart, and runs table:
 
 ```bash
-python3 tools/build_flaky_dashboard.py \
+python3 tools/build_metrics_dashboard.py \
   --artifacts-dir downloaded_artifacts \
   --report-title "QA Metrics Dashboard (main)" \
   --output reports/metrics_dashboard.html
+```
+
+Quality gates configuration:
+- thresholds/recommendations are stored in `metrics_gates.yml`
+- report settings are also in `metrics_gates.yml` (for example `report.slowest_tests_limit`)
+- default path is loaded automatically
+- you can pass custom config path:
+
+```bash
+python3 tools/build_metrics_dashboard.py --gates-config ./metrics_gates.yml
 ```
 
 ## 10. Automatic metrics report in GitHub Actions
@@ -188,8 +199,9 @@ How to enable:
 - For push/PR runs: set repository variable `METRICS_REPORT_ENABLED=true`
 
 Email recipients list:
-- Set directly in workflow YAML (`.github/workflows/automation.yml`) in job `metrics-email-report`:
-- `REPORT_RECIPIENTS: ekaterina-konchina@yandex.ru,other@example.com`
+- Set in `report_delivery.yml`:
+- `email.recipients: ["ekaterina-konchina@yandex.ru", "other@example.com"]`
+- Workflow job `metrics-email-report` reads recipients from this config automatically
 
 Published links:
 - Allure report: `https://<owner>.github.io/<repo>/index.html`

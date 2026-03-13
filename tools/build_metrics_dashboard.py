@@ -1,12 +1,122 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+import yaml
 from allure_flaky_stats import RunStats, collect_all_stats, collect_slowest_tests
+
+DEFAULT_GATES: dict[str, dict[str, Any]] = {
+    "pass_rate":
+        {
+            "name": "Pass Rate",
+            "unit": "%",
+            "good_threshold": 98.0,
+            "warn_threshold": 95.0,
+            "higher_is_better": True,
+            "recommendation": "Review failing tests and fix frequent assertions.",
+        },
+    "fail_rate":
+        {
+            "name": "Fail Rate",
+            "unit": "%",
+            "good_threshold": 2.0,
+            "warn_threshold": 5.0,
+            "higher_is_better": False,
+            "recommendation": "Prioritize top failing suites and stabilize environments.",
+        },
+    "broken_rate":
+        {
+            "name": "Broken Rate",
+            "unit": "%",
+            "good_threshold": 1.0,
+            "warn_threshold": 3.0,
+            "higher_is_better": False,
+            "recommendation": "Fix infrastructure/test setup errors first.",
+        },
+    "flaky_rate":
+        {
+            "name": "Flaky Rate",
+            "unit": "%",
+            "good_threshold": 2.0,
+            "warn_threshold": 5.0,
+            "higher_is_better": False,
+            "recommendation": "Quarantine flaky tests and remove unstable waits.",
+        },
+    "stability_rate":
+        {
+            "name": "Test Stability",
+            "unit": "%",
+            "good_threshold": 95.0,
+            "warn_threshold": 85.0,
+            "higher_is_better": True,
+            "recommendation": "Track unstable runs and fix recurring root causes.",
+        },
+    "avg_duration_sec":
+        {
+            "name": "Average Test Duration",
+            "unit": "s",
+            "good_threshold": 8.0,
+            "warn_threshold": 12.0,
+            "higher_is_better": False,
+            "recommendation": "Optimize slow tests and reduce external dependencies.",
+        },
+    "suite_duration_sec":
+        {
+            "name": "CI Pipeline Duration (proxy)",
+            "unit": "s",
+            "good_threshold": 1800.0,
+            "warn_threshold": 2700.0,
+            "higher_is_better": False,
+            "recommendation": "Increase parallelism and remove long serial bottlenecks.",
+        },
+}
+DEFAULT_SLOWEST_TESTS_LIMIT = 4
+
+
+def load_dashboard_config(config_path: Path) -> tuple[dict[str, dict[str, Any]], int]:
+    gates = copy.deepcopy(DEFAULT_GATES)
+    slowest_tests_limit = DEFAULT_SLOWEST_TESTS_LIMIT
+    if not config_path.exists():
+        print(f"Gates config not found, using defaults: {config_path}")
+        return gates, slowest_tests_limit
+    try:
+        raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        print(f"Failed to read gates config ({config_path}): {exc}. Using defaults.")
+        return gates, slowest_tests_limit
+
+    report_cfg = raw.get("report")
+    if isinstance(report_cfg, dict):
+        raw_limit = report_cfg.get("slowest_tests_limit")
+        if isinstance(raw_limit, int) and raw_limit > 0:
+            slowest_tests_limit = raw_limit
+
+    user_gates = raw.get("gates")
+    if not isinstance(user_gates, dict):
+        print(f"Invalid gates config format in {config_path}, expected 'gates' mapping. Using defaults.")
+        return gates, slowest_tests_limit
+
+    allowed_fields = {
+        "name",
+        "unit",
+        "good_threshold",
+        "warn_threshold",
+        "higher_is_better",
+        "recommendation",
+    }
+    for key, user_value in user_gates.items():
+        if key not in gates or not isinstance(user_value, dict):
+            continue
+        for field_name, field_value in user_value.items():
+            if field_name in allowed_fields:
+                gates[key][field_name] = field_value
+    return gates, slowest_tests_limit
 
 
 def parse_run_datetime(run_name: str) -> datetime | None:
@@ -25,7 +135,55 @@ def fmt_datetime(dt: datetime | None, fallback: str) -> str:
     return dt.strftime("%Y-%m-%d %H:%M")
 
 
-def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict]) -> str:
+def evaluate_gate(value: float, good_threshold: float, warn_threshold: float, higher_is_better: bool) -> str:
+    if higher_is_better:
+        if value >= good_threshold:
+            return "ok"
+        if value >= warn_threshold:
+            return "warn"
+        return "fail"
+    if value <= good_threshold:
+        return "ok"
+    if value <= warn_threshold:
+        return "warn"
+    return "fail"
+
+
+def build_gate(
+    key: str,
+    name: str,
+    value: float,
+    unit: str,
+    good_threshold: float,
+    warn_threshold: float,
+    higher_is_better: bool,
+    formula: str,
+    recommendation: str,
+) -> dict:
+    status = evaluate_gate(value, good_threshold, warn_threshold, higher_is_better)
+    threshold = f">= {good_threshold:.2f}{unit}" if higher_is_better else f"<= {good_threshold:.2f}{unit}"
+    status_label = {"ok": "OK", "warn": "Warning", "fail": "Failed"}[status]
+    css_class = {"ok": "metric-ok", "warn": "metric-warn", "fail": "metric-fail"}[status]
+    return {
+        "key": key,
+        "name": name,
+        "value": value,
+        "unit": unit,
+        "status": status,
+        "status_label": status_label,
+        "css_class": css_class,
+        "threshold": threshold,
+        "formula": formula,
+        "recommendation": recommendation,
+    }
+
+
+def build_html(
+    report_title: str,
+    rows: list[RunStats],
+    slowest_tests: list[dict],
+    gates_config: dict[str, dict[str, Any]],
+) -> str:
     sorted_rows = sorted(rows, key=lambda r: parse_run_datetime(r.run_name) or datetime.min)
 
     points: list[dict] = []
@@ -73,6 +231,78 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
     avg_duration_sec = round((total_duration_ms / total_tests / 1000.0), 2) if total_tests else 0.0
     avg_suite_duration_sec = round((total_suite_duration_ms / total_runs / 1000.0), 2) if total_runs else 0.0
 
+    formulas = {
+        "pass_rate":
+            f"{total_passed}/{total_tests}={pass_rate:.2f}%" if total_tests else "0/0=0.00%",
+        "fail_rate":
+            f"{total_failed}/{total_tests}={fail_rate:.2f}%" if total_tests else "0/0=0.00%",
+        "broken_rate":
+            f"{total_broken}/{total_tests}={broken_rate:.2f}%" if total_tests else "0/0=0.00%",
+        "flaky_rate":
+            f"{total_flaky}/{total_tests}={flaky_rate:.2f}%" if total_tests else "0/0=0.00%",
+        "stability_rate":
+            f"{successful_runs}/{total_runs}={stability_rate:.2f}%" if total_runs else "0/0=0.00%",
+        "avg_duration_sec":
+            (
+                f"{round(total_duration_ms / 1000.0, 2)}/{total_tests}={avg_duration_sec:.2f}s"
+                if total_tests else "0/0=0.00s"
+            ),
+        "suite_duration_sec":
+            (
+                f"{round(total_suite_duration_ms / 1000.0, 2)}/{total_runs}={avg_suite_duration_sec:.2f}s"
+                if total_runs else "0/0=0.00s"
+            ),
+    }
+    values = {
+        "pass_rate": pass_rate,
+        "fail_rate": fail_rate,
+        "broken_rate": broken_rate,
+        "flaky_rate": flaky_rate,
+        "stability_rate": stability_rate,
+        "avg_duration_sec": avg_duration_sec,
+        "suite_duration_sec": avg_suite_duration_sec,
+    }
+    gates = []
+    for key in DEFAULT_GATES.keys():
+        cfg = gates_config.get(key, DEFAULT_GATES[key])
+        gates.append(
+            build_gate(
+                key=key,
+                name=str(cfg["name"]),
+                value=float(values[key]),
+                unit=str(cfg["unit"]),
+                good_threshold=float(cfg["good_threshold"]),
+                warn_threshold=float(cfg["warn_threshold"]),
+                higher_is_better=bool(cfg["higher_is_better"]),
+                formula=formulas[key],
+                recommendation=str(cfg["recommendation"]),
+            )
+        )
+    gate_by_key = {item["key"]: item for item in gates}
+    gates_ok = sum(1 for item in gates if item["status"] == "ok")
+    gates_warn = sum(1 for item in gates if item["status"] == "warn")
+    gates_fail = sum(1 for item in gates if item["status"] == "fail")
+    gate_rows_html = "\n".join(
+        (
+            "<tr>"
+            f"<td>{item['name']}</td>"
+            f"<td>{item['value']:.2f}{item['unit']}</td>"
+            f"<td>{item['threshold']}</td>"
+            f"<td><span class=\"status-badge {item['css_class']}\">{item['status_label']}</span></td>"
+            f"<td>{item['formula']}</td>"
+            f"<td>{item['recommendation']}</td>"
+            "</tr>"
+        ) for item in gates
+    )
+
+    pass_rate_class = gate_by_key["pass_rate"]["css_class"]
+    fail_rate_class = gate_by_key["fail_rate"]["css_class"]
+    broken_rate_class = gate_by_key["broken_rate"]["css_class"]
+    flaky_rate_class = gate_by_key["flaky_rate"]["css_class"]
+    stability_rate_class = gate_by_key["stability_rate"]["css_class"]
+    avg_duration_class = gate_by_key["avg_duration_sec"]["css_class"]
+    suite_duration_class = gate_by_key["suite_duration_sec"]["css_class"]
+
     points_json = json.dumps(points, ensure_ascii=False)
     slowest_json = json.dumps(slowest_tests, ensure_ascii=False)
     report_title_safe = report_title.replace("<", "&lt;").replace(">", "&gt;")
@@ -114,6 +344,19 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       backdrop-filter: blur(4px);
       box-shadow: 0 10px 28px rgba(24, 33, 47, 0.07);
     }}
+    .metric-ok {{ border-color: #1c8a56; background: #f1fbf5; }}
+    .metric-warn {{ border-color: #b6801e; background: #fff8e8; }}
+    .metric-fail {{ border-color: #b43737; background: #fff1f1; }}
+    .status-badge {{
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }}
+    .status-badge.metric-ok {{ color: #0d6e42; }}
+    .status-badge.metric-warn {{ color: #7a580e; }}
+    .status-badge.metric-fail {{ color: #8f2424; }}
     .label {{ color: var(--muted); font-size: 13px; }}
     .value {{ margin-top: 6px; font-size: 30px; font-weight: 700; line-height: 1; }}
 
@@ -166,12 +409,40 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
     </div>
 
     <section class=\"group\">
+      <h2>🚦 Quality Gates Overview</h2>
+      <p class=\"desc\">Each metric is checked against a threshold. Failed gates are highlighted in red and need action.</p>
+      <div class=\"metric-cards\">
+        <div class=\"card metric-ok\"><div class=\"label\">OK Gates</div><div class=\"value\">{gates_ok}</div></div>
+        <div class=\"card metric-warn\"><div class=\"label\">Warning Gates</div><div class=\"value\">{gates_warn}</div></div>
+        <div class=\"card metric-fail\"><div class=\"label\">Failed Gates</div><div class=\"value\">{gates_fail}</div></div>
+      </div>
+      <div class=\"panel\">
+        <h3>Gate Status by Metric</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Current Value</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Calculation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gate_rows_html}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class=\"group\">
       <h2>1️⃣ Test Result Distribution</h2>
       <p class=\"desc\">Distribution of test outcomes by status.</p>
       <div class=\"metric-cards\">
-        <div class=\"card\"><div class=\"label\">pass rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
-        <div class=\"card\"><div class=\"label\">fail rate</div><div class=\"value\">{fail_rate:.2f}%</div></div>
-        <div class=\"card\"><div class=\"label\">broken rate</div><div class=\"value\">{broken_rate:.2f}%</div></div>
+        <div class=\"card {pass_rate_class}\"><div class=\"label\">pass rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
+        <div class=\"card {fail_rate_class}\"><div class=\"label\">fail rate</div><div class=\"value\">{fail_rate:.2f}%</div></div>
+        <div class=\"card {broken_rate_class}\"><div class=\"label\">broken rate</div><div class=\"value\">{broken_rate:.2f}%</div></div>
       </div>
 
       <div class=\"panel\">
@@ -226,9 +497,9 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
         Test Stability = Successful runs / Total runs
       </div>
       <div class=\"metric-cards\">
-        <div class=\"card\"><div class=\"label\">Pass Rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
-        <div class=\"card\"><div class=\"label\">Flaky Rate</div><div class=\"value\">{flaky_rate:.2f}%</div></div>
-        <div class=\"card\"><div class=\"label\">Test Stability</div><div class=\"value\">{stability_rate:.2f}%</div></div>
+        <div class=\"card {pass_rate_class}\"><div class=\"label\">Pass Rate</div><div class=\"value\">{pass_rate:.2f}%</div></div>
+        <div class=\"card {flaky_rate_class}\"><div class=\"label\">Flaky Rate</div><div class=\"value\">{flaky_rate:.2f}%</div></div>
+        <div class=\"card {stability_rate_class}\"><div class=\"label\">Test Stability</div><div class=\"value\">{stability_rate:.2f}%</div></div>
         <div class=\"card\"><div class=\"label\">Successful Runs</div><div class=\"value\">{successful_runs}/{total_runs}</div></div>
       </div>
 
@@ -279,8 +550,8 @@ def build_html(report_title: str, rows: list[RunStats], slowest_tests: list[dict
       </div>
       <div class=\"metric-cards\">
         <div class=\"card\"><div class=\"label\">Test Execution Time</div><div class=\"value\">{round(total_suite_duration_ms / 1000.0, 1)}s</div></div>
-        <div class=\"card\"><div class=\"label\">Average Test Duration</div><div class=\"value\">{avg_duration_sec:.2f}s</div></div>
-        <div class=\"card\"><div class=\"label\">CI Pipeline Duration</div><div class=\"value\">{avg_suite_duration_sec:.2f}s</div></div>
+        <div class=\"card {avg_duration_class}\"><div class=\"label\">Average Test Duration</div><div class=\"value\">{avg_duration_sec:.2f}s</div></div>
+        <div class=\"card {suite_duration_class}\"><div class=\"label\">CI Pipeline Duration</div><div class=\"value\">{avg_suite_duration_sec:.2f}s</div></div>
       </div>
 
       <div class=\"charts-2\">
@@ -551,6 +822,12 @@ def parse_args() -> argparse.Namespace:
         default=Path("reports/metrics_dashboard.html"),
         help="Output HTML file path.",
     )
+    parser.add_argument(
+        "--gates-config",
+        type=Path,
+        default=Path("metrics_gates.yml"),
+        help="YAML config with quality gate thresholds.",
+    )
     return parser.parse_args()
 
 
@@ -561,7 +838,8 @@ def main() -> int:
         return 1
 
     rows = collect_all_stats(args.artifacts_dir)
-    slow_records = collect_slowest_tests(args.artifacts_dir, limit=4)
+    gates_config, slowest_tests_limit = load_dashboard_config(args.gates_config)
+    slow_records = collect_slowest_tests(args.artifacts_dir, limit=slowest_tests_limit)
     slowest_tests = [
         {
             "run_name": r.run_name,
@@ -572,7 +850,7 @@ def main() -> int:
         } for r in slow_records
     ]
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(build_html(args.report_title, rows, slowest_tests), encoding="utf-8")
+    args.output.write_text(build_html(args.report_title, rows, slowest_tests, gates_config), encoding="utf-8")
     print(f"Dashboard generated: {args.output}")
     return 0
 

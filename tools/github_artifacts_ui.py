@@ -18,10 +18,11 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
 import requests
+import yaml
 
 GITHUB_API = "https://api.github.com"
 DEFAULT_TIMEOUT = 30
-DEFAULT_REPORT_RECIPIENT = "ekaterina-konchina@yandex.ru"
+DEFAULT_REPORT_RECIPIENTS = ["ekaterina-konchina@yandex.ru"]
 
 
 def load_env_value(key: str, env_path: Path | None = None) -> str:
@@ -59,6 +60,27 @@ def load_env_value(key: str, env_path: Path | None = None) -> str:
 
 def config_value(key: str, default: str = "") -> str:
     return load_env_value(key) or os.getenv(key, default)
+
+
+def default_recipients_from_config(config_path: Path | None = None) -> str:
+    path = config_path or (Path.cwd() / "report_delivery.yml")
+    if not path.exists():
+        return ",".join(DEFAULT_REPORT_RECIPIENTS)
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return ",".join(DEFAULT_REPORT_RECIPIENTS)
+
+    email_cfg = payload.get("email")
+    if not isinstance(email_cfg, dict):
+        return ",".join(DEFAULT_REPORT_RECIPIENTS)
+
+    recipients = email_cfg.get("recipients")
+    if isinstance(recipients, list):
+        parsed = [str(item).strip() for item in recipients if str(item).strip()]
+        if parsed:
+            return ",".join(parsed)
+    return ",".join(DEFAULT_REPORT_RECIPIENTS)
 
 
 def log_info(message: str) -> None:
@@ -172,7 +194,7 @@ class App(tk.Tk):
         self.branch_var = tk.StringVar(value="main")
         self.days_var = tk.StringVar(value="7")
         self.output_var = tk.StringVar(value=str(Path.cwd() / "downloaded_artifacts"))
-        self.email_to_var = tk.StringVar(value=config_value("REPORT_EMAIL_TO", DEFAULT_REPORT_RECIPIENT))
+        self.email_to_var = tk.StringVar(value=config_value("REPORT_EMAIL_TO", default_recipients_from_config()))
 
         self._build_ui()
         self._ensure_visible()
@@ -422,7 +444,7 @@ class App(tk.Tk):
         return values
 
     def _generate_dashboard(self, artifacts_dir: Path, branch: str) -> Path:
-        script_path = Path(__file__).with_name("build_flaky_dashboard.py")
+        script_path = Path(__file__).with_name("build_metrics_dashboard.py")
         report_path = Path.cwd() / "reports" / "metrics_dashboard.html"
         log_info(f"Generate dashboard: branch='{branch}', artifacts_dir='{artifacts_dir}'")
         result = subprocess.run(
@@ -447,7 +469,7 @@ class App(tk.Tk):
                 "Failed to generate dashboard.\n\n"
                 "Details:\n"
                 f"{details}\n\n"
-                "Hint: check that downloaded artifacts exist and build_flaky_dashboard.py runs locally."
+                "Hint: check that downloaded artifacts exist and build_metrics_dashboard.py runs locally."
             )
         log_info(f"Dashboard generated: '{report_path}'")
         return report_path

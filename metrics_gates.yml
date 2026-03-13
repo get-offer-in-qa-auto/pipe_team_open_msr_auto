@@ -1,0 +1,59 @@
+report:
+  slowest_tests_limit: 4
+
+gates:
+  pass_rate:
+    name: "Pass Rate"
+    unit: "%"
+    good_threshold: 98.0
+    warn_threshold: 95.0
+    higher_is_better: true
+    recommendation: "Review failing tests and fix frequent assertions."
+
+  fail_rate:
+    name: "Fail Rate"
+    unit: "%"
+    good_threshold: 2.0
+    warn_threshold: 5.0
+    higher_is_better: false
+    recommendation: "Prioritize top failing suites and stabilize environments."
+
+  broken_rate:
+    name: "Broken Rate"
+    unit: "%"
+    good_threshold: 1.0
+    warn_threshold: 3.0
+    higher_is_better: false
+    recommendation: "Fix infrastructure/test setup errors first."
+
+  flaky_rate:
+    name: "Flaky Rate"
+    unit: "%"
+    good_threshold: 2.0
+    warn_threshold: 5.0
+    higher_is_better: false
+    recommendation: "Quarantine flaky tests and remove unstable waits."
+
+  stability_rate:
+    name: "Test Stability"
+    unit: "%"
+    good_threshold: 95.0
+    warn_threshold: 85.0
+    higher_is_better: true
+    recommendation: "Track unstable runs and fix recurring root causes."
+
+  avg_duration_sec:
+    name: "Average Test Duration"
+    unit: "s"
+    good_threshold: 8.0
+    warn_threshold: 12.0
+    higher_is_better: false
+    recommendation: "Optimize slow tests and reduce external dependencies."
+
+  suite_duration_sec:
+    name: "CI Pipeline Duration (proxy)"
+    unit: "s"
+    good_threshold: 1800.0
+    warn_threshold: 2700.0
+    higher_is_better: false
+    recommendation: "Increase parallelism and remove long serial bottlenecks."
