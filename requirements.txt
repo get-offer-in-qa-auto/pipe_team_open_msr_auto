@@ -1,5 +1,6 @@
 pytest
 allure-pytest
+pytest-rerunfailures
 requests
 pydantic
 faker

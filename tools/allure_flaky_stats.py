@@ -14,6 +14,8 @@ class RunStats:
     api_tests: int
     ui_tests: int
     flaky_tests: int
+    api_flaky_tests: int
+    ui_flaky_tests: int
     passed_tests: int
     failed_tests: int
     broken_tests: int
@@ -27,6 +29,18 @@ class RunStats:
         if self.total_tests == 0:
             return 0.0
         return (self.flaky_tests / self.total_tests) * 100.0
+
+    @property
+    def ui_flaky_percent(self) -> float:
+        if self.ui_tests == 0:
+            return 0.0
+        return (self.ui_flaky_tests / self.ui_tests) * 100.0
+
+    @property
+    def api_flaky_percent(self) -> float:
+        if self.api_tests == 0:
+            return 0.0
+        return (self.api_flaky_tests / self.api_tests) * 100.0
 
     @property
     def pass_percent(self) -> float:
@@ -185,32 +199,63 @@ def _iter_test_payloads(zip_path: Path) -> list[dict]:
     return [item for item in test_case_items if "status" in item and "uid" in item]
 
 
+def _test_identity(payload: dict) -> str:
+    for key in ("historyId", "testCaseId", "fullName", "testCaseName", "name", "uid"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return "unknown_test"
+
+
+def _select_final_attempt(payloads: list[dict]) -> dict:
+    def _attempt_order(payload: dict) -> tuple[int, int]:
+        stop_start = _extract_start_stop(payload)
+        if stop_start is not None:
+            return stop_start[1], stop_start[0]
+        return 0, 0
+
+    return max(payloads, key=_attempt_order)
+
+
 def collect_stats_for_zip(zip_path: Path) -> RunStats:
     payloads = _iter_test_payloads(zip_path)
     if payloads:
-        total = len(payloads)
+        grouped_payloads: dict[str, list[dict]] = {}
+        for item in payloads:
+            grouped_payloads.setdefault(_test_identity(item), []).append(item)
+
+        final_payloads = [_select_final_attempt(group) for group in grouped_payloads.values()]
+        total = len(final_payloads)
         api_tests = 0
         ui_tests = 0
         api_duration_ms = 0
         ui_duration_ms = 0
         duration_ms = 0
         statuses: list[str] = []
-        for item in payloads:
+        ui_flaky_tests = 0
+        api_flaky_tests = 0
+        has_result_format = any("labels" in item or "statusDetails" in item for item in payloads)
+        for attempts in grouped_payloads.values():
+            item = _select_final_attempt(attempts)
             test_name = _extract_test_name(item).lower()
             duration = _extract_duration_ms(item)
             duration_ms += duration
             statuses.append(str(item.get("status", "")).lower())
+            if has_result_format:
+                is_flaky = any(_is_flaky_from_result(attempt) for attempt in attempts)
+            else:
+                is_flaky = any(_is_flaky_from_test_case(attempt) for attempt in attempts)
             if ".api." in test_name:
                 api_tests += 1
                 api_duration_ms += duration
+                if is_flaky:
+                    api_flaky_tests += 1
             if ".ui." in test_name:
                 ui_tests += 1
                 ui_duration_ms += duration
-        has_result_format = any("labels" in item or "statusDetails" in item for item in payloads)
-        if has_result_format:
-            flaky = sum(1 for item in payloads if _is_flaky_from_result(item))
-        else:
-            flaky = sum(1 for item in payloads if _is_flaky_from_test_case(item))
+                if is_flaky:
+                    ui_flaky_tests += 1
+        flaky = ui_flaky_tests + api_flaky_tests
         passed = sum(1 for status in statuses if status == "passed")
         failed = sum(1 for status in statuses if status == "failed")
         broken = sum(1 for status in statuses if status == "broken")
@@ -227,6 +272,8 @@ def collect_stats_for_zip(zip_path: Path) -> RunStats:
             api_tests=api_tests,
             ui_tests=ui_tests,
             flaky_tests=flaky,
+            api_flaky_tests=api_flaky_tests,
+            ui_flaky_tests=ui_flaky_tests,
             passed_tests=passed,
             failed_tests=failed,
             broken_tests=broken,
@@ -242,6 +289,8 @@ def collect_stats_for_zip(zip_path: Path) -> RunStats:
         api_tests=0,
         ui_tests=0,
         flaky_tests=0,
+        api_flaky_tests=0,
+        ui_flaky_tests=0,
         passed_tests=0,
         failed_tests=0,
         broken_tests=0,
@@ -261,7 +310,12 @@ def collect_slowest_tests(artifacts_dir: Path, limit: int = 20) -> list[SlowTest
         except BadZipFile:
             continue
 
+        grouped_payloads: dict[str, list[dict]] = {}
         for item in payloads:
+            grouped_payloads.setdefault(_test_identity(item), []).append(item)
+
+        for attempts in grouped_payloads.values():
+            item = _select_final_attempt(attempts)
             duration_ms = _extract_duration_ms(item)
             if duration_ms <= 0:
                 continue

@@ -80,8 +80,8 @@ jobs:
         api_exit=0
         ui_exit=0
 
-        pytest -n 2 -m api --alluredir=allure-results --log-file=artifacts/logs/pytest-api.log --log-file-level=INFO || api_exit=$?
-        pytest -n 2 -m ui  --alluredir=allure-results --log-file=artifacts/logs/pytest-ui.log --log-file-level=INFO || ui_exit=$?
+        pytest -n 2 -m api --reruns 1 --reruns-delay 2 --alluredir=allure-results --log-file=artifacts/logs/pytest-api.log --log-file-level=INFO || api_exit=$?
+        pytest -n 2 -m ui  --reruns 1 --reruns-delay 2 --alluredir=allure-results --log-file=artifacts/logs/pytest-ui.log --log-file-level=INFO || ui_exit=$?
 
         if [ "$api_exit" -ne 0 ] || [ "$ui_exit" -ne 0 ]; then
           exit 1
@@ -331,24 +331,6 @@ jobs:
       run: |
         python - <<'PY'
         import os
-        import re
-        from pathlib import Path
-
-        report_path = Path("reports/metrics_dashboard.html")
-        html = report_path.read_text(encoding="utf-8") if report_path.exists() else ""
-
-        def extract_card(label: str) -> str:
-            pattern = rf'<div class="label">{re.escape(label)}</div><div class="value">([^<]+)</div>'
-            m = re.search(pattern, html, flags=re.IGNORECASE)
-            return m.group(1).strip() if m else "n/a"
-
-        pass_rate = extract_card("average pass rate")
-        fail_rate = extract_card("average fail rate")
-        broken_rate = extract_card("average broken rate")
-        flaky_rate = extract_card("Flaky Rate")
-        stability = extract_card("Test Stability")
-        ok_gates = extract_card("OK Gates")
-        failed_gates = extract_card("Failed Gates")
 
         metrics_url = "${{ needs.publish-allure-report.outputs.metrics_url }}"
         if not metrics_url:
@@ -360,15 +342,6 @@ jobs:
             "Automated QA metrics summary\n\n"
             f"Branch: ${{ github.ref_name }}\n"
             f"Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\n"
-            "Key metrics:\n"
-            f"- Average Pass Rate: {pass_rate}\n"
-            f"- Average Fail Rate: {fail_rate}\n"
-            f"- Average Broken Rate: {broken_rate}\n"
-            f"- Flaky Rate: {flaky_rate}\n"
-            f"- Test Stability: {stability}\n\n"
-            "Quality gates:\n"
-            f"- OK: {ok_gates}\n"
-            f"- Failed: {failed_gates}\n\n"
             f"GitHub Pages metrics report: {metrics_url}\n\n"
             "The full dashboard is attached as HTML."
         )
@@ -438,7 +411,7 @@ jobs:
             LINT_LINE="$(printf '• Lint: %s\n' '${{ needs.lint.result }}')"
           fi
 
-          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s\n\n📈 <b>Metrics report (GitHub Pages):</b>\n<a href=\"%s\">Open metrics dashboard</a>\n%s' \
+          MESSAGE="$(printf '%s\n\n🌿 <b>Branch:</b> %s\n👤 <b>Triggered by:</b> %s\n🔁 <b>Event:</b> %s\n\n📋 <b>Results:</b>\n%s• Run tests: %s\n• Allure report: %s\n\n🔗 <b>Pipeline:</b>\n%s\n\n📊 <b>Allure report:</b>\n%s\n\n📈 <b>Metrics report (GitHub Pages):</b>\n• <a href=\"%s\">Open metrics dashboard</a>\n%s' \
             '${{ steps.status.outputs.emoji }} <b>'"${REPO}"'</b> - tests <b>${{ steps.status.outputs.text }}</b>' \
             "${BRANCH}" \
             "${ACTOR}" \
@@ -449,9 +422,7 @@ jobs:
             "${RUN_URL}" \
             "${REPORT_URL}" \
             "${METRICS_REPORT_URL}" \
-            "${METRICS_REPORT_URL}")"
-          
-          MESSAGE="$(printf '%s%s' "$MESSAGE" "$METRICS_LINE")"
+            "${METRICS_LINE}")"
           
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \

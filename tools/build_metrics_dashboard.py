@@ -248,6 +248,8 @@ def build_html(
                 "broken_percent": round(row.broken_percent, 2),
                 "flaky_tests": row.flaky_tests,
                 "flaky_percent": round(row.flaky_percent, 2),
+                "ui_flaky_percent": round(row.ui_flaky_percent, 2),
+                "api_flaky_percent": round(row.api_flaky_percent, 2),
                 "run_success": run_success,
                 "stability_value": 100.0 if run_success else 0.0,
                 "run_qg_passed": run_qg_passed,
@@ -275,6 +277,8 @@ def build_html(
     avg_pass_rate = round((sum(r.pass_percent for r in rows) / total_runs), 2) if total_runs else 0.0
     avg_fail_rate = round((sum(r.fail_percent for r in rows) / total_runs), 2) if total_runs else 0.0
     avg_broken_rate = round((sum(r.broken_percent for r in rows) / total_runs), 2) if total_runs else 0.0
+    avg_ui_flaky_rate = round((sum(r.ui_flaky_percent for r in rows) / total_runs), 2) if total_runs else 0.0
+    avg_api_flaky_rate = round((sum(r.api_flaky_percent for r in rows) / total_runs), 2) if total_runs else 0.0
 
     avg_duration_sec = round((sum(r.avg_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
     avg_api_duration_sec = round((sum(r.avg_api_duration_seconds for r in rows) / total_runs), 2) if total_runs else 0.0
@@ -285,6 +289,8 @@ def build_html(
     pass_series = " + ".join(f"{r.pass_percent:.2f}" for r in sorted_rows)
     fail_series = " + ".join(f"{r.fail_percent:.2f}" for r in sorted_rows)
     broken_series = " + ".join(f"{r.broken_percent:.2f}" for r in sorted_rows)
+    ui_flaky_series = " + ".join(f"{r.ui_flaky_percent:.2f}" for r in sorted_rows)
+    api_flaky_series = " + ".join(f"{r.api_flaky_percent:.2f}" for r in sorted_rows)
     avg_pass_formula = (
         f"average pass rate = ({pass_series}) / {total_runs} = {avg_pass_rate:.2f}%"
         if total_runs else "average pass rate = n/a"
@@ -296,6 +302,14 @@ def build_html(
     avg_broken_formula = (
         f"average broken rate = ({broken_series}) / {total_runs} = {avg_broken_rate:.2f}%"
         if total_runs else "average broken rate = n/a"
+    )
+    avg_ui_flaky_formula = (
+        f"average UI flaky rate = ({ui_flaky_series}) / {total_runs} = {avg_ui_flaky_rate:.2f}%"
+        if total_runs else "average UI flaky rate = n/a"
+    )
+    avg_api_flaky_formula = (
+        f"average API flaky rate = ({api_flaky_series}) / {total_runs} = {avg_api_flaky_rate:.2f}%"
+        if total_runs else "average API flaky rate = n/a"
     )
     avg_duration_series = " + ".join(f"{r.avg_duration_seconds:.2f}" for r in sorted_rows)
 
@@ -313,6 +327,10 @@ def build_html(
             avg_broken_formula,
         "flaky_rate":
             f"{total_flaky}/{total_tests}={flaky_rate:.2f}%" if total_tests else "0/0=0.00%",
+        "ui_flaky_rate":
+            avg_ui_flaky_formula,
+        "api_flaky_rate":
+            avg_api_flaky_formula,
         "stability_rate":
             f"{successful_runs}/{total_runs}={stability_rate:.2f}%" if total_runs else "0/0=0.00%",
         "avg_duration_sec": (f"({avg_duration_series})/{total_runs}={avg_duration_sec:.2f}s" if total_runs else "n/a"),
@@ -359,6 +377,33 @@ def build_html(
                 recommendation=str(cfg["recommendation"]),
             )
         )
+    flaky_cfg = gates_config.get("flaky_rate", DEFAULT_GATES["flaky_rate"])
+    gates.append(
+        build_gate(
+            key="ui_flaky_rate",
+            name="Average UI Flaky Rate",
+            value=float(avg_ui_flaky_rate),
+            unit=str(flaky_cfg["unit"]),
+            good_threshold=float(flaky_cfg["good_threshold"]),
+            warn_threshold=float(flaky_cfg["warn_threshold"]),
+            higher_is_better=bool(flaky_cfg["higher_is_better"]),
+            formula=formulas["ui_flaky_rate"],
+            recommendation=str(flaky_cfg["recommendation"]),
+        )
+    )
+    gates.append(
+        build_gate(
+            key="api_flaky_rate",
+            name="Average API Flaky Rate",
+            value=float(avg_api_flaky_rate),
+            unit=str(flaky_cfg["unit"]),
+            good_threshold=float(flaky_cfg["good_threshold"]),
+            warn_threshold=float(flaky_cfg["warn_threshold"]),
+            higher_is_better=bool(flaky_cfg["higher_is_better"]),
+            formula=formulas["api_flaky_rate"],
+            recommendation=str(flaky_cfg["recommendation"]),
+        )
+    )
     gate_by_key = {item["key"]: item for item in gates}
 
     metric_descriptions = {
@@ -366,6 +411,8 @@ def build_html(
         "fail_rate": "Average share of failed tests across all runs in the selected period.",
         "broken_rate": "Average share of broken tests across all runs in the selected period.",
         "flaky_rate": "Share of flaky tests that behave inconsistently across runs.",
+        "ui_flaky_rate": "Average share of flaky UI tests across all runs in the selected period.",
+        "api_flaky_rate": "Average share of flaky API tests across all runs in the selected period.",
         "stability_rate": "Share of successful runs among all runs.",
         "avg_duration_sec": "Average Test Duration UI tests = Sum(run average durations) / Number of runs",
         "avg_api_duration_sec": "Average Test Duration API tests = Sum(run average API durations) / Number of runs",
@@ -431,7 +478,9 @@ def build_html(
         return ok_count, fail_count, rows_html
 
     _, _, dist_rows_html = build_section_gates(
-        ["pass_rate", "fail_rate", "broken_rate"], include_action=False, include_description=True
+        ["pass_rate", "fail_rate", "broken_rate", "ui_flaky_rate", "api_flaky_rate"],
+        include_action=False,
+        include_description=True,
     )
     speed_gate_keys = [
         "avg_duration_sec",
@@ -452,6 +501,7 @@ def build_html(
     pass_rate_target = float(gates_config.get("pass_rate", DEFAULT_GATES["pass_rate"])["good_threshold"])
     fail_rate_target = float(gates_config.get("fail_rate", DEFAULT_GATES["fail_rate"])["good_threshold"])
     broken_rate_target = float(gates_config.get("broken_rate", DEFAULT_GATES["broken_rate"])["good_threshold"])
+    flaky_rate_target = float(gates_config.get("flaky_rate", DEFAULT_GATES["flaky_rate"])["good_threshold"])
     slow_ui_target_sec = float(
         gates_config.get("avg_duration_sec", DEFAULT_GATES["avg_duration_sec"])["good_threshold"]
     )
@@ -471,6 +521,8 @@ def build_html(
     pass_rate_class = gate_by_key["pass_rate"]["css_class"]
     fail_rate_class = gate_by_key["fail_rate"]["css_class"]
     broken_rate_class = gate_by_key["broken_rate"]["css_class"]
+    ui_flaky_rate_class = "metric-ok" if avg_ui_flaky_rate <= flaky_rate_target else "metric-fail"
+    api_flaky_rate_class = "metric-ok" if avg_api_flaky_rate <= flaky_rate_target else "metric-fail"
     avg_duration_class = gate_by_key["avg_duration_sec"]["css_class"]
     avg_api_duration_class = gate_by_key["avg_api_duration_sec"]["css_class"]
     ui_run_duration_class = gate_by_key["ui_run_duration_sec"]["css_class"]
@@ -615,6 +667,8 @@ def build_html(
         <div class=\"card {pass_rate_class}\"><div class=\"label\">average pass rate</div><div class=\"value\">{avg_pass_rate:.2f}%</div></div>
         <div class=\"card {fail_rate_class}\"><div class=\"label\">average fail rate</div><div class=\"value\">{avg_fail_rate:.2f}%</div></div>
         <div class=\"card {broken_rate_class}\"><div class=\"label\">average broken rate</div><div class=\"value\">{avg_broken_rate:.2f}%</div></div>
+        <div class=\"card {ui_flaky_rate_class}\"><div class=\"label\">average UI flaky rate</div><div class=\"value\">{avg_ui_flaky_rate:.2f}%</div></div>
+        <div class=\"card {api_flaky_rate_class}\"><div class=\"label\">average API flaky rate</div><div class=\"value\">{avg_api_flaky_rate:.2f}%</div></div>
       </div>
 
       <div class=\"panel\">
@@ -622,7 +676,9 @@ def build_html(
         <div class=\"formulas\">
           {avg_pass_formula}<br/>
           {avg_fail_formula}<br/>
-          {avg_broken_formula}
+          {avg_broken_formula}<br/>
+          {avg_ui_flaky_formula}<br/>
+          {avg_api_flaky_formula}
         </div>
       </div>
 
@@ -683,6 +739,46 @@ def build_html(
               </tr>
             </thead>
             <tbody id=\"broken-distribution-rows\"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average UI Flaky Rate Trend</h3>
+          <canvas id=\"ui-flaky-rate-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>UI Flaky Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>UI Flaky %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"ui-flaky-distribution-rows\"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class=\"metric-pair\">
+        <div class=\"panel\">
+          <h3>Average API Flaky Rate Trend</h3>
+          <canvas id=\"api-flaky-rate-trend\"></canvas>
+        </div>
+        <div class=\"panel\">
+          <h3>API Flaky Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>API Flaky %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id=\"api-flaky-distribution-rows\"></tbody>
           </table>
         </div>
       </div>
@@ -868,6 +964,7 @@ def build_html(
     const passRateTarget = {pass_rate_target:.2f};
     const failRateTarget = {fail_rate_target:.2f};
     const brokenRateTarget = {broken_rate_target:.2f};
+    const flakyRateTarget = {flaky_rate_target:.2f};
     const slowUiTargetSec = {slow_ui_target_sec:.2f};
     const slowApiTargetSec = {slow_api_target_sec:.2f};
     const uiRunTargetSec = {ui_run_target_sec:.2f};
@@ -1047,6 +1144,10 @@ def build_html(
 
       const brokenDistributionBody = document.getElementById('broken-distribution-rows');
       brokenDistributionBody.innerHTML = renderTargetRows('broken_percent', brokenRateTarget, '%', false);
+      const uiFlakyDistributionBody = document.getElementById('ui-flaky-distribution-rows');
+      uiFlakyDistributionBody.innerHTML = renderTargetRows('ui_flaky_percent', flakyRateTarget, '%', false);
+      const apiFlakyDistributionBody = document.getElementById('api-flaky-distribution-rows');
+      apiFlakyDistributionBody.innerHTML = renderTargetRows('api_flaky_percent', flakyRateTarget, '%', false);
 
       const speedAvgUiBody = document.getElementById('speed-avg-ui-duration-rows');
       speedAvgUiBody.innerHTML = renderTargetRows('avg_duration_sec', slowUiTargetSec, 's', false);
@@ -1093,6 +1194,8 @@ def build_html(
       const passRateMax = Math.max(...data.map(d => d.pass_percent), 1);
       const failRateMax = Math.max(...data.map(d => d.fail_percent), 1);
       const brokenRateMax = Math.max(...data.map(d => d.broken_percent), 1);
+      const uiFlakyRateMax = Math.max(...data.map(d => d.ui_flaky_percent), 1);
+      const apiFlakyRateMax = Math.max(...data.map(d => d.api_flaky_percent), 1);
       const avgDurMax = Math.max(...data.map(d => d.avg_duration_sec), 1);
       const avgApiDurMax = Math.max(...data.map(d => d.avg_api_duration_sec), 1);
       const uiRunDurMax = Math.max(...data.map(d => d.ui_run_duration_sec), 1);
@@ -1102,6 +1205,8 @@ def build_html(
       drawLineChart('pass-rate-trend', 'pass_percent', passRateMax, '#1b8a4f', '#159a55', '%', {pass_rate_target:.2f}, '#1b8a4f');
       drawLineChart('fail-rate-trend', 'fail_percent', failRateMax, '#b63a31', '#cf3f34', '%', {fail_rate_target:.2f}, '#b63a31');
       drawLineChart('broken-rate-trend', 'broken_percent', brokenRateMax, '#8f3245', '#a73b52', '%', {broken_rate_target:.2f}, '#8f3245');
+      drawLineChart('ui-flaky-rate-trend', 'ui_flaky_percent', uiFlakyRateMax, '#1b6f77', '#1f97a3', '%', {flaky_rate_target:.2f}, '#1b6f77');
+      drawLineChart('api-flaky-rate-trend', 'api_flaky_percent', apiFlakyRateMax, '#7a5a1a', '#a37b24', '%', {flaky_rate_target:.2f}, '#7a5a1a');
       drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's', {slow_ui_target_sec:.2f}, '#7a4a18');
       drawLineChart('avg-api-duration-trend', 'avg_api_duration_sec', avgApiDurMax, '#1c5d8f', '#2f7fc3', 's', {slow_api_target_sec:.2f}, '#1c5d8f');
       drawLineChart('ui-run-duration-trend', 'ui_run_duration_sec', uiRunDurMax, '#216a4c', '#2c9568', 's', {ui_run_target_sec:.2f}, '#216a4c');

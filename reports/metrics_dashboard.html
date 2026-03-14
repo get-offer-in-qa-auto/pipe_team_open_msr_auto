@@ -126,6 +126,8 @@
             <tr><td>Average Pass Rate</td><td>Average share of passed tests across all runs in the selected period.</td><td>99.01%</td><td>>= 98.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
 <tr><td>Average Fail Rate</td><td>Average share of failed tests across all runs in the selected period.</td><td>0.99%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
 <tr><td>Average Broken Rate</td><td>Average share of broken tests across all runs in the selected period.</td><td>0.00%</td><td><= 1.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
+<tr><td>Average UI Flaky Rate</td><td>Average share of flaky UI tests across all runs in the selected period.</td><td>0.00%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
+<tr><td>Average API Flaky Rate</td><td>Average share of flaky API tests across all runs in the selected period.</td><td>0.00%</td><td><= 2.00%</td><td><span class="status-badge metric-ok">OK</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -133,6 +135,8 @@
         <div class="card metric-ok"><div class="label">average pass rate</div><div class="value">99.01%</div></div>
         <div class="card metric-ok"><div class="label">average fail rate</div><div class="value">0.99%</div></div>
         <div class="card metric-ok"><div class="label">average broken rate</div><div class="value">0.00%</div></div>
+        <div class="card metric-ok"><div class="label">average UI flaky rate</div><div class="value">0.00%</div></div>
+        <div class="card metric-ok"><div class="label">average API flaky rate</div><div class="value">0.00%</div></div>
       </div>
 
       <div class="panel">
@@ -140,7 +144,9 @@
         <div class="formulas">
           average pass rate = (100.00 + 100.00 + 100.00 + 100.00 + 97.89 + 99.30 + 98.59 + 99.30 + 97.89 + 97.18) / 10 = 99.01%<br/>
           average fail rate = (0.00 + 0.00 + 0.00 + 0.00 + 2.11 + 0.70 + 1.41 + 0.70 + 2.11 + 2.82) / 10 = 0.99%<br/>
-          average broken rate = (0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00) / 10 = 0.00%
+          average broken rate = (0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00) / 10 = 0.00%<br/>
+          average UI flaky rate = (0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00) / 10 = 0.00%<br/>
+          average API flaky rate = (0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00 + 0.00) / 10 = 0.00%
         </div>
       </div>
 
@@ -201,6 +207,46 @@
               </tr>
             </thead>
             <tbody id="broken-distribution-rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="metric-pair">
+        <div class="panel">
+          <h3>Average UI Flaky Rate Trend</h3>
+          <canvas id="ui-flaky-rate-trend"></canvas>
+        </div>
+        <div class="panel">
+          <h3>UI Flaky Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>UI Flaky %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ui-flaky-distribution-rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="metric-pair">
+        <div class="panel">
+          <h3>Average API Flaky Rate Trend</h3>
+          <canvas id="api-flaky-rate-trend"></canvas>
+        </div>
+        <div class="panel">
+          <h3>API Flaky Rate vs Target by Run</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>API Flaky %</th>
+                <th>Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="api-flaky-distribution-rows"></tbody>
           </table>
         </div>
       </div>
@@ -384,12 +430,13 @@
   </div>
 
   <script>
-    const data = [{"run_name": "20260307_131915_5811367046_allure-results.zip", "run_label": "2026-03-07 13:19", "total_tests": 100, "passed_tests": 100, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 12362, "avg_duration_sec": 0.12, "avg_api_duration_sec": 0.12, "ui_run_duration_sec": 0.0, "api_run_duration_sec": 12.36, "suite_duration_ms": 12371, "suite_duration_sec": 12.37}, {"run_name": "20260307_145039_5811732263_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 91027, "avg_duration_sec": 0.8, "avg_api_duration_sec": 0.11, "ui_run_duration_sec": 80.25, "api_run_duration_sec": 10.78, "suite_duration_ms": 70944, "suite_duration_sec": 70.94}, {"run_name": "20260307_145051_5811733041_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 94571, "avg_duration_sec": 0.83, "avg_api_duration_sec": 0.12, "ui_run_duration_sec": 82.44, "api_run_duration_sec": 12.13, "suite_duration_ms": 73088, "suite_duration_sec": 73.09}, {"run_name": "20260307_151004_5811814975_allure-results.zip", "run_label": "2026-03-07 15:10", "total_tests": 14, "passed_tests": 14, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 85464, "avg_duration_sec": 6.1, "avg_api_duration_sec": 0.0, "ui_run_duration_sec": 85.46, "api_run_duration_sec": 0.0, "suite_duration_ms": 61654, "suite_duration_sec": 61.65}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 303050, "avg_duration_sec": 2.13, "avg_api_duration_sec": 0.12, "ui_run_duration_sec": 290.87, "api_run_duration_sec": 12.18, "suite_duration_ms": 233776, "suite_duration_sec": 233.78}, {"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 291728, "avg_duration_sec": 2.05, "avg_api_duration_sec": 0.1, "ui_run_duration_sec": 281.96, "api_run_duration_sec": 9.77, "suite_duration_ms": 217687, "suite_duration_sec": 217.69}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "total_tests": 142, "passed_tests": 140, "pass_percent": 98.59, "failed_tests": 2, "fail_percent": 1.41, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 307398, "avg_duration_sec": 2.16, "avg_api_duration_sec": 0.13, "ui_run_duration_sec": 294.69, "api_run_duration_sec": 12.71, "suite_duration_ms": 232616, "suite_duration_sec": 232.62}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 305413, "avg_duration_sec": 2.15, "avg_api_duration_sec": 0.11, "ui_run_duration_sec": 294.48, "api_run_duration_sec": 10.93, "suite_duration_ms": 231072, "suite_duration_sec": 231.07}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 300891, "avg_duration_sec": 2.12, "avg_api_duration_sec": 0.11, "ui_run_duration_sec": 289.64, "api_run_duration_sec": 11.25, "suite_duration_ms": 230194, "suite_duration_sec": 230.19}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "total_tests": 142, "passed_tests": 138, "pass_percent": 97.18, "failed_tests": 4, "fail_percent": 2.82, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 313234, "avg_duration_sec": 2.21, "avg_api_duration_sec": 0.13, "ui_run_duration_sec": 300.56, "api_run_duration_sec": 12.67, "suite_duration_ms": 237426, "suite_duration_sec": 237.43}];
+    const data = [{"run_name": "20260307_131915_5811367046_allure-results.zip", "run_label": "2026-03-07 13:19", "total_tests": 100, "passed_tests": 100, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 12362, "avg_duration_sec": 0.12, "avg_api_duration_sec": 0.12, "ui_run_duration_sec": 0.0, "api_run_duration_sec": 12.36, "suite_duration_ms": 12371, "suite_duration_sec": 12.37}, {"run_name": "20260307_145039_5811732263_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 91027, "avg_duration_sec": 0.8, "avg_api_duration_sec": 0.11, "ui_run_duration_sec": 80.25, "api_run_duration_sec": 10.78, "suite_duration_ms": 70944, "suite_duration_sec": 70.94}, {"run_name": "20260307_145051_5811733041_allure-results.zip", "run_label": "2026-03-07 14:50", "total_tests": 114, "passed_tests": 114, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 94571, "avg_duration_sec": 0.83, "avg_api_duration_sec": 0.12, "ui_run_duration_sec": 82.44, "api_run_duration_sec": 12.13, "suite_duration_ms": 73088, "suite_duration_sec": 73.09}, {"run_name": "20260307_151004_5811814975_allure-results.zip", "run_label": "2026-03-07 15:10", "total_tests": 14, "passed_tests": 14, "pass_percent": 100.0, "failed_tests": 0, "fail_percent": 0.0, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": true, "stability_value": 100.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 85464, "avg_duration_sec": 6.1, "avg_api_duration_sec": 0.0, "ui_run_duration_sec": 85.46, "api_run_duration_sec": 0.0, "suite_duration_ms": 61654, "suite_duration_sec": 61.65}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 303050, "avg_duration_sec": 2.13, "avg_api_duration_sec": 0.12, "ui_run_duration_sec": 290.87, "api_run_duration_sec": 12.18, "suite_duration_ms": 233776, "suite_duration_sec": 233.78}, {"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 291728, "avg_duration_sec": 2.05, "avg_api_duration_sec": 0.1, "ui_run_duration_sec": 281.96, "api_run_duration_sec": 9.77, "suite_duration_ms": 217687, "suite_duration_sec": 217.69}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "total_tests": 142, "passed_tests": 140, "pass_percent": 98.59, "failed_tests": 2, "fail_percent": 1.41, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 307398, "avg_duration_sec": 2.16, "avg_api_duration_sec": 0.13, "ui_run_duration_sec": 294.69, "api_run_duration_sec": 12.71, "suite_duration_ms": 232616, "suite_duration_sec": 232.62}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "total_tests": 142, "passed_tests": 141, "pass_percent": 99.3, "failed_tests": 1, "fail_percent": 0.7, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 3, "run_qg_failed": 0, "run_qg_status": "OK", "run_qg_css_class": "metric-ok", "total_duration_ms": 305413, "avg_duration_sec": 2.15, "avg_api_duration_sec": 0.11, "ui_run_duration_sec": 294.48, "api_run_duration_sec": 10.93, "suite_duration_ms": 231072, "suite_duration_sec": 231.07}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "total_tests": 142, "passed_tests": 139, "pass_percent": 97.89, "failed_tests": 3, "fail_percent": 2.11, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 300891, "avg_duration_sec": 2.12, "avg_api_duration_sec": 0.11, "ui_run_duration_sec": 289.64, "api_run_duration_sec": 11.25, "suite_duration_ms": 230194, "suite_duration_sec": 230.19}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "total_tests": 142, "passed_tests": 138, "pass_percent": 97.18, "failed_tests": 4, "fail_percent": 2.82, "broken_tests": 0, "broken_percent": 0.0, "flaky_tests": 0, "flaky_percent": 0.0, "ui_flaky_percent": 0.0, "api_flaky_percent": 0.0, "run_success": false, "stability_value": 0.0, "run_qg_passed": 1, "run_qg_failed": 2, "run_qg_status": "Failed", "run_qg_css_class": "metric-fail", "total_duration_ms": 313234, "avg_duration_sec": 2.21, "avg_api_duration_sec": 0.13, "ui_run_duration_sec": 300.56, "api_run_duration_sec": 12.67, "suite_duration_ms": 237426, "suite_duration_sec": 237.43}];
     const slowestUiTests = [{"run_name": "20260307_170527_5812348011_allure-results.zip", "run_label": "2026-03-07 17:05", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 17.03, "status": "passed"}, {"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.96, "status": "passed"}, {"run_name": "20260309_162944_5833420461_allure-results.zip", "run_label": "2026-03-09 16:29", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.83, "status": "passed"}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "test_name": "tests.ui.test_login_user.TestLoginUser#test_admin_can_login_with_correct_data", "duration_sec": 16.56, "status": "passed"}];
     const slowestApiTests = [{"run_name": "20260309_153622_5832351397_allure-results.zip", "run_label": "2026-03-09 15:36", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.72, "status": "passed"}, {"run_name": "20260307_170830_5812364325_allure-results.zip", "run_label": "2026-03-07 17:08", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.58, "status": "passed"}, {"run_name": "20260309_163050_5833443875_allure-results.zip", "run_label": "2026-03-09 16:30", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.58, "status": "passed"}, {"run_name": "20260307_164537_5812250114_allure-results.zip", "run_label": "2026-03-07 16:45", "test_name": "tests.api.open_msr.test_create_patient_from_existing_person.TestCreatePatientFromExistingPerson#test_create_patient_from_existing_person_no_create_edit_patient_privilege_user", "duration_sec": 0.57, "status": "passed"}];
     const passRateTarget = 98.00;
     const failRateTarget = 2.00;
     const brokenRateTarget = 1.00;
+    const flakyRateTarget = 2.00;
     const slowUiTargetSec = 3.00;
     const slowApiTargetSec = 0.20;
     const uiRunTargetSec = 240.00;
@@ -569,6 +616,10 @@
 
       const brokenDistributionBody = document.getElementById('broken-distribution-rows');
       brokenDistributionBody.innerHTML = renderTargetRows('broken_percent', brokenRateTarget, '%', false);
+      const uiFlakyDistributionBody = document.getElementById('ui-flaky-distribution-rows');
+      uiFlakyDistributionBody.innerHTML = renderTargetRows('ui_flaky_percent', flakyRateTarget, '%', false);
+      const apiFlakyDistributionBody = document.getElementById('api-flaky-distribution-rows');
+      apiFlakyDistributionBody.innerHTML = renderTargetRows('api_flaky_percent', flakyRateTarget, '%', false);
 
       const speedAvgUiBody = document.getElementById('speed-avg-ui-duration-rows');
       speedAvgUiBody.innerHTML = renderTargetRows('avg_duration_sec', slowUiTargetSec, 's', false);
@@ -615,6 +666,8 @@
       const passRateMax = Math.max(...data.map(d => d.pass_percent), 1);
       const failRateMax = Math.max(...data.map(d => d.fail_percent), 1);
       const brokenRateMax = Math.max(...data.map(d => d.broken_percent), 1);
+      const uiFlakyRateMax = Math.max(...data.map(d => d.ui_flaky_percent), 1);
+      const apiFlakyRateMax = Math.max(...data.map(d => d.api_flaky_percent), 1);
       const avgDurMax = Math.max(...data.map(d => d.avg_duration_sec), 1);
       const avgApiDurMax = Math.max(...data.map(d => d.avg_api_duration_sec), 1);
       const uiRunDurMax = Math.max(...data.map(d => d.ui_run_duration_sec), 1);
@@ -624,6 +677,8 @@
       drawLineChart('pass-rate-trend', 'pass_percent', passRateMax, '#1b8a4f', '#159a55', '%', 98.00, '#1b8a4f');
       drawLineChart('fail-rate-trend', 'fail_percent', failRateMax, '#b63a31', '#cf3f34', '%', 2.00, '#b63a31');
       drawLineChart('broken-rate-trend', 'broken_percent', brokenRateMax, '#8f3245', '#a73b52', '%', 1.00, '#8f3245');
+      drawLineChart('ui-flaky-rate-trend', 'ui_flaky_percent', uiFlakyRateMax, '#1b6f77', '#1f97a3', '%', 2.00, '#1b6f77');
+      drawLineChart('api-flaky-rate-trend', 'api_flaky_percent', apiFlakyRateMax, '#7a5a1a', '#a37b24', '%', 2.00, '#7a5a1a');
       drawLineChart('avg-duration-trend', 'avg_duration_sec', avgDurMax, '#7a4a18', '#c9762b', 's', 3.00, '#7a4a18');
       drawLineChart('avg-api-duration-trend', 'avg_api_duration_sec', avgApiDurMax, '#1c5d8f', '#2f7fc3', 's', 0.20, '#1c5d8f');
       drawLineChart('ui-run-duration-trend', 'ui_run_duration_sec', uiRunDurMax, '#216a4c', '#2c9568', 's', 240.00, '#216a4c');
