@@ -8,6 +8,9 @@ from typing import List
 
 from playwright.sync_api import BrowserType
 
+from src.api.coverage.api_coverage_collector import ApiCoverageCollector
+from src.api.coverage.calculate_api_coverage import calculate_and_save_summary
+from src.api.coverage.swagger_operations import generate_swagger_operations
 from src.fixtures.api_fixtures import *  # noqa: F403
 from src.fixtures.assertion_fixtures.patient_assertion_fixtures import *  # noqa: F403
 from src.fixtures.assertion_fixtures.visit_assertion_fixtures import *  # noqa: F403
@@ -71,9 +74,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:  # noqa: F405
     parser.addoption(
         "--seed",
         action="store",
-        default=Config.get("default_seed", 100),  # noqa: F405  # move to env files later
+        default=Config.get("default_seed", 100),  # noqa: F405
         help=
         "Seed for random generators. If not set, a new seed is generated per run (and shared across xdist workers).",
+    )
+    parser.addoption(
+        "--api-coverage",
+        action="store_true",
+        default=False,
+        help="Enable API coverage collection",
     )
 
 
@@ -226,3 +235,12 @@ def browser_context_args(browser_context_args):
                     Config.get_int("BROWSER_HEIGHT", 1080)  # noqa: F405
             }
     }
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if not session.config.getoption("--api-coverage"):
+        return
+
+    generate_swagger_operations()
+    ApiCoverageCollector.save(Path("artifacts/api_coverage/covered_operations.json"))
+    calculate_and_save_summary()
