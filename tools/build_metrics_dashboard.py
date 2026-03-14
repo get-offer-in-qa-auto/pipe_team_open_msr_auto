@@ -811,7 +811,6 @@ def build_html(
 
     <div class=\"summary\">
       <div class=\"card\"><div class=\"label\">Total Runs</div><div class=\"value\">{total_runs}</div></div>
-      <div class=\"card\"><div class=\"label\">Generated Metric Groups</div><div class=\"value\">3</div></div>
     </div>
 
     <section class=\"group\">
