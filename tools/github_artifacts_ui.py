@@ -488,6 +488,8 @@ class App(tk.Tk):
                 str(artifacts_dir),
                 "--report-title",
                 f"QA Metrics Dashboard ({branch})",
+                "--pipeline-source",
+                "auto",
                 "--output",
                 str(report_path),
             ],

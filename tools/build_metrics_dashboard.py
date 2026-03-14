@@ -3,10 +3,14 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import re
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import yaml
 from allure_flaky_stats import RunStats, collect_all_stats, collect_slowest_tests
@@ -164,6 +168,173 @@ def fmt_datetime(dt: datetime | None, fallback: str) -> str:
     if dt is None:
         return fallback
     return dt.strftime("%Y-%m-%d %H:%M")
+
+
+def parse_run_id(run_name: str) -> int | None:
+    match = re.match(r"^\d{8}_\d{6}_(\d+)_allure-results\.zip$", run_name)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def parse_github_dt(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return None
+
+
+def load_local_env_file(path: Path = Path(".env")) -> None:
+    if not path.exists() or not path.is_file():
+        return
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        value = value.strip().strip("'").strip('"')
+        os.environ[key] = value
+
+
+def discover_github_repo(repo_override: str | None = None) -> str | None:
+    if repo_override and repo_override.strip():
+        return repo_override.strip()
+
+    for env_key in ("GITHUB_REPOSITORY", "GH_REPO"):
+        env_repo = os.getenv(env_key, "").strip()
+        if env_repo:
+            return env_repo
+
+    try:
+        remote_url = subprocess.check_output(
+            ["git", "config", "--get", "remote.origin.url"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).strip()
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
+
+    patterns = [
+        r"^https://github\.com/(?P<owner>[^/]+)/(?P<repo>[^/.]+)(?:\.git)?$",
+        r"^git@github\.com:(?P<owner>[^/]+)/(?P<repo>[^/.]+)(?:\.git)?$",
+    ]
+    for pattern in patterns:
+        match = re.match(pattern, remote_url)
+        if match:
+            return f"{match.group('owner')}/{match.group('repo')}"
+    return None
+
+
+def discover_github_token(token_override: str | None = None) -> str | None:
+    if token_override and token_override.strip():
+        return token_override.strip()
+
+    for env_key in ("GITHUB_TOKEN", "GH_TOKEN", "GITHUB_API_TOKEN", "GITHUB_PAT", "GH_PAT"):
+        token = os.getenv(env_key, "").strip()
+        if token:
+            return token
+
+    try:
+        token = subprocess.check_output(
+            ["gh", "auth", "token"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).strip()
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
+    return token or None
+
+
+def _github_get_json(url: str, token: str | None) -> dict[str, Any]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "metrics-dashboard-builder",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = Request(url, headers=headers)
+    with urlopen(request, timeout=20) as response:  # nosec B310
+        payload = json.loads(response.read().decode("utf-8"))
+    return payload if isinstance(payload, dict) else {}
+
+
+def fetch_run_tests_duration_sec(repo: str, run_id: int, token: str | None) -> float | None:
+    jobs_url = f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100"
+    try:
+        payload = _github_get_json(jobs_url, token)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return None
+
+    jobs = payload.get("jobs")
+    if not isinstance(jobs, list):
+        return None
+
+    # Prefer the run-tests job: it includes environment setup + test execution.
+    selected_job: dict[str, Any] | None = None
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        name = str(job.get("name", "")).strip().lower()
+        if name == "run-tests":
+            selected_job = job
+            break
+    if selected_job is None:
+        return None
+
+    started = parse_github_dt(str(selected_job.get("started_at", "")))
+    completed = parse_github_dt(str(selected_job.get("completed_at", "")))
+    if started is None or completed is None or completed < started:
+        return None
+    return (completed - started).total_seconds()
+
+
+def enrich_pipeline_durations_from_github(
+    rows: list[RunStats],
+    repo_override: str | None = None,
+    token_override: str | None = None,
+) -> int:
+    repo = discover_github_repo(repo_override)
+    if not repo:
+        return 0
+    token = discover_github_token(token_override)
+
+    run_ids = {parse_run_id(row.run_name) for row in rows}
+    durations_by_run_id: dict[int, float] = {}
+    for run_id in run_ids:
+        if run_id is None:
+            continue
+        duration_sec = fetch_run_tests_duration_sec(repo, run_id, token)
+        if duration_sec is not None and duration_sec >= 0:
+            durations_by_run_id[run_id] = duration_sec
+
+    if not durations_by_run_id:
+        return 0
+
+    applied = 0
+    for row in rows:
+        run_id = parse_run_id(row.run_name)
+        if run_id is None:
+            continue
+        duration_sec = durations_by_run_id.get(run_id)
+        if duration_sec is None:
+            continue
+        row.suite_duration_ms = int(round(duration_sec * 1000))
+        applied += 1
+    return applied
 
 
 def evaluate_gate(value: float, good_threshold: float, warn_threshold: float, higher_is_better: bool) -> str:
@@ -1249,16 +1420,50 @@ def parse_args() -> argparse.Namespace:
         default=Path("config/metrics/gates.yml"),
         help="YAML config with quality gate thresholds.",
     )
+    parser.add_argument(
+        "--pipeline-source",
+        choices=["auto", "github", "allure"],
+        default="auto",
+        help=
+        "Source for pipeline duration: auto (default, try GitHub then fallback), github (require GitHub data), allure (local proxy).",
+    )
+    parser.add_argument(
+        "--github-repo",
+        type=str,
+        default="",
+        help="Optional GitHub repository in owner/repo format for pipeline duration lookups.",
+    )
+    parser.add_argument(
+        "--github-token",
+        type=str,
+        default="",
+        help="Optional GitHub token for API lookups (otherwise GITHUB_TOKEN/GH_TOKEN/gh auth token is used).",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    load_local_env_file()
     if not args.artifacts_dir.exists() or not args.artifacts_dir.is_dir():
         print(f"Artifacts directory not found: {args.artifacts_dir}")
         return 1
 
     rows = collect_all_stats(args.artifacts_dir)
+    applied = 0
+    if args.pipeline_source in {"auto", "github"}:
+        applied = enrich_pipeline_durations_from_github(
+            rows,
+            repo_override=args.github_repo,
+            token_override=args.github_token,
+        )
+        if applied == 0:
+            if args.pipeline_source == "github":
+                print(
+                    "Failed to fetch pipeline durations from GitHub. Provide --github-repo and --github-token or authenticate via gh."
+                )
+                return 1
+            print("GitHub pipeline durations unavailable, using Allure proxy durations.")
     gates_config, slowest_tests_limit = load_dashboard_config(args.gates_config)
     slow_records = collect_slowest_tests(args.artifacts_dir, limit=max(1, sum(r.total_tests for r in rows)))
     slowest_tests = [

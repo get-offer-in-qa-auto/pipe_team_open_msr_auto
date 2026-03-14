@@ -196,6 +196,8 @@ jobs:
         test -f allure-history/index.html
 
     - name: Build metrics dashboard from Allure results
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mkdir -p downloaded_artifacts
         ARCHIVE_NAME="$(date +'%Y%m%d_%H%M%S')_${{ github.run_id }}_allure-results.zip"
@@ -205,6 +207,7 @@ jobs:
         python tools/build_metrics_dashboard.py \
           --artifacts-dir downloaded_artifacts \
           --report-title "QA Metrics Dashboard (${{ steps.metrics_source_branch.outputs.branch }})" \
+          --pipeline-source github \
           --output reports/metrics_dashboard.html
 
     - name: Add metrics dashboard to GitHub Pages content
