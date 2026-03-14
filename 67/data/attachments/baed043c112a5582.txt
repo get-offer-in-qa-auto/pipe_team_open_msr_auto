@@ -1,0 +1,2 @@
+2026-03-14 13:45:31,556 [INFO] conftest: Started test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_create_patient_no_create_edit_patient_privilege_user[firefox]
+2026-03-14 13:45:40,401 [INFO] conftest: Finished test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_create_patient_no_create_edit_patient_privilege_user[firefox]

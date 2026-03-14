@@ -1,0 +1,2 @@
+2026-03-13 10:46:53,149 [INFO] conftest: Started test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[webkit-Privilege Level: High]
+2026-03-13 10:47:04,757 [INFO] conftest: Finished test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[webkit-Privilege Level: High]

@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_invalid[birthdate-1997-02-30-birth]
+INFO     conftest:conftest.py:198 Finished test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_invalid[birthdate-1997-02-30-birth]

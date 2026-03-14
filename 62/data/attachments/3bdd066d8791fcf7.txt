@@ -1,0 +1,2 @@
+2026-03-13 10:43:24,962 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_allowed_roles[Registration Clerk]
+2026-03-13 10:43:25,401 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_allowed_roles[Registration Clerk]

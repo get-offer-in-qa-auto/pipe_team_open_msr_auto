@@ -1,0 +1,2 @@
+2026-03-14 15:15:50,342 [INFO] conftest: Started test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[chromium-Organizational: Doctor]
+2026-03-14 15:15:59,662 [INFO] conftest: Finished test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[chromium-Organizational: Doctor]

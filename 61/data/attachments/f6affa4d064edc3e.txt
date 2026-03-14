@@ -1,0 +1,2 @@
+2026-03-09 16:26:59,407 [INFO] conftest: Started test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_invalid_required_fields[startDatetime--Invalid format]
+2026-03-09 16:26:59,769 [INFO] conftest: Finished test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_invalid_required_fields[startDatetime--Invalid format]

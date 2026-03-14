@@ -1,0 +1,2 @@
+2026-03-13 10:43:26,353 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_missing_person
+2026-03-13 10:43:26,441 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_missing_person

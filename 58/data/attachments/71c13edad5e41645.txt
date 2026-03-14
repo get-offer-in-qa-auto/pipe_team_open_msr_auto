@@ -1,0 +1,2 @@
+2026-03-07 18:47:25,282 [INFO] conftest: Started test: tests/ui/test_add_patient_by_admin_user.py::TestCreatePatientByAdminUser::test_add_patient_with_correct_data[chromium]
+2026-03-07 18:47:36,889 [INFO] conftest: Finished test: tests/ui/test_add_patient_by_admin_user.py::TestCreatePatientByAdminUser::test_add_patient_with_correct_data[chromium]

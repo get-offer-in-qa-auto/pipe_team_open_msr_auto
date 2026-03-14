@@ -1,0 +1,2 @@
+2026-03-14 13:44:01,926 [INFO] conftest: Started test: tests/ui/test_login_user.py::TestLoginUser::test_login_as_disabled_user[chromium]
+2026-03-14 13:44:04,951 [INFO] conftest: Finished test: tests/ui/test_login_user.py::TestLoginUser::test_login_as_disabled_user[chromium]

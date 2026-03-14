@@ -1,0 +1,2 @@
+2026-03-07 18:49:46,475 [INFO] conftest: Started test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_create_patient_no_create_edit_patient_privilege_user[webkit]
+2026-03-07 18:49:55,445 [INFO] conftest: Finished test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_create_patient_no_create_edit_patient_privilege_user[webkit]

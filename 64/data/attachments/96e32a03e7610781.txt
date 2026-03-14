@@ -1,0 +1,2 @@
+2026-03-13 12:29:27,349 [INFO] conftest: Started test: tests/ui/test_login_user.py::TestLoginUser::test_admin_can_login_with_correct_data[firefox]
+2026-03-13 12:29:43,630 [INFO] conftest: Finished test: tests/ui/test_login_user.py::TestLoginUser::test_admin_can_login_with_correct_data[firefox]

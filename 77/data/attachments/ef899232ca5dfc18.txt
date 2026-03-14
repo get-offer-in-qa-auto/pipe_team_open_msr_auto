@@ -1,0 +1,2 @@
+2026-03-14 15:14:23,143 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_identifier[identifier-MRN#123-Invalid Submission]
+2026-03-14 15:14:23,245 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_identifier[identifier-MRN#123-Invalid Submission]

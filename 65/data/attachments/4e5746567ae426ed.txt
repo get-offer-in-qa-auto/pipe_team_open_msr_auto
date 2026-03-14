@@ -1,0 +1,2 @@
+2026-03-13 15:49:08,807 [INFO] conftest: Started test: tests/ui/test_visit_actions.py::TestVisitActions::test_create_visit_for_patient[chromium]
+2026-03-13 15:49:18,207 [INFO] conftest: Finished test: tests/ui/test_visit_actions.py::TestVisitActions::test_create_visit_for_patient[chromium]

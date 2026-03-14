@@ -1,0 +1,2 @@
+2026-03-13 11:38:44,140 [INFO] conftest: Started test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit
+2026-03-13 11:38:44,604 [INFO] conftest: Finished test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit

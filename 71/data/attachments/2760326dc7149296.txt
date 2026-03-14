@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/ui/test_visit_actions.py::TestVisitActions::test_cancel_end_visit[webkit]
+INFO     conftest:conftest.py:198 Finished test: tests/ui/test_visit_actions.py::TestVisitActions::test_cancel_end_visit[webkit]

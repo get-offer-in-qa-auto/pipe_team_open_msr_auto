@@ -1,0 +1,2 @@
+2026-03-14 15:12:26,388 [INFO] conftest: Started test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[firefox-Organizational: Doctor]
+2026-03-14 15:12:38,191 [INFO] conftest: Finished test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[firefox-Organizational: Doctor]

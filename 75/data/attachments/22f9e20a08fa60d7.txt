@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_with_another_ended_visit
+INFO     conftest:conftest.py:198 Finished test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_with_another_ended_visit

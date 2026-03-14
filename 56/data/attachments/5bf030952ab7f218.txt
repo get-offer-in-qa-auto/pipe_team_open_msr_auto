@@ -1,0 +1,2 @@
+2026-03-07 17:33:51,221 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_no_create_edit_patient_privilege_user
+2026-03-07 17:33:51,827 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_no_create_edit_patient_privilege_user

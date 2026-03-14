@@ -1,0 +1,2 @@
+2026-03-09 16:29:37,530 [INFO] conftest: Started test: tests/ui/test_login_user.py::TestLoginUser::test_admin_can_login_with_correct_data[webkit]
+2026-03-09 16:29:53,704 [INFO] conftest: Finished test: tests/ui/test_login_user.py::TestLoginUser::test_admin_can_login_with_correct_data[webkit]

@@ -1,0 +1,2 @@
+2026-03-14 13:40:39,427 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_with_role[Privilege Level: Full]
+2026-03-14 13:40:40,090 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_with_role[Privilege Level: Full]

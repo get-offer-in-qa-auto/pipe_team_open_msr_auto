@@ -1,0 +1,2 @@
+2026-03-09 16:25:56,517 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_identifier[identifier-money-Invalid Submission]
+2026-03-09 16:25:56,610 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_identifier[identifier-money-Invalid Submission]

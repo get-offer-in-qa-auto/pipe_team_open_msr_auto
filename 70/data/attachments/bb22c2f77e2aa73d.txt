@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_birthdate
+INFO     conftest:conftest.py:198 Finished test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_birthdate

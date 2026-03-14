@@ -1,0 +1,2 @@
+2026-03-13 15:48:36,391 [INFO] conftest: Started test: tests/api/open_msr/test_create_person.py::test_create_person_invalid[birthdate--birth]
+2026-03-13 15:48:36,422 [INFO] conftest: Finished test: tests/api/open_msr/test_create_person.py::test_create_person_invalid[birthdate--birth]

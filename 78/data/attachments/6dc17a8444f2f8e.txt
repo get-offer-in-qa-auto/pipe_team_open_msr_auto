@@ -1,0 +1,2 @@
+2026-03-14 15:13:15,725 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_invalid_identifier_data[identifier-bad-Invalid Submission]
+2026-03-14 15:13:16,174 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_invalid_identifier_data[identifier-bad-Invalid Submission]

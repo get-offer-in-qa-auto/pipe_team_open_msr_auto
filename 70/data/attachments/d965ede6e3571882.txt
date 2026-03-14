@@ -1,0 +1,2 @@
+2026-03-14 13:42:27,500 [INFO] conftest: Started test: tests/ui/test_visit_actions.py::TestVisitActions::test_create_visit_for_patient[firefox]
+2026-03-14 13:42:37,080 [INFO] conftest: Finished test: tests/ui/test_visit_actions.py::TestVisitActions::test_create_visit_for_patient[firefox]

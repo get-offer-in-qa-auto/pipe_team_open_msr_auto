@@ -1,0 +1,2 @@
+2026-03-13 10:43:31,768 [INFO] conftest: Started test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_gender
+2026-03-13 10:43:31,888 [INFO] conftest: Finished test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_gender

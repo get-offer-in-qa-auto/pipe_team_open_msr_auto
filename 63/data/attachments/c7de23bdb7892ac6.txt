@@ -1,0 +1,2 @@
+2026-03-13 11:38:48,922 [INFO] conftest: Started test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_invalid[birthdate-abcd-ef-gh-birth]
+2026-03-13 11:38:49,039 [INFO] conftest: Finished test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_invalid[birthdate-abcd-ef-gh-birth]

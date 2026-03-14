@@ -1,0 +1,2 @@
+2026-03-14 13:40:45,544 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_nested_person[birthdate-3000-01-01]
+2026-03-14 13:40:45,642 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_nested_person[birthdate-3000-01-01]

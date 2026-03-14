@@ -1,0 +1,2 @@
+2026-03-09 16:25:58,904 [INFO] conftest: Started test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_invalid_required_fields[patient-ydoPfZFIBk-Patient Id is required]
+2026-03-09 16:25:59,234 [INFO] conftest: Finished test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_invalid_required_fields[patient-ydoPfZFIBk-Patient Id is required]

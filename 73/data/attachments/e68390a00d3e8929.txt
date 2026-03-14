@@ -1,0 +1,2 @@
+2026-03-14 15:10:13,969 [INFO] conftest: Started test: tests/ui/test_search_patient_by_admin.py::TestSearchPatientByAdmin::test_search_patient_by_id_by_admin[chromium]
+2026-03-14 15:10:22,037 [INFO] conftest: Finished test: tests/ui/test_search_patient_by_admin.py::TestSearchPatientByAdmin::test_search_patient_by_id_by_admin[chromium]

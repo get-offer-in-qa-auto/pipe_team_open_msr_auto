@@ -1,0 +1,2 @@
+2026-03-14 15:13:24,275 [INFO] conftest: Started test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_birthdate
+2026-03-14 15:13:24,359 [INFO] conftest: Finished test: tests/api/open_msr/test_update_person.py::TestUpdatePerson::test_update_person_birthdate

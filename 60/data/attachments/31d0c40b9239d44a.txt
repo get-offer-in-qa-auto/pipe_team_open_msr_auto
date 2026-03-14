@@ -1,0 +1,2 @@
+2026-03-09 16:25:52,380 [INFO] conftest: Started test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_with_role[Organizational: Doctor]
+2026-03-09 16:25:52,946 [INFO] conftest: Finished test: tests/api/open_msr/test_create_patient_from_existing_person.py::TestCreatePatientFromExistingPerson::test_create_patient_from_existing_person_with_role[Organizational: Doctor]

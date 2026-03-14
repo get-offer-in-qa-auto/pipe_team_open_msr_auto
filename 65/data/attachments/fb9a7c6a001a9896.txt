@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_identifier[identifier-money-Invalid Submission]
+INFO     conftest:conftest.py:198 Finished test: tests/api/open_msr/test_create_patient_with_new_person.py::TestCreatePatientWithNewPerson::test_create_patient_with_new_person_invalid_identifier[identifier-money-Invalid Submission]

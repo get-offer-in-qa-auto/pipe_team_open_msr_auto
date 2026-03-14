@@ -1,0 +1,2 @@
+2026-03-14 15:33:25,255 [INFO] conftest: Started test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_invalid_required_fields[visitType-4a110431-ad3b-41f8-bfe0-3f0b64eac23c-Visit Type is required]
+2026-03-14 15:33:25,639 [INFO] conftest: Finished test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_create_visit_invalid_required_fields[visitType-4a110431-ad3b-41f8-bfe0-3f0b64eac23c-Visit Type is required]

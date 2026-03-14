@@ -1,0 +1,2 @@
+2026-03-07 17:35:34,781 [INFO] conftest: Started test: tests/ui/test_visit_actions.py::TestVisitActions::test_delete_visit[chromium]
+2026-03-07 17:35:41,900 [INFO] conftest: Finished test: tests/ui/test_visit_actions.py::TestVisitActions::test_delete_visit[chromium]

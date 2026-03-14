@@ -1,0 +1,2 @@
+2026-03-09 16:27:00,668 [INFO] conftest: Started test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_update_visit_invalid_stop_datetime[HuJLGJbFTFKHLGVgSLRV]
+2026-03-09 16:27:01,067 [INFO] conftest: Finished test: tests/api/open_msr/test_create_visit.py::TestCreateVisit::test_update_visit_invalid_stop_datetime[HuJLGJbFTFKHLGVgSLRV]

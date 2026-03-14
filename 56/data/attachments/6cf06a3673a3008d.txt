@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/api/open_msr/test_create_person.py::test_create_person_invalid[addresses-value10-address]
+INFO     conftest:conftest.py:198 Finished test: tests/api/open_msr/test_create_person.py::test_create_person_invalid[addresses-value10-address]

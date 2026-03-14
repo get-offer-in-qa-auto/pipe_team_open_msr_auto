@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[webkit-Organizational: Doctor]
+INFO     conftest:conftest.py:198 Finished test: tests/ui/test_add_patient_by_user.py::TestCreatePatientByUser::test_add_patient_user_has_allowed_roles_to_create_patient[webkit-Organizational: Doctor]

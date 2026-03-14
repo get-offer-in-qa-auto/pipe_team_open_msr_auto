@@ -1,0 +1,2 @@
+2026-03-14 15:10:57,296 [INFO] conftest: Started test: tests/ui/test_visit_actions.py::TestVisitActions::test_delete_visit[firefox]
+2026-03-14 15:11:08,195 [INFO] conftest: Finished test: tests/ui/test_visit_actions.py::TestVisitActions::test_delete_visit[firefox]

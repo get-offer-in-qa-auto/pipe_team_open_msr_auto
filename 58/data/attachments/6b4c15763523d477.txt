@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/ui/test_login_user.py::TestLoginUser::test_login_as_disabled_user[webkit]
+INFO     conftest:conftest.py:198 Finished test: tests/ui/test_login_user.py::TestLoginUser::test_login_as_disabled_user[webkit]

@@ -1,0 +1,2 @@
+INFO     conftest:conftest.py:170 Started test: tests/ui/test_search_patient_by_admin.py::TestSearchPatientByAdmin::test_search_patient_by_nonexistent_fullname_by_admin[webkit]
+INFO     conftest:conftest.py:198 Finished test: tests/ui/test_search_patient_by_admin.py::TestSearchPatientByAdmin::test_search_patient_by_nonexistent_fullname_by_admin[webkit]

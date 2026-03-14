@@ -1,0 +1,2 @@
+2026-03-09 16:27:54,668 [INFO] conftest: Started test: tests/ui/test_visit_actions.py::TestVisitActions::test_cancel_end_visit[chromium]
+2026-03-09 16:28:03,146 [INFO] conftest: Finished test: tests/ui/test_visit_actions.py::TestVisitActions::test_cancel_end_visit[chromium]
